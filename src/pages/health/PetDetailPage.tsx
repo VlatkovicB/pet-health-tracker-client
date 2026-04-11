@@ -4,15 +4,18 @@ import {
   Box, Button, Container, Tab, Tabs, Typography, Dialog, DialogTitle,
   DialogContent, DialogActions, TextField, MenuItem, List, ListItemButton,
   Divider, Skeleton, Checkbox, FormControlLabel, IconButton, Avatar, Chip, Tooltip,
-  CircularProgress,
+  CircularProgress, Alert,
 } from '@mui/material';
-import { Add, AddAPhoto, Edit, Pets, Close } from '@mui/icons-material';
+import { Add, AddAPhoto, Edit, Pets, Close, CheckCircle, Cancel, Medication as MedicationIcon } from '@mui/icons-material';
 import { useMutation, useQuery, useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import { healthApi } from '../../api/health';
 import { vetsApi } from '../../api/vets';
 import { petsApi } from '../../api/pets';
+import { medicationsApi, type CreateMedicationInput } from '../../api/medications';
+import { getApiError } from '../../api/client';
+import { useNotification } from '../../context/NotificationContext';
 import { useInfiniteScroll } from '../../hooks/useInfiniteScroll';
-import type { Pet, VetVisit } from '../../types';
+import type { Medication, Pet, VetVisit } from '../../types';
 
 type TabValue = 'vet-visits' | 'medications';
 
@@ -36,8 +39,10 @@ function calcAge(birthDate: string): string {
 export function PetDetailPage() {
   const { petId, groupId } = useParams<{ petId: string; groupId: string }>();
   const queryClient = useQueryClient();
+  const { showError } = useNotification();
   const [tab, setTab] = useState<TabValue>('vet-visits');
   const [addOpen, setAddOpen] = useState(false);
+  const [addMedOpen, setAddMedOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [detailVisit, setDetailVisit] = useState<VetVisit | null>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
@@ -71,6 +76,23 @@ export function PetDetailPage() {
     tab === 'vet-visits' && vetVisitsQuery.hasNextPage,
   );
 
+  // Medications
+  const medicationsQuery = useQuery({
+    queryKey: ['medications', petId],
+    queryFn: () => medicationsApi.list(petId!),
+    enabled: !!petId && tab === 'medications',
+  });
+  const medications = medicationsQuery.data ?? [];
+
+  const addMedMutation = useMutation({
+    mutationFn: (data: CreateMedicationInput) => medicationsApi.create(petId!, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['medications', petId] });
+      setAddMedOpen(false);
+    },
+    onError: (err) => showError(getApiError(err)),
+  });
+
   // Edit pet mutation
   const editMutation = useMutation({
     mutationFn: (data: Partial<Omit<Pet, 'id' | 'groupId' | 'createdAt' | 'photoUrl'>>) =>
@@ -79,12 +101,14 @@ export function PetDetailPage() {
       queryClient.invalidateQueries({ queryKey: ['pet', groupId, petId] });
       setEditOpen(false);
     },
+    onError: (err) => showError(getApiError(err)),
   });
 
   // Pet photo upload mutation
   const photoMutation = useMutation({
     mutationFn: (file: File) => petsApi.uploadPhoto(groupId!, petId!, file),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['pet', groupId, petId] }),
+    onError: (err) => showError(getApiError(err)),
   });
 
   const handlePhotoPick = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -110,6 +134,7 @@ export function PetDetailPage() {
       setVetForm({ vetId: '', reason: '', notes: '', visitDate: todayNoon(), nextVisitDate: weekFromNow() });
       setHasNextVisit(false);
     },
+    onError: (err) => showError(getApiError(err)),
   });
 
   // Vet visit update mutation
@@ -120,6 +145,7 @@ export function PetDetailPage() {
       queryClient.invalidateQueries({ queryKey: ['vet-visits', petId] });
       setDetailVisit(updatedVisit);
     },
+    onError: (err) => showError(getApiError(err)),
   });
 
   // Vet visit image upload mutation
@@ -130,6 +156,7 @@ export function PetDetailPage() {
       queryClient.invalidateQueries({ queryKey: ['vet-visits', petId] });
       setDetailVisit(updatedVisit);
     },
+    onError: (err) => showError(getApiError(err)),
   });
 
   const handleImagePick = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -222,6 +249,9 @@ export function PetDetailPage() {
         {tab === 'vet-visits' && (
           <Button variant="contained" startIcon={<Add />} onClick={() => setAddOpen(true)} size="small">Add</Button>
         )}
+        {tab === 'medications' && (
+          <Button variant="contained" startIcon={<Add />} onClick={() => setAddMedOpen(true)} size="small">Add</Button>
+        )}
       </Box>
 
       <Box sx={{
@@ -233,7 +263,9 @@ export function PetDetailPage() {
       }}>
         {tab === 'vet-visits' && (
           <>
-            {vetVisitsQuery.isLoading ? <LoadingState /> : !vetVisits.length ? <EmptyState /> : (
+            {vetVisitsQuery.isLoading ? <LoadingState /> : vetVisitsQuery.isError ? (
+              <Box sx={{ p: 2 }}><Alert severity="error">{getApiError(vetVisitsQuery.error)}</Alert></Box>
+            ) : !vetVisits.length ? <EmptyState /> : (
               <>
                 <List disablePadding>
                   {vetVisits.map((v, i) => {
@@ -262,7 +294,20 @@ export function PetDetailPage() {
           </>
         )}
 
-        {tab === 'medications' && <EmptyState label="Coming soon" />}
+        {tab === 'medications' && (
+          medicationsQuery.isLoading ? <LoadingState /> : medicationsQuery.isError ? (
+            <Box sx={{ p: 2 }}><Alert severity="error">{getApiError(medicationsQuery.error)}</Alert></Box>
+          ) : !medications.length ? <EmptyState /> : (
+            <List disablePadding>
+              {medications.map((m, i) => (
+                <Box key={m.id}>
+                  {i > 0 && <Divider />}
+                  <MedicationRow med={m} />
+                </Box>
+              ))}
+            </List>
+          )
+        )}
       </Box>
 
       {/* Edit pet dialog */}
@@ -303,6 +348,14 @@ export function PetDetailPage() {
           <Button variant="contained" onClick={() => vetMutation.mutate()} disabled={!canSaveVetVisit}>Save</Button>
         </DialogActions>
       </Dialog>
+
+      {/* Add medication dialog */}
+      <AddMedicationDialog
+        open={addMedOpen}
+        saving={addMedMutation.isPending}
+        onClose={() => setAddMedOpen(false)}
+        onSave={(data) => addMedMutation.mutate(data)}
+      />
 
       {/* Vet visit detail dialog */}
       {detailVisit && (
@@ -557,6 +610,171 @@ function VetVisitDetailDialog({
         </DialogActions>
       </Dialog>
     </>
+  );
+}
+
+const today = () => new Date().toISOString().slice(0, 10);
+
+const DOSAGE_UNITS = ['mg', 'ml', 'g', 'mcg', 'tab', 'pip', 'injection', 'collar', 'drop'];
+
+type FreqType = 'hourly' | 'daily' | 'weekly' | 'monthly';
+
+function freqLabel(type: FreqType, n: number): string {
+  if (!n || n < 1) return '';
+  switch (type) {
+    case 'hourly':  return n === 1 ? 'Every hour' : `Every ${n} hours`;
+    case 'daily':   return n === 1 ? 'Once daily' : n === 2 ? 'Twice daily' : `${n} times daily`;
+    case 'weekly':  return n === 1 ? 'Once a week' : `Every ${n} weeks`;
+    case 'monthly': return n === 1 ? 'Once a month' : `Every ${n} months`;
+  }
+}
+
+function FrequencyPicker({ onChange }: { onChange: (value: { type: FreqType; interval: number }) => void }) {
+  const [type, setType] = useState<FreqType>('daily');
+  const [interval, setInterval] = useState(1);
+
+  const handleType = (t: FreqType) => {
+    setType(t);
+    onChange({ type: t, interval });
+  };
+
+  const handleInterval = (raw: string) => {
+    const n = Math.max(1, parseInt(raw) || 1);
+    setInterval(n);
+    onChange({ type, interval: n });
+  };
+
+  const preview = freqLabel(type, interval);
+
+  return (
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+      <Box sx={{ display: 'flex', gap: 1 }}>
+        <TextField
+          select label="Frequency" value={type}
+          onChange={(e) => handleType(e.target.value as FreqType)}
+          sx={{ flex: 1 }}
+        >
+          <MenuItem value="hourly">Hourly</MenuItem>
+          <MenuItem value="daily">Daily</MenuItem>
+          <MenuItem value="weekly">Weekly</MenuItem>
+          <MenuItem value="monthly">Monthly</MenuItem>
+        </TextField>
+        <TextField
+          label="Every" type="number" value={interval}
+          onChange={(e) => handleInterval(e.target.value)}
+          sx={{ width: 100 }}
+          slotProps={{ htmlInput: { min: 1 } }}
+        />
+      </Box>
+      {preview && (
+        <Typography variant="caption" color="primary" sx={{ pl: 0.5 }}>{preview}</Typography>
+      )}
+    </Box>
+  );
+}
+
+function AddMedicationDialog({ open, saving, onClose, onSave }: {
+  open: boolean;
+  saving: boolean;
+  onClose: () => void;
+  onSave: (data: CreateMedicationInput) => void;
+}) {
+  const [form, setForm] = useState({
+    name: '',
+    dosageAmount: '',
+    dosageUnit: 'mg',
+    startDate: today(),
+    endDate: '',
+    notes: '',
+  });
+  const [frequency, setFrequency] = useState<{ type: FreqType; interval: number }>({ type: 'daily', interval: 1 });
+  const [hasEndDate, setHasEndDate] = useState(false);
+
+  const set = (field: string, value: string) => setForm((f) => ({ ...f, [field]: value }));
+  const canSave = !!(form.name && form.dosageAmount && form.dosageUnit && form.startDate);
+
+  const handleSave = () => {
+    onSave({
+      name: form.name,
+      dosageAmount: parseFloat(form.dosageAmount),
+      dosageUnit: form.dosageUnit,
+      frequency,
+      startDate: new Date(form.startDate).toISOString(),
+      endDate: hasEndDate && form.endDate ? new Date(form.endDate).toISOString() : undefined,
+      notes: form.notes || undefined,
+    });
+  };
+
+  return (
+    <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
+      <DialogTitle>Add Medication</DialogTitle>
+      <DialogContent>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
+          <TextField label="Medication name" value={form.name} onChange={(e) => set('name', e.target.value)} fullWidth required />
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <TextField
+              label="Dose" type="number" value={form.dosageAmount}
+              onChange={(e) => set('dosageAmount', e.target.value)}
+              sx={{ flex: 1 }} required
+              slotProps={{ htmlInput: { min: 0, step: 'any' } }}
+            />
+            <TextField
+              select label="Unit" value={form.dosageUnit}
+              onChange={(e) => set('dosageUnit', e.target.value)}
+              sx={{ width: 130 }}
+            >
+              {DOSAGE_UNITS.map((u) => <MenuItem key={u} value={u}>{u}</MenuItem>)}
+            </TextField>
+          </Box>
+          <FrequencyPicker onChange={setFrequency} />
+          <TextField label="Start date" type="date" value={form.startDate} onChange={(e) => set('startDate', e.target.value)} fullWidth required slotProps={{ inputLabel: { shrink: true } }} />
+          <FormControlLabel
+            control={<Checkbox checked={hasEndDate} onChange={(e) => setHasEndDate(e.target.checked)} />}
+            label="Set end date"
+          />
+          {hasEndDate && (
+            <TextField label="End date" type="date" value={form.endDate} onChange={(e) => set('endDate', e.target.value)} fullWidth slotProps={{ inputLabel: { shrink: true } }} />
+          )}
+          <TextField label="Notes" value={form.notes} onChange={(e) => set('notes', e.target.value)} fullWidth multiline rows={2} />
+        </Box>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={onClose}>Cancel</Button>
+        <Button variant="contained" disabled={!canSave || saving} onClick={handleSave}>
+          {saving ? 'Saving…' : 'Save'}
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+}
+
+function MedicationRow({ med }: { med: Medication }) {
+  const dosageLabel = `${med.dosage.amount} ${med.dosage.unit}`;
+  const dateRange = med.endDate
+    ? `${fmtDate(med.startDate)} – ${fmtDate(med.endDate)}`
+    : `Since ${fmtDate(med.startDate)}`;
+
+  return (
+    <Box sx={{ px: 2, py: 1.5, display: 'flex', alignItems: 'flex-start', gap: 1.5 }}>
+      <MedicationIcon sx={{ mt: 0.3, color: med.active ? 'primary.main' : 'text.disabled', flexShrink: 0 }} fontSize="small" />
+      <Box sx={{ flex: 1, minWidth: 0 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+          <Typography variant="body2" fontWeight={500}>{med.name}</Typography>
+          <Typography variant="caption" color="text.secondary">
+            {dosageLabel} · {med.frequency.label}
+          </Typography>
+          {med.active
+            ? <CheckCircle sx={{ fontSize: 14, color: 'success.main', ml: 'auto' }} />
+            : <Cancel sx={{ fontSize: 14, color: 'text.disabled', ml: 'auto' }} />}
+        </Box>
+        <Typography variant="caption" color="text.secondary">{dateRange}</Typography>
+        {med.notes && (
+          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.25 }} noWrap>
+            {med.notes}
+          </Typography>
+        )}
+      </Box>
+    </Box>
   );
 }
 

@@ -7,6 +7,8 @@ import {
 import { Add, Group } from '@mui/icons-material';
 import { useMutation, useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import { groupsApi } from '../../api/groups';
+import { getApiError } from '../../api/client';
+import { useNotification } from '../../context/NotificationContext';
 import { useInfiniteScroll } from '../../hooks/useInfiniteScroll';
 
 export function GroupsPage() {
@@ -29,6 +31,8 @@ export function GroupsPage() {
     hasNextPage,
   );
 
+  const { showError } = useNotification();
+
   const mutation = useMutation({
     mutationFn: groupsApi.create,
     onSuccess: (group) => {
@@ -37,6 +41,7 @@ export function GroupsPage() {
       setName('');
       navigate(`/groups/${group.id}`);
     },
+    onError: (err) => showError(getApiError(err)),
   });
 
   return (

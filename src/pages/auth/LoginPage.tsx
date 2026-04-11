@@ -9,8 +9,8 @@ import { useAuth } from '../../context/AuthContext';
 export function LoginPage() {
   const navigate = useNavigate();
   const { login } = useAuth();
-  const [email, setEmail] = useState(import.meta.env.DEV ? 'latzko@latzko.com' : '');
-  const [password, setPassword] = useState(import.meta.env.DEV ? 'latzkolatzko' : '');
+  const [email, setEmail] = useState(import.meta.env.DEV ? 'alex@example.com' : '');
+  const [password, setPassword] = useState(import.meta.env.DEV ? 'password123' : '');
 
   const mutation = useMutation({
     mutationFn: authApi.login,

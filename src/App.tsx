@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { CssBaseline, ThemeProvider } from '@mui/material';
 import { theme } from './theme';
 import { AuthProvider } from './context/AuthContext';
+import { NotificationProvider } from './context/NotificationContext';
 import { ProtectedRoute } from './routes/ProtectedRoute';
 import { Layout } from './components/Layout';
 import { LoginPage } from './pages/auth/LoginPage';
@@ -19,19 +20,21 @@ export default function App() {
     <QueryClientProvider client={queryClient}>
       <ThemeProvider theme={theme}>
         <CssBaseline />
-        <AuthProvider>
-          <BrowserRouter>
-            <Routes>
-              <Route path="/login" element={<LoginPage />} />
-              <Route path="/register" element={<RegisterPage />} />
-              <Route path="/" element={<ProtectedRoute><Layout><GroupsPage /></Layout></ProtectedRoute>} />
-              <Route path="/groups/:groupId" element={<ProtectedRoute><Layout><PetsPage /></Layout></ProtectedRoute>} />
-              <Route path="/groups/:groupId/vets" element={<ProtectedRoute><Layout><VetsPage /></Layout></ProtectedRoute>} />
-              <Route path="/groups/:groupId/pets/:petId" element={<ProtectedRoute><Layout><PetDetailPage /></Layout></ProtectedRoute>} />
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-          </BrowserRouter>
-        </AuthProvider>
+        <NotificationProvider>
+          <AuthProvider>
+            <BrowserRouter>
+              <Routes>
+                <Route path="/login" element={<LoginPage />} />
+                <Route path="/register" element={<RegisterPage />} />
+                <Route path="/" element={<ProtectedRoute><Layout><GroupsPage /></Layout></ProtectedRoute>} />
+                <Route path="/groups/:groupId" element={<ProtectedRoute><Layout><PetsPage /></Layout></ProtectedRoute>} />
+                <Route path="/groups/:groupId/vets" element={<ProtectedRoute><Layout><VetsPage /></Layout></ProtectedRoute>} />
+                <Route path="/groups/:groupId/pets/:petId" element={<ProtectedRoute><Layout><PetDetailPage /></Layout></ProtectedRoute>} />
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </Routes>
+            </BrowserRouter>
+          </AuthProvider>
+        </NotificationProvider>
       </ThemeProvider>
     </QueryClientProvider>
   );

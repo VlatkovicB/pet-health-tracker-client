@@ -30,6 +30,9 @@ export const healthApi = {
   toggleReminder: (medicationId: string) =>
     apiClient.patch(`/medications/${medicationId}/reminder/toggle`).then((r) => r.data),
 
+  listUpcomingVetVisits: (groupId: string) =>
+    apiClient.get<VetVisit[]>(`/groups/${groupId}/upcoming-vet-visits`).then((r) => r.data),
+
   // Symptoms
   listSymptoms: (petId: string, { pageParam = 1 }: { pageParam?: number } = {}) =>
     apiClient.get<PaginatedResult<Symptom>>(`/pets/${petId}/symptoms`, { params: { page: pageParam, limit: 20 } }).then((r) => r.data),

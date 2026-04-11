@@ -48,14 +48,11 @@ export interface Medication {
   petId: string;
   name: string;
   dosage: { amount: number; unit: string };
+  frequency: { type: string; interval: number; label: string };
   startDate: string;
   endDate?: string;
+  notes?: string;
   active: boolean;
-  reminder?: {
-    schedule: { times?: string[]; intervalHours?: number; days?: string[]; timezone?: string };
-    notifyUserIds: string[];
-    enabled: boolean;
-  };
   createdAt: string;
 }
 

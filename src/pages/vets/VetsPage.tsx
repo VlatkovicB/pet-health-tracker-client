@@ -2,11 +2,13 @@ import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import {
   Box, Button, Container, TextField, Typography, Dialog, DialogTitle,
-  DialogContent, DialogActions, Card, CardContent, Grid, Chip, Link, Skeleton,
+  DialogContent, DialogActions, Card, CardContent, Grid, Chip, Link, Skeleton, Alert,
 } from '@mui/material';
 import { Add, Phone, LocationOn, AccessTime, Map } from '@mui/icons-material';
 import { useMutation, useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import { vetsApi } from '../../api/vets';
+import { getApiError } from '../../api/client';
+import { useNotification } from '../../context/NotificationContext';
 import { useInfiniteScroll } from '../../hooks/useInfiniteScroll';
 
 export function VetsPage() {
@@ -18,7 +20,9 @@ export function VetsPage() {
   const set = (field: string) => (e: React.ChangeEvent<HTMLInputElement>) =>
     setForm((f) => ({ ...f, [field]: e.target.value }));
 
-  const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteQuery({
+  const { showError } = useNotification();
+
+  const { data, isLoading, isError: listError, error: listErrorObj, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteQuery({
     queryKey: ['vets', groupId],
     queryFn: ({ pageParam }) => vetsApi.list(groupId!, { pageParam }),
     initialPageParam: 1,
@@ -47,6 +51,7 @@ export function VetsPage() {
       setOpen(false);
       setForm({ name: '', address: '', phone: '', workHours: '', googleMapsUrl: '', notes: '' });
     },
+    onError: (err) => showError(getApiError(err)),
   });
 
   return (
@@ -55,6 +60,10 @@ export function VetsPage() {
         <Typography variant="h5" fontWeight="bold">Vets</Typography>
         <Button variant="contained" startIcon={<Add />} onClick={() => setOpen(true)}>Add Vet</Button>
       </Box>
+
+      {listError && (
+        <Alert severity="error" sx={{ mb: 2 }}>{getApiError(listErrorObj)}</Alert>
+      )}
 
       {isLoading ? (
         <Grid container spacing={2}>
