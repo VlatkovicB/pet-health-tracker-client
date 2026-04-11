@@ -1,17 +1,17 @@
 import { useRef, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
 import {
   Box, Button, Container, Tab, Tabs, Typography, Dialog, DialogTitle,
   DialogContent, DialogActions, TextField, MenuItem, List, ListItemButton,
-  Divider, Skeleton, Checkbox, FormControlLabel, IconButton, Avatar, Chip, Tooltip,
+  Divider, Skeleton, Checkbox, FormControlLabel, Switch, IconButton, Avatar, Chip, Tooltip,
   CircularProgress, Alert,
 } from '@mui/material';
-import { Add, AddAPhoto, Edit, Pets, Close, CheckCircle, Cancel, Medication as MedicationIcon } from '@mui/icons-material';
+import { Add, AddAPhoto, Edit, Pets, Close, Medication as MedicationIcon } from '@mui/icons-material';
 import { useMutation, useQuery, useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import { healthApi } from '../../api/health';
 import { vetsApi } from '../../api/vets';
 import { petsApi } from '../../api/pets';
-import { medicationsApi, type CreateMedicationInput } from '../../api/medications';
+import { medicationsApi, type CreateMedicationInput, type UpdateMedicationInput } from '../../api/medications';
 import { getApiError } from '../../api/client';
 import { useNotification } from '../../context/NotificationContext';
 import { useInfiniteScroll } from '../../hooks/useInfiniteScroll';
@@ -38,11 +38,15 @@ function calcAge(birthDate: string): string {
 
 export function PetDetailPage() {
   const { petId, groupId } = useParams<{ petId: string; groupId: string }>();
+  const [searchParams, setSearchParams] = useSearchParams();
   const queryClient = useQueryClient();
   const { showError } = useNotification();
-  const [tab, setTab] = useState<TabValue>('vet-visits');
+  const rawTab = searchParams.get('tab');
+  const tab: TabValue = rawTab === 'medications' ? 'medications' : 'vet-visits';
+  const setTab = (value: TabValue) => setSearchParams({ tab: value }, { replace: true });
   const [addOpen, setAddOpen] = useState(false);
   const [addMedOpen, setAddMedOpen] = useState(false);
+  const [editMed, setEditMed] = useState<Medication | null>(null);
   const [editOpen, setEditOpen] = useState(false);
   const [detailVisit, setDetailVisit] = useState<VetVisit | null>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
@@ -82,13 +86,23 @@ export function PetDetailPage() {
     queryFn: () => medicationsApi.list(petId!),
     enabled: !!petId && tab === 'medications',
   });
-  const medications = medicationsQuery.data ?? [];
+  const medications = (medicationsQuery.data ?? []).slice().sort((a, b) => a.name.localeCompare(b.name));
 
   const addMedMutation = useMutation({
     mutationFn: (data: CreateMedicationInput) => medicationsApi.create(petId!, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['medications', petId] });
       setAddMedOpen(false);
+    },
+    onError: (err) => showError(getApiError(err)),
+  });
+
+  const editMedMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: UpdateMedicationInput }) =>
+      medicationsApi.update(petId!, id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['medications', petId] });
+      setEditMed(null);
     },
     onError: (err) => showError(getApiError(err)),
   });
@@ -302,7 +316,11 @@ export function PetDetailPage() {
               {medications.map((m, i) => (
                 <Box key={m.id}>
                   {i > 0 && <Divider />}
-                  <MedicationRow med={m} />
+                  <MedicationRow
+                    med={m}
+                    onEdit={() => setEditMed(m)}
+                    onToggleActive={(active) => editMedMutation.mutate({ id: m.id, data: { active } })}
+                  />
                 </Box>
               ))}
             </List>
@@ -356,6 +374,17 @@ export function PetDetailPage() {
         onClose={() => setAddMedOpen(false)}
         onSave={(data) => addMedMutation.mutate(data)}
       />
+
+      {/* Edit medication dialog */}
+      {editMed && (
+        <EditMedicationDialog
+          key={editMed.id}
+          med={editMed}
+          saving={editMedMutation.isPending}
+          onClose={() => setEditMed(null)}
+          onSave={(data) => editMedMutation.mutate({ id: editMed.id, data })}
+        />
+      )}
 
       {/* Vet visit detail dialog */}
       {detailVisit && (
@@ -629,9 +658,13 @@ function freqLabel(type: FreqType, n: number): string {
   }
 }
 
-function FrequencyPicker({ onChange }: { onChange: (value: { type: FreqType; interval: number }) => void }) {
-  const [type, setType] = useState<FreqType>('daily');
-  const [interval, setInterval] = useState(1);
+function FrequencyPicker({ onChange, initialType = 'daily', initialInterval = 1 }: {
+  onChange: (value: { type: FreqType; interval: number }) => void;
+  initialType?: FreqType;
+  initialInterval?: number;
+}) {
+  const [type, setType] = useState<FreqType>(initialType);
+  const [interval, setInterval] = useState(initialInterval);
 
   const handleType = (t: FreqType) => {
     setType(t);
@@ -748,24 +781,113 @@ function AddMedicationDialog({ open, saving, onClose, onSave }: {
   );
 }
 
-function MedicationRow({ med }: { med: Medication }) {
+function EditMedicationDialog({ med, saving, onClose, onSave }: {
+  med: Medication;
+  saving: boolean;
+  onClose: () => void;
+  onSave: (data: UpdateMedicationInput) => void;
+}) {
+  const [form, setForm] = useState({
+    name: med.name,
+    dosageAmount: String(med.dosage.amount),
+    dosageUnit: med.dosage.unit,
+    startDate: med.startDate.slice(0, 10),
+    endDate: med.endDate ? med.endDate.slice(0, 10) : '',
+    notes: med.notes ?? '',
+  });
+  const [frequency, setFrequency] = useState<{ type: FreqType; interval: number }>({
+    type: med.frequency.type as FreqType,
+    interval: med.frequency.interval,
+  });
+  const [hasEndDate, setHasEndDate] = useState(!!med.endDate);
+  const [active, setActive] = useState(med.active);
+
+  const set = (field: string, value: string) => setForm((f) => ({ ...f, [field]: value }));
+  const canSave = !!(form.name && form.dosageAmount && form.dosageUnit && form.startDate);
+
+  const handleSave = () => {
+    onSave({
+      name: form.name,
+      dosageAmount: parseFloat(form.dosageAmount),
+      dosageUnit: form.dosageUnit,
+      frequency,
+      startDate: new Date(form.startDate).toISOString(),
+      endDate: hasEndDate && form.endDate ? new Date(form.endDate).toISOString() : null,
+      notes: form.notes || null,
+      active,
+    });
+  };
+
+  return (
+    <Dialog open onClose={onClose} fullWidth maxWidth="sm">
+      <DialogTitle>Edit Medication</DialogTitle>
+      <DialogContent>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
+          <TextField label="Medication name" value={form.name} onChange={(e) => set('name', e.target.value)} fullWidth required />
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <TextField
+              label="Dose" type="number" value={form.dosageAmount}
+              onChange={(e) => set('dosageAmount', e.target.value)}
+              sx={{ flex: 1 }} required
+              slotProps={{ htmlInput: { min: 0, step: 'any' } }}
+            />
+            <TextField
+              select label="Unit" value={form.dosageUnit}
+              onChange={(e) => set('dosageUnit', e.target.value)}
+              sx={{ width: 130 }}
+            >
+              {DOSAGE_UNITS.map((u) => <MenuItem key={u} value={u}>{u}</MenuItem>)}
+            </TextField>
+          </Box>
+          <FrequencyPicker
+            onChange={setFrequency}
+            initialType={med.frequency.type as FreqType}
+            initialInterval={med.frequency.interval}
+          />
+          <TextField label="Start date" type="date" value={form.startDate} onChange={(e) => set('startDate', e.target.value)} fullWidth required slotProps={{ inputLabel: { shrink: true } }} />
+          <FormControlLabel
+            control={<Checkbox checked={hasEndDate} onChange={(e) => setHasEndDate(e.target.checked)} />}
+            label="Set end date"
+          />
+          {hasEndDate && (
+            <TextField label="End date" type="date" value={form.endDate} onChange={(e) => set('endDate', e.target.value)} fullWidth slotProps={{ inputLabel: { shrink: true } }} />
+          )}
+          <TextField label="Notes" value={form.notes} onChange={(e) => set('notes', e.target.value)} fullWidth multiline rows={2} />
+          <FormControlLabel
+            control={<Switch checked={active} onChange={(e) => setActive(e.target.checked)} />}
+            label="Active"
+          />
+        </Box>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={onClose}>Cancel</Button>
+        <Button variant="contained" disabled={!canSave || saving} onClick={handleSave}>
+          {saving ? 'Saving…' : 'Save'}
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+}
+
+function MedicationRow({ med, onEdit, onToggleActive }: {
+  med: Medication;
+  onEdit: () => void;
+  onToggleActive: (active: boolean) => void;
+}) {
   const dosageLabel = `${med.dosage.amount} ${med.dosage.unit}`;
   const dateRange = med.endDate
     ? `${fmtDate(med.startDate)} – ${fmtDate(med.endDate)}`
     : `Since ${fmtDate(med.startDate)}`;
 
   return (
-    <Box sx={{ px: 2, py: 1.5, display: 'flex', alignItems: 'flex-start', gap: 1.5 }}>
-      <MedicationIcon sx={{ mt: 0.3, color: med.active ? 'primary.main' : 'text.disabled', flexShrink: 0 }} fontSize="small" />
+    <Box sx={{ px: 2, py: 1.5, display: 'flex', alignItems: 'center', gap: 1.5 }}>
+      <MedicationIcon sx={{ color: med.active ? 'primary.main' : 'text.disabled', flexShrink: 0 }} fontSize="small" />
       <Box sx={{ flex: 1, minWidth: 0 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
           <Typography variant="body2" fontWeight={500}>{med.name}</Typography>
           <Typography variant="caption" color="text.secondary">
             {dosageLabel} · {med.frequency.label}
           </Typography>
-          {med.active
-            ? <CheckCircle sx={{ fontSize: 14, color: 'success.main', ml: 'auto' }} />
-            : <Cancel sx={{ fontSize: 14, color: 'text.disabled', ml: 'auto' }} />}
         </Box>
         <Typography variant="caption" color="text.secondary">{dateRange}</Typography>
         {med.notes && (
@@ -774,6 +896,15 @@ function MedicationRow({ med }: { med: Medication }) {
           </Typography>
         )}
       </Box>
+      <Switch
+        size="small"
+        checked={med.active}
+        onChange={() => onToggleActive(!med.active)}
+        sx={{ flexShrink: 0 }}
+      />
+      <IconButton size="small" onClick={onEdit} sx={{ flexShrink: 0 }}>
+        <Edit fontSize="small" />
+      </IconButton>
     </Box>
   );
 }

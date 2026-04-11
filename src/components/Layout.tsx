@@ -1,11 +1,74 @@
-import { AppBar, Box, Button, Toolbar, Typography } from '@mui/material';
-import { Pets } from '@mui/icons-material';
-import { useNavigate } from 'react-router-dom';
+import { useState } from 'react';
+import {
+  AppBar, Box, Breadcrumbs, IconButton, Link, Menu, MenuItem,
+  Toolbar, Tooltip, Typography,
+} from '@mui/material';
+import { AccountCircle, NavigateNext, Pets } from '@mui/icons-material';
+import { Link as RouterLink, useNavigate, useParams, useLocation } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../context/AuthContext';
+import { groupsApi } from '../api/groups';
+import { petsApi } from '../api/pets';
+
+function AppBreadcrumbs() {
+  const { groupId, petId } = useParams<{ groupId?: string; petId?: string }>();
+  const location = useLocation();
+
+  const { data: group } = useQuery({
+    queryKey: ['group', groupId],
+    queryFn: () => groupsApi.get(groupId!),
+    enabled: !!groupId,
+  });
+
+  const { data: pet } = useQuery({
+    queryKey: ['pet', groupId, petId],
+    queryFn: () => petsApi.get(groupId!, petId!),
+    enabled: !!groupId && !!petId,
+  });
+
+  const isVets = location.pathname.endsWith('/vets');
+
+  if (!groupId) return null;
+
+  return (
+    <Breadcrumbs
+      separator={<NavigateNext sx={{ fontSize: 16 }} />}
+      sx={{ px: 2, py: 1, borderBottom: '1px solid', borderColor: 'divider', bgcolor: 'background.paper' }}
+    >
+      <Link component={RouterLink} to="/" underline="hover" color="text.secondary" variant="caption">
+        Groups
+      </Link>
+      {petId ? (
+        <Link
+          component={RouterLink}
+          to={`/groups/${groupId}`}
+          underline="hover"
+          color="text.secondary"
+          variant="caption"
+        >
+          {group?.name ?? '…'}
+        </Link>
+      ) : (
+        <Typography variant="caption" color="text.primary">
+          {group?.name ?? '…'}
+        </Typography>
+      )}
+      {petId && (
+        <Typography variant="caption" color="text.primary">
+          {pet?.name ?? '…'}
+        </Typography>
+      )}
+      {isVets && !petId && (
+        <Typography variant="caption" color="text.primary">Vets</Typography>
+      )}
+    </Breadcrumbs>
+  );
+}
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
   const { logout } = useAuth();
+  const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
 
   return (
     <Box sx={{ minHeight: '100vh', position: 'relative', overflow: 'hidden' }}>
@@ -49,14 +112,33 @@ export function Layout({ children }: { children: React.ReactNode }) {
           >
             Pet Health Tracker
           </Typography>
-          <Button
-            onClick={() => { logout(); navigate('/login'); }}
-            sx={{ color: 'rgba(255,255,255,0.6)', '&:hover': { color: '#fff' } }}
+          <Tooltip title="Account">
+            <IconButton
+              onClick={(e) => setMenuAnchor(e.currentTarget)}
+              sx={{ color: 'rgba(255,255,255,0.7)', '&:hover': { color: '#fff' } }}
+            >
+              <AccountCircle />
+            </IconButton>
+          </Tooltip>
+          <Menu
+            anchorEl={menuAnchor}
+            open={!!menuAnchor}
+            onClose={() => setMenuAnchor(null)}
+            anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+            transformOrigin={{ vertical: 'top', horizontal: 'right' }}
           >
-            Logout
-          </Button>
+            <MenuItem onClick={() => { setMenuAnchor(null); navigate('/'); }}>My Groups</MenuItem>
+            <MenuItem
+              onClick={() => { setMenuAnchor(null); logout(); navigate('/login'); }}
+              sx={{ color: 'error.main' }}
+            >
+              Logout
+            </MenuItem>
+          </Menu>
         </Toolbar>
       </AppBar>
+
+      <AppBreadcrumbs />
 
       <Box sx={{ position: 'relative', zIndex: 1, pb: 10 }}>
         {children}
