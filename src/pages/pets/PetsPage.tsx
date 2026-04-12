@@ -5,12 +5,12 @@ import {
   DialogTitle, DialogContent, DialogActions, Card, CardContent, CardActionArea,
   Grid, Skeleton, List, ListItemButton, Divider, Avatar, Chip,
 } from '@mui/material';
-import { Add, CalendarMonth, MedicalServices, Pets } from '@mui/icons-material';
+import { Add, CalendarMonth, ChevronRight, Email, MedicalServices, Pets } from '@mui/icons-material';
 import { useMutation, useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query';
 import { petsApi } from '../../api/pets';
 import { healthApi } from '../../api/health';
 import { vetsApi } from '../../api/vets';
-import { getApiError } from '../../api/client';
+import { apiClient, getApiError } from '../../api/client';
 import { useNotification } from '../../context/NotificationContext';
 import { useInfiniteScroll } from '../../hooks/useInfiniteScroll';
 
@@ -21,7 +21,11 @@ function fmtDate(iso: string) {
 }
 
 function daysUntil(iso: string) {
-  const diff = Math.ceil((new Date(iso).getTime() - Date.now()) / 86_400_000);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const [year, month, day] = iso.split('T')[0].split('-').map(Number);
+  const visitDate = new Date(year, month - 1, day);
+  const diff = Math.round((visitDate.getTime() - today.getTime()) / 86_400_000);
   if (diff === 0) return 'Today';
   if (diff === 1) return 'Tomorrow';
   return `In ${diff} days`;
@@ -65,7 +69,13 @@ export function PetsPage() {
   // Pet map for resolving pet names on visits
   const petMap = Object.fromEntries(pets.map((p) => [p.id, p]));
 
-  const { showError } = useNotification();
+  const { showError, showSuccess } = useNotification();
+
+  const testEmailMutation = useMutation({
+    mutationFn: () => apiClient.post('/dev/test-email/vet-visit').then((r) => r.data as { sentTo: string }),
+    onSuccess: (data) => showSuccess(`Test email sent to ${data.sentTo}`),
+    onError: (err) => showError(getApiError(err)),
+  });
 
   const mutation = useMutation({
     mutationFn: (data: typeof form) => petsApi.create(groupId!, {
@@ -83,50 +93,76 @@ export function PetsPage() {
   });
 
   return (
-    <Container maxWidth="md" sx={{ mt: 4 }}>
+    <Container maxWidth="md" sx={{ mt: 4, px: { xs: 2, sm: 3 } }}>
       {/* Header */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h5" fontWeight="bold">Group</Typography>
+        <Typography variant="h5">Pets</Typography>
         <Box sx={{ display: 'flex', gap: 1 }}>
-          <Button variant="outlined" startIcon={<MedicalServices />} onClick={() => navigate(`/groups/${groupId}/vets`)}>
+          {import.meta.env.DEV && (
+            <Button
+              variant="outlined"
+              color="warning"
+              size="small"
+              startIcon={<Email sx={{ fontSize: 17 }} />}
+              onClick={() => testEmailMutation.mutate()}
+              disabled={testEmailMutation.isPending}
+              title="DEV: Send test vet visit reminder email"
+            >
+              Test Email
+            </Button>
+          )}
+          <Button
+            variant="outlined"
+            startIcon={<MedicalServices sx={{ fontSize: 17 }} />}
+            onClick={() => navigate(`/groups/${groupId}/vets`)}
+            size="small"
+          >
             Vets
           </Button>
-          <Button variant="contained" startIcon={<Add />} onClick={() => setOpen(true)}>Add Pet</Button>
+          <Button variant="contained" startIcon={<Add />} onClick={() => setOpen(true)} size="small">
+            Add Pet
+          </Button>
         </Box>
       </Box>
 
-      {/* Pets section */}
-      <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
-        <Pets fontSize="small" color="primary" /> Pets
-      </Typography>
-
+      {/* Pets grid */}
       {isLoading ? (
         <Grid container spacing={2} sx={{ mb: 4 }}>
           {[1, 2, 3].map((i) => (
             <Grid size={{ xs: 12, sm: 6, md: 4 }} key={i}>
-              <Skeleton variant="rectangular" height={90} sx={{ borderRadius: 2 }} />
+              <Skeleton variant="rectangular" height={96} sx={{ borderRadius: 2 }} />
             </Grid>
           ))}
         </Grid>
+      ) : pets.length === 0 ? (
+        <Card elevation={1} sx={{ mb: 4 }}>
+          <CardActionArea onClick={() => setOpen(true)} sx={{ py: 4, textAlign: 'center' }}>
+            <Pets sx={{ fontSize: 32, color: 'primary.main', mb: 1, opacity: 0.6 }} />
+            <Typography variant="subtitle2" color="text.secondary">
+              No pets yet — add one to get started
+            </Typography>
+          </CardActionArea>
+        </Card>
       ) : (
         <Grid container spacing={2} sx={{ mb: 4 }}>
           {pets.map((pet) => (
             <Grid size={{ xs: 12, sm: 6, md: 4 }} key={pet.id}>
-              <Card>
+              <Card elevation={1} sx={{ '&:hover': { boxShadow: 4 } }}>
                 <CardActionArea onClick={() => navigate(`/groups/${groupId}/pets/${pet.id}`)}>
-                  <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                  <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 1.5, py: 2 }}>
                     <Avatar
                       src={pet.photoUrl ? `${serverUrl}${pet.photoUrl}` : undefined}
-                      sx={{ width: 44, height: 44, bgcolor: 'primary.main', flexShrink: 0 }}
+                      sx={{ width: 48, height: 48, flexShrink: 0 }}
                     >
-                      {!pet.photoUrl && <Pets fontSize="small" />}
+                      {!pet.photoUrl && <Pets sx={{ fontSize: 22 }} />}
                     </Avatar>
-                    <Box sx={{ minWidth: 0 }}>
-                      <Typography variant="subtitle2" fontWeight={600} noWrap>{pet.name}</Typography>
+                    <Box sx={{ minWidth: 0, flex: 1 }}>
+                      <Typography variant="subtitle2" noWrap>{pet.name}</Typography>
                       <Typography variant="caption" color="text.secondary" noWrap>
                         {pet.species}{pet.breed ? ` · ${pet.breed}` : ''}
                       </Typography>
                     </Box>
+                    <ChevronRight sx={{ color: 'text.disabled', flexShrink: 0, fontSize: 20 }} />
                   </CardContent>
                 </CardActionArea>
               </Card>
@@ -138,29 +174,24 @@ export function PetsPage() {
       <div ref={sentinelRef} />
       {isFetchingNextPage && (
         <Box sx={{ mb: 4 }}>
-          <Skeleton variant="rectangular" height={90} sx={{ borderRadius: 2 }} />
+          <Skeleton variant="rectangular" height={96} sx={{ borderRadius: 2 }} />
         </Box>
       )}
 
-      {/* Upcoming vet visits section */}
-      <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
-        <CalendarMonth fontSize="small" color="primary" /> Upcoming Vet Visits
-      </Typography>
+      {/* Upcoming vet visits */}
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
+        <CalendarMonth sx={{ fontSize: 18, color: 'primary.main' }} />
+        <Typography variant="subtitle1">Upcoming Vet Visits</Typography>
+      </Box>
 
-      <Box sx={{
-        background: 'rgba(255,255,255,0.03)',
-        borderRadius: 2,
-        overflow: 'hidden',
-        borderTop: '1px solid rgba(255,255,255,0.06)',
-        borderBottom: '1px solid rgba(255,255,255,0.06)',
-      }}>
+      <Card elevation={1} sx={{ overflow: 'hidden' }}>
         {visitsLoading ? (
           <Box sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 1 }}>
-            {[1, 2].map((i) => <Skeleton key={i} variant="rectangular" height={52} sx={{ borderRadius: 1 }} />)}
+            {[1, 2].map((i) => <Skeleton key={i} variant="rectangular" height={56} sx={{ borderRadius: 1 }} />)}
           </Box>
         ) : !upcomingVisits.length ? (
           <Box sx={{ py: 4, textAlign: 'center' }}>
-            <Typography color="text.secondary">No upcoming vet visits</Typography>
+            <Typography variant="body2" color="text.secondary">No upcoming vet visits</Typography>
           </Box>
         ) : (
           <List disablePadding>
@@ -175,13 +206,13 @@ export function PetsPage() {
                   {i > 0 && <Divider />}
                   <ListItemButton
                     onClick={() => pet && navigate(`/groups/${groupId}/pets/${pet.id}`)}
-                    sx={{ py: 1.5, px: 2 }}
+                    sx={{ py: 1.75, px: 2, borderRadius: 0 }}
                   >
                     <Box sx={{ flex: 1, minWidth: 0 }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <Typography variant="body2" fontWeight={500} noWrap>{visit.reason}</Typography>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+                        <Typography variant="body2" sx={{ fontWeight: 600 }} noWrap>{visit.reason}</Typography>
                         {pet && (
-                          <Chip label={pet.name} size="small" variant="outlined" sx={{ fontSize: 11 }} />
+                          <Chip label={pet.name} size="small" variant="outlined" sx={{ fontSize: 11, height: 20 }} />
                         )}
                       </Box>
                       {vetName && (
@@ -189,10 +220,13 @@ export function PetsPage() {
                       )}
                     </Box>
                     <Box sx={{ ml: 2, textAlign: 'right', flexShrink: 0 }}>
-                      <Typography variant="caption" color={isUrgent ? 'warning.main' : 'text.secondary'} fontWeight={isUrgent ? 600 : 400}>
+                      <Typography
+                        variant="caption"
+                        sx={{ fontWeight: 600, display: 'block', color: isUrgent ? 'error.main' : 'primary.main' }}
+                      >
                         {until}
                       </Typography>
-                      <Typography variant="caption" color="text.secondary" display="block">
+                      <Typography variant="caption" color="text.secondary">
                         {fmtDate(visit.nextVisitDate!)}
                       </Typography>
                     </Box>
@@ -202,19 +236,19 @@ export function PetsPage() {
             })}
           </List>
         )}
-      </Box>
+      </Card>
 
       {/* Add pet dialog */}
       <Dialog open={open} onClose={() => setOpen(false)} fullWidth maxWidth="xs">
         <DialogTitle>Add Pet</DialogTitle>
-        <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
-          <TextField label="Name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} fullWidth required />
+        <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 0.5 }}>
+          <TextField label="Name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} fullWidth required autoFocus />
           <TextField label="Species" value={form.species} onChange={(e) => setForm({ ...form, species: e.target.value })} fullWidth required />
           <TextField label="Breed (optional)" value={form.breed} onChange={(e) => setForm({ ...form, breed: e.target.value })} fullWidth />
           <TextField label="Birth Date" type="date" value={form.birthDate} onChange={(e) => setForm({ ...form, birthDate: e.target.value })} fullWidth slotProps={{ inputLabel: { shrink: true } }} />
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setOpen(false)}>Cancel</Button>
+        <DialogActions sx={{ px: 3, pb: 2.5 }}>
+          <Button onClick={() => setOpen(false)} color="inherit">Cancel</Button>
           <Button
             variant="contained"
             onClick={() => mutation.mutate(form)}

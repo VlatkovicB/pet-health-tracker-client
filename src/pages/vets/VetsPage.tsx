@@ -4,7 +4,7 @@ import {
   Box, Button, Container, TextField, Typography, Dialog, DialogTitle,
   DialogContent, DialogActions, Card, CardContent, Grid, Chip, Link, Skeleton, Alert,
 } from '@mui/material';
-import { Add, Phone, LocationOn, AccessTime, Map } from '@mui/icons-material';
+import { Add, Phone, LocationOn, AccessTime, Map, MedicalServices } from '@mui/icons-material';
 import { useMutation, useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import { vetsApi } from '../../api/vets';
 import { getApiError } from '../../api/client';
@@ -55,10 +55,12 @@ export function VetsPage() {
   });
 
   return (
-    <Container maxWidth="md" sx={{ mt: 4 }}>
+    <Container maxWidth="md" sx={{ mt: 4, px: { xs: 2, sm: 3 } }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h5" fontWeight="bold">Vets</Typography>
-        <Button variant="contained" startIcon={<Add />} onClick={() => setOpen(true)}>Add Vet</Button>
+        <Typography variant="h5">Vets</Typography>
+        <Button variant="contained" startIcon={<Add />} onClick={() => setOpen(true)}>
+          Add Vet
+        </Button>
       </Box>
 
       {listError && (
@@ -67,43 +69,68 @@ export function VetsPage() {
 
       {isLoading ? (
         <Grid container spacing={2}>
-          {[1, 2].map((i) => <Grid size={{ xs: 12 }} key={i}><Skeleton variant="rectangular" height={120} sx={{ borderRadius: 1 }} /></Grid>)}
+          {[1, 2].map((i) => (
+            <Grid size={{ xs: 12 }} key={i}>
+              <Skeleton variant="rectangular" height={120} sx={{ borderRadius: 2 }} />
+            </Grid>
+          ))}
         </Grid>
       ) : vets.length === 0 ? (
-        <Card>
-          <CardContent sx={{ textAlign: 'center', py: 4 }}>
-            <Typography color="text.secondary">No vets added yet. Add one to start tracking visits.</Typography>
+        <Card elevation={1}>
+          <CardContent sx={{ textAlign: 'center', py: 5 }}>
+            <MedicalServices sx={{ fontSize: 32, color: 'primary.main', mb: 1, opacity: 0.5 }} />
+            <Typography variant="subtitle2" color="text.secondary">
+              No vets added yet
+            </Typography>
+            <Typography variant="body2" color="text.disabled" sx={{ mt: 0.5 }}>
+              Add a vet to link them to visits and get reminders
+            </Typography>
           </CardContent>
         </Card>
       ) : (
         <Grid container spacing={2}>
           {vets.map((vet) => (
             <Grid size={{ xs: 12 }} key={vet.id}>
-              <Card>
-                <CardContent>
-                  <Typography variant="h6" fontWeight={600} gutterBottom>{vet.name}</Typography>
-                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5 }}>
-                    {vet.phone && (
-                      <Chip icon={<Phone fontSize="small" />} label={vet.phone} size="small" variant="outlined" />
-                    )}
-                    {vet.workHours && (
-                      <Chip icon={<AccessTime fontSize="small" />} label={vet.workHours} size="small" variant="outlined" />
-                    )}
-                    {vet.address && (
-                      <Chip icon={<LocationOn fontSize="small" />} label={vet.address} size="small" variant="outlined" />
-                    )}
-                    {vet.googleMapsUrl && (
-                      <Chip
-                        icon={<Map fontSize="small" />}
-                        label={<Link href={vet.googleMapsUrl} target="_blank" rel="noopener" underline="none">Maps</Link>}
-                        size="small"
-                        variant="outlined"
-                        color="primary"
-                      />
-                    )}
+              <Card elevation={1}>
+                <CardContent sx={{ pb: '16px !important' }}>
+                  <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5, mb: vet.phone || vet.workHours || vet.address || vet.googleMapsUrl ? 1.5 : 0 }}>
+                    <Box
+                      sx={{
+                        width: 40, height: 40, borderRadius: 2, flexShrink: 0,
+                        bgcolor: 'rgba(42,157,143,0.1)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      }}
+                    >
+                      <MedicalServices sx={{ color: 'primary.main', fontSize: 20 }} />
+                    </Box>
+                    <Box sx={{ minWidth: 0, flex: 1 }}>
+                      <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>{vet.name}</Typography>
+                      {vet.notes && (
+                        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>{vet.notes}</Typography>
+                      )}
+                    </Box>
                   </Box>
-                  {vet.notes && (
-                    <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>{vet.notes}</Typography>
+                  {(vet.phone || vet.workHours || vet.address || vet.googleMapsUrl) && (
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                      {vet.phone && (
+                        <Chip icon={<Phone sx={{ fontSize: '14px !important' }} />} label={vet.phone} size="small" variant="outlined" />
+                      )}
+                      {vet.workHours && (
+                        <Chip icon={<AccessTime sx={{ fontSize: '14px !important' }} />} label={vet.workHours} size="small" variant="outlined" />
+                      )}
+                      {vet.address && (
+                        <Chip icon={<LocationOn sx={{ fontSize: '14px !important' }} />} label={vet.address} size="small" variant="outlined" />
+                      )}
+                      {vet.googleMapsUrl && (
+                        <Chip
+                          icon={<Map sx={{ fontSize: '14px !important' }} />}
+                          label={<Link href={vet.googleMapsUrl} target="_blank" rel="noopener" underline="none" color="primary">Maps</Link>}
+                          size="small"
+                          variant="outlined"
+                          color="primary"
+                        />
+                      )}
+                    </Box>
                   )}
                 </CardContent>
               </Card>
@@ -115,22 +142,22 @@ export function VetsPage() {
       <div ref={sentinelRef} />
       {isFetchingNextPage && (
         <Box sx={{ mt: 2 }}>
-          <Skeleton variant="rectangular" height={120} sx={{ borderRadius: 1 }} />
+          <Skeleton variant="rectangular" height={120} sx={{ borderRadius: 2 }} />
         </Box>
       )}
 
       <Dialog open={open} onClose={() => setOpen(false)} fullWidth maxWidth="sm">
         <DialogTitle>Add Vet</DialogTitle>
-        <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
-          <TextField label="Name" value={form.name} onChange={set('name')} fullWidth required />
+        <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 0.5 }}>
+          <TextField label="Name" value={form.name} onChange={set('name')} fullWidth required autoFocus />
           <TextField label="Phone" value={form.phone} onChange={set('phone')} fullWidth />
           <TextField label="Address" value={form.address} onChange={set('address')} fullWidth />
           <TextField label="Work Hours" placeholder="e.g. Mon–Fri 8:00–18:00" value={form.workHours} onChange={set('workHours')} fullWidth />
           <TextField label="Google Maps URL" value={form.googleMapsUrl} onChange={set('googleMapsUrl')} fullWidth />
           <TextField label="Notes" value={form.notes} onChange={set('notes')} fullWidth multiline rows={3} />
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setOpen(false)}>Cancel</Button>
+        <DialogActions sx={{ px: 3, pb: 2.5 }}>
+          <Button onClick={() => setOpen(false)} color="inherit">Cancel</Button>
           <Button variant="contained" onClick={() => mutation.mutate()} disabled={!form.name.trim() || mutation.isPending}>
             Add
           </Button>

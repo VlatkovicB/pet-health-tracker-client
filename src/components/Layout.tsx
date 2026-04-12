@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import {
   AppBar, Box, Breadcrumbs, IconButton, Link, Menu, MenuItem,
-  Toolbar, Tooltip, Typography,
+  Toolbar, Tooltip, Typography, Avatar,
 } from '@mui/material';
-import { AccountCircle, NavigateNext, Pets } from '@mui/icons-material';
+import { NavigateNext, Pets } from '@mui/icons-material';
 import { Link as RouterLink, useNavigate, useParams, useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../context/AuthContext';
@@ -31,37 +31,44 @@ function AppBreadcrumbs() {
   if (!groupId) return null;
 
   return (
-    <Breadcrumbs
-      separator={<NavigateNext sx={{ fontSize: 16 }} />}
-      sx={{ px: 2, py: 1, borderBottom: '1px solid', borderColor: 'divider', bgcolor: 'background.paper' }}
-    >
-      <Link component={RouterLink} to="/" underline="hover" color="text.secondary" variant="caption">
-        Groups
-      </Link>
-      {petId ? (
+    <Box sx={{ px: { xs: 2, sm: 3 }, py: 0.75, borderBottom: '1px solid', borderColor: 'divider', bgcolor: 'background.paper' }}>
+      <Breadcrumbs
+        separator={<NavigateNext sx={{ fontSize: 14, color: 'text.disabled' }} />}
+      >
         <Link
           component={RouterLink}
-          to={`/groups/${groupId}`}
+          to="/"
           underline="hover"
           color="text.secondary"
-          variant="caption"
+          sx={{ fontSize: '0.8125rem', fontWeight: 500 }}
         >
-          {group?.name ?? '…'}
+          Groups
         </Link>
-      ) : (
-        <Typography variant="caption" color="text.primary">
-          {group?.name ?? '…'}
-        </Typography>
-      )}
-      {petId && (
-        <Typography variant="caption" color="text.primary">
-          {pet?.name ?? '…'}
-        </Typography>
-      )}
-      {isVets && !petId && (
-        <Typography variant="caption" color="text.primary">Vets</Typography>
-      )}
-    </Breadcrumbs>
+        {petId ? (
+          <Link
+            component={RouterLink}
+            to={`/groups/${groupId}`}
+            underline="hover"
+            color="text.secondary"
+            sx={{ fontSize: '0.8125rem', fontWeight: 500 }}
+          >
+            {group?.name ?? '…'}
+          </Link>
+        ) : (
+          <Typography sx={{ fontSize: '0.8125rem', fontWeight: 600, color: 'text.primary' }}>
+            {group?.name ?? '…'}
+          </Typography>
+        )}
+        {petId && (
+          <Typography sx={{ fontSize: '0.8125rem', fontWeight: 600, color: 'text.primary' }}>
+            {pet?.name ?? '…'}
+          </Typography>
+        )}
+        {isVets && !petId && (
+          <Typography sx={{ fontSize: '0.8125rem', fontWeight: 600, color: 'text.primary' }}>Vets</Typography>
+        )}
+      </Breadcrumbs>
+    </Box>
   );
 }
 
@@ -71,53 +78,37 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
 
   return (
-    <Box sx={{ minHeight: '100vh', position: 'relative', overflow: 'hidden' }}>
-      {/* Background glows */}
-      <Box sx={{
-        position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 0,
-        '&::before': {
-          content: '""', position: 'absolute',
-          width: '600px', height: '600px', borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(32,178,170,0.07) 0%, transparent 70%)',
-          top: '-150px', right: '-100px',
-        },
-        '&::after': {
-          content: '""', position: 'absolute',
-          width: '400px', height: '400px', borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(100,149,237,0.08) 0%, transparent 70%)',
-          bottom: '-100px', left: '-50px',
-        },
-      }} />
-
+    <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
       <AppBar position="sticky" sx={{ zIndex: 10 }}>
-        <Toolbar>
+        <Toolbar sx={{ px: { xs: 2, sm: 3 } }}>
           <Box
             sx={{
-              width: 32, height: 32, borderRadius: 1.5, mr: 1.5,
-              background: 'linear-gradient(135deg, #20b2aa, #6495ed)',
+              width: 34, height: 34, borderRadius: 2, mr: 1.5, flexShrink: 0,
+              bgcolor: 'primary.main',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              boxShadow: '0 2px 8px rgba(32,178,170,0.4)',
               cursor: 'pointer',
+              boxShadow: '0 2px 8px rgba(42,157,143,0.3)',
             }}
             onClick={() => navigate('/')}
           >
-            <Pets sx={{ color: '#fff', fontSize: 18 }} />
+            <Pets sx={{ color: '#fff', fontSize: 19 }} />
           </Box>
           <Typography
             variant="h6"
-            fontWeight={700}
-            letterSpacing="-0.3px"
-            sx={{ flexGrow: 1, cursor: 'pointer', color: '#e8f4f8' }}
+            sx={{ flexGrow: 1, cursor: 'pointer', color: 'text.primary', letterSpacing: '-0.3px', fontSize: '1rem', fontWeight: 700 }}
             onClick={() => navigate('/')}
           >
-            Pet Health Tracker
+            Pet Health
           </Typography>
           <Tooltip title="Account">
             <IconButton
               onClick={(e) => setMenuAnchor(e.currentTarget)}
-              sx={{ color: 'rgba(255,255,255,0.7)', '&:hover': { color: '#fff' } }}
+              size="small"
+              sx={{ ml: 1 }}
             >
-              <AccountCircle />
+              <Avatar sx={{ width: 32, height: 32, bgcolor: 'primary.light', fontSize: 14, fontWeight: 700, color: '#fff' }}>
+                U
+              </Avatar>
             </IconButton>
           </Tooltip>
           <Menu
@@ -126,11 +117,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
             onClose={() => setMenuAnchor(null)}
             anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
             transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+            slotProps={{ paper: { sx: { mt: 0.5, minWidth: 160, borderRadius: 2, boxShadow: '0 8px 24px rgba(0,0,0,0.12)' } } }}
           >
-            <MenuItem onClick={() => { setMenuAnchor(null); navigate('/'); }}>My Groups</MenuItem>
+            <MenuItem onClick={() => { setMenuAnchor(null); navigate('/'); }} sx={{ fontSize: '0.9rem' }}>My Groups</MenuItem>
             <MenuItem
               onClick={() => { setMenuAnchor(null); logout(); navigate('/login'); }}
-              sx={{ color: 'error.main' }}
+              sx={{ color: 'error.main', fontSize: '0.9rem' }}
             >
               Logout
             </MenuItem>
@@ -140,7 +132,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
       <AppBreadcrumbs />
 
-      <Box sx={{ position: 'relative', zIndex: 1, pb: 10 }}>
+      <Box sx={{ pb: 8 }}>
         {children}
       </Box>
     </Box>

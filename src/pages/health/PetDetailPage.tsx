@@ -26,6 +26,27 @@ const todayNoon = () => { const d = new Date(); d.setHours(12, 0, 0, 0); return 
 const weekFromNow = () => { const d = new Date(); d.setDate(d.getDate() + 7); d.setHours(12, 0, 0, 0); return d.toISOString().slice(0, 16); };
 const serverUrl = import.meta.env.VITE_SERVER_URL ?? 'http://localhost:3000';
 
+function daysUntilNum(iso: string): number {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const [year, month, day] = iso.split('T')[0].split('-').map(Number);
+  return Math.round((new Date(year, month - 1, day).getTime() - today.getTime()) / 86_400_000);
+}
+
+function daysUntilLabel(days: number): string {
+  if (days === 0) return 'Today';
+  if (days === 1) return 'Tomorrow';
+  return `In ${days} days`;
+}
+
+function getVisitBubbleColor(days: number): string {
+  if (days <= 3) return '#4caf50';
+  if (days <= 10) return '#81c784';
+  if (days <= 20) return '#a5d6a7';
+  if (days < 30) return '#bdbdbd';
+  return '#9e9e9e';
+}
+
 function calcAge(birthDate: string): string {
   const birth = new Date(birthDate);
   const now = new Date();
@@ -72,13 +93,18 @@ export function PetDetailPage() {
     queryFn: ({ pageParam }) => healthApi.listVetVisits(petId!, { pageParam }),
     initialPageParam: 1,
     getNextPageParam: (lastPage) => lastPage.nextPage ?? undefined,
-    enabled: !!petId && tab === 'vet-visits',
+    enabled: !!petId,
   });
   const vetVisits = vetVisitsQuery.data?.pages.flatMap((p) => p.items) ?? [];
   const vetVisitsSentinel = useInfiniteScroll(
     () => { if (vetVisitsQuery.hasNextPage && !vetVisitsQuery.isFetchingNextPage) vetVisitsQuery.fetchNextPage(); },
     tab === 'vet-visits' && vetVisitsQuery.hasNextPage,
   );
+
+  const nextVisit = vetVisits
+    .filter((v) => v.nextVisitDate && daysUntilNum(v.nextVisitDate) >= 0)
+    .sort((a, b) => daysUntilNum(a.nextVisitDate!) - daysUntilNum(b.nextVisitDate!))[0];
+  const nextVisitDays = nextVisit ? daysUntilNum(nextVisit.nextVisitDate!) : null;
 
   // Medications
   const medicationsQuery = useQuery({
@@ -219,7 +245,7 @@ export function PetDetailPage() {
         <Box sx={{ flex: 1 }}>
           {pet ? (
             <>
-              <Typography variant="h4" fontWeight="bold" sx={{ lineHeight: 1.1 }}>{pet.name}</Typography>
+              <Typography variant="h4" sx={{ fontWeight: 700, lineHeight: 1.1 }}>{pet.name}</Typography>
               <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mt: 1 }}>
                 <Chip label={pet.species} size="small" color="primary" variant="outlined" />
                 {pet.breed && <Chip label={pet.breed} size="small" variant="outlined" />}
@@ -257,7 +283,32 @@ export function PetDetailPage() {
       {/* Tabs */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
         <Tabs value={tab} onChange={(_, v) => setTab(v)}>
-          <Tab label="Vet Visits" value="vet-visits" />
+          <Tab
+            value="vet-visits"
+            label={
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+                Vet Visits
+                {nextVisitDays !== null && (
+                  <Tooltip
+                    title={`Next visit: ${fmtDate(nextVisit!.nextVisitDate!)} · ${daysUntilLabel(nextVisitDays)}`}
+                    arrow
+                  >
+                    <Box
+                      component="span"
+                      sx={{
+                        display: 'inline-block',
+                        width: 10,
+                        height: 10,
+                        borderRadius: '50%',
+                        bgcolor: getVisitBubbleColor(nextVisitDays),
+                        flexShrink: 0,
+                      }}
+                    />
+                  </Tooltip>
+                )}
+              </Box>
+            }
+          />
           <Tab label="Medications" value="medications" />
         </Tabs>
         {tab === 'vet-visits' && (
@@ -290,7 +341,7 @@ export function PetDetailPage() {
                         {i > 0 && <Divider />}
                         <ListItemButton onClick={() => setDetailVisit(v)} sx={{ py: 1, px: 2 }}>
                           <Box sx={{ flex: 1, minWidth: 0 }}>
-                            <Typography variant="body2" fontWeight={500} noWrap>{v.reason}</Typography>
+                            <Typography variant="body2" sx={{ fontWeight: 500 }} noWrap>{v.reason}</Typography>
                             {vetName && <Typography variant="caption" color="text.secondary" noWrap>{vetName}</Typography>}
                           </Box>
                           <Typography variant="caption" color="text.secondary" sx={{ ml: 2, whiteSpace: 'nowrap' }}>
@@ -880,32 +931,24 @@ function MedicationRow({ med, onEdit, onToggleActive }: {
     : `Since ${fmtDate(med.startDate)}`;
 
   return (
-    <Box sx={{ px: 2, py: 1.5, display: 'flex', alignItems: 'center', gap: 1.5 }}>
+    <ListItemButton onClick={onEdit} sx={{ px: 2, py: 1.5, gap: 1.5 }}>
       <MedicationIcon sx={{ color: med.active ? 'primary.main' : 'text.disabled', flexShrink: 0 }} fontSize="small" />
       <Box sx={{ flex: 1, minWidth: 0 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
-          <Typography variant="body2" fontWeight={500}>{med.name}</Typography>
+          <Typography variant="body2" sx={{ fontWeight: 500 }}>{med.name}</Typography>
           <Typography variant="caption" color="text.secondary">
             {dosageLabel} · {med.frequency.label}
           </Typography>
         </Box>
         <Typography variant="caption" color="text.secondary">{dateRange}</Typography>
-        {med.notes && (
-          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.25 }} noWrap>
-            {med.notes}
-          </Typography>
-        )}
       </Box>
       <Switch
         size="small"
         checked={med.active}
-        onChange={() => onToggleActive(!med.active)}
+        onChange={(e) => { e.stopPropagation(); onToggleActive(!med.active); }}
         sx={{ flexShrink: 0 }}
       />
-      <IconButton size="small" onClick={onEdit} sx={{ flexShrink: 0 }}>
-        <Edit fontSize="small" />
-      </IconButton>
-    </Box>
+    </ListItemButton>
   );
 }
 
