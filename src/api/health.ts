@@ -1,5 +1,5 @@
 import { apiClient } from './client';
-import type { VetVisit, Medication, Symptom, HealthCheck, PaginatedResult } from '../types';
+import type { VetVisit, Medication, PaginatedResult } from '../types';
 
 export const healthApi = {
   // Vet Visits
@@ -20,30 +20,10 @@ export const healthApi = {
     }).then((r) => r.data);
   },
 
+  listUpcomingVetVisits: () =>
+    apiClient.get<VetVisit[]>('/vet-visits/upcoming').then((r) => r.data),
+
   // Medications
   createMedication: (petId: string, data: Omit<Medication, 'id' | 'petId' | 'createdAt'>) =>
     apiClient.post<Medication>(`/pets/${petId}/medications`, data).then((r) => r.data),
-
-  updateReminder: (medicationId: string, reminder: Medication['reminder']) =>
-    apiClient.put(`/medications/${medicationId}/reminder`, { reminder }).then((r) => r.data),
-
-  toggleReminder: (medicationId: string) =>
-    apiClient.patch(`/medications/${medicationId}/reminder/toggle`).then((r) => r.data),
-
-  listUpcomingVetVisits: (groupId: string) =>
-    apiClient.get<VetVisit[]>(`/groups/${groupId}/upcoming-vet-visits`).then((r) => r.data),
-
-  // Symptoms
-  listSymptoms: (petId: string, { pageParam = 1 }: { pageParam?: number } = {}) =>
-    apiClient.get<PaginatedResult<Symptom>>(`/pets/${petId}/symptoms`, { params: { page: pageParam, limit: 20 } }).then((r) => r.data),
-
-  createSymptom: (petId: string, data: Omit<Symptom, 'id' | 'petId' | 'createdAt'>) =>
-    apiClient.post<Symptom>(`/pets/${petId}/symptoms`, data).then((r) => r.data),
-
-  // Health Checks
-  listHealthChecks: (petId: string, { pageParam = 1 }: { pageParam?: number } = {}) =>
-    apiClient.get<PaginatedResult<HealthCheck>>(`/pets/${petId}/health-checks`, { params: { page: pageParam, limit: 20 } }).then((r) => r.data),
-
-  createHealthCheck: (petId: string, data: Omit<HealthCheck, 'id' | 'petId' | 'createdAt'>) =>
-    apiClient.post<HealthCheck>(`/pets/${petId}/health-checks`, data).then((r) => r.data),
 };

@@ -1,40 +1,32 @@
 import { useState } from 'react';
 import {
   AppBar, Box, Breadcrumbs, IconButton, Link, Menu, MenuItem,
-  Toolbar, Tooltip, Typography, Avatar,
+  Toolbar, Tooltip, Typography, Avatar, Switch, FormControlLabel,
 } from '@mui/material';
 import { NavigateNext, Pets } from '@mui/icons-material';
 import { Link as RouterLink, useNavigate, useParams, useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../context/AuthContext';
-import { groupsApi } from '../api/groups';
+import { useAppTheme } from '../context/ThemeContext';
 import { petsApi } from '../api/pets';
 
 function AppBreadcrumbs() {
-  const { groupId, petId } = useParams<{ groupId?: string; petId?: string }>();
+  const { petId } = useParams<{ petId?: string }>();
   const location = useLocation();
 
-  const { data: group } = useQuery({
-    queryKey: ['group', groupId],
-    queryFn: () => groupsApi.get(groupId!),
-    enabled: !!groupId,
-  });
-
   const { data: pet } = useQuery({
-    queryKey: ['pet', groupId, petId],
-    queryFn: () => petsApi.get(groupId!, petId!),
-    enabled: !!groupId && !!petId,
+    queryKey: ['pet', petId],
+    queryFn: () => petsApi.get(petId!),
+    enabled: !!petId,
   });
 
-  const isVets = location.pathname.endsWith('/vets');
+  const isVets = location.pathname === '/vets';
 
-  if (!groupId) return null;
+  if (!petId && !isVets) return null;
 
   return (
     <Box sx={{ px: { xs: 2, sm: 3 }, py: 0.75, borderBottom: '1px solid', borderColor: 'divider', bgcolor: 'background.paper' }}>
-      <Breadcrumbs
-        separator={<NavigateNext sx={{ fontSize: 14, color: 'text.disabled' }} />}
-      >
+      <Breadcrumbs separator={<NavigateNext sx={{ fontSize: 14, color: 'text.disabled' }} />}>
         <Link
           component={RouterLink}
           to="/"
@@ -42,29 +34,14 @@ function AppBreadcrumbs() {
           color="text.secondary"
           sx={{ fontSize: '0.8125rem', fontWeight: 500 }}
         >
-          Groups
+          Pets
         </Link>
-        {petId ? (
-          <Link
-            component={RouterLink}
-            to={`/groups/${groupId}`}
-            underline="hover"
-            color="text.secondary"
-            sx={{ fontSize: '0.8125rem', fontWeight: 500 }}
-          >
-            {group?.name ?? '…'}
-          </Link>
-        ) : (
-          <Typography sx={{ fontSize: '0.8125rem', fontWeight: 600, color: 'text.primary' }}>
-            {group?.name ?? '…'}
-          </Typography>
-        )}
         {petId && (
           <Typography sx={{ fontSize: '0.8125rem', fontWeight: 600, color: 'text.primary' }}>
             {pet?.name ?? '…'}
           </Typography>
         )}
-        {isVets && !petId && (
+        {isVets && (
           <Typography sx={{ fontSize: '0.8125rem', fontWeight: 600, color: 'text.primary' }}>Vets</Typography>
         )}
       </Breadcrumbs>
@@ -75,6 +52,7 @@ function AppBreadcrumbs() {
 export function Layout({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
   const { logout } = useAuth();
+  const { mode, toggleTheme } = useAppTheme();
   const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
 
   return (
@@ -119,7 +97,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
             transformOrigin={{ vertical: 'top', horizontal: 'right' }}
             slotProps={{ paper: { sx: { mt: 0.5, minWidth: 160, borderRadius: 2, boxShadow: '0 8px 24px rgba(0,0,0,0.12)' } } }}
           >
-            <MenuItem onClick={() => { setMenuAnchor(null); navigate('/'); }} sx={{ fontSize: '0.9rem' }}>My Groups</MenuItem>
+            <MenuItem onClick={() => { setMenuAnchor(null); navigate('/'); }} sx={{ fontSize: '0.9rem' }}>My Pets</MenuItem>
+            <MenuItem onClick={toggleTheme} sx={{ fontSize: '0.9rem' }}>
+              <FormControlLabel
+                control={<Switch checked={mode === 'dark'} size="small" sx={{ ml: 0, mr: 1 }} />}
+                label="Dark mode"
+                sx={{ m: 0, pointerEvents: 'none', fontSize: '0.9rem' }}
+              />
+            </MenuItem>
             <MenuItem
               onClick={() => { setMenuAnchor(null); logout(); navigate('/login'); }}
               sx={{ color: 'error.main', fontSize: '0.9rem' }}

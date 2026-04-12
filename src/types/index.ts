@@ -5,19 +5,6 @@ export interface User {
   createdAt: string;
 }
 
-export interface Group {
-  id: string;
-  name: string;
-  members: GroupMember[];
-  createdAt: string;
-}
-
-export interface GroupMember {
-  userId: string;
-  role: 'owner' | 'member';
-  joinedAt: string;
-}
-
 export interface Pet {
   id: string;
   name: string;
@@ -25,7 +12,7 @@ export interface Pet {
   breed?: string;
   birthDate?: string;
   photoUrl?: string;
-  groupId: string;
+  userId: string;
   createdAt: string;
 }
 
@@ -56,29 +43,9 @@ export interface Medication {
   createdAt: string;
 }
 
-export interface Symptom {
-  id: string;
-  petId: string;
-  description: string;
-  severity: 'mild' | 'moderate' | 'severe';
-  observedAt: string;
-  notes?: string;
-  createdAt: string;
-}
-
-export interface HealthCheck {
-  id: string;
-  petId: string;
-  weight?: number;
-  temperature?: number;
-  notes?: string;
-  checkedAt: string;
-  createdAt: string;
-}
-
 export interface Vet {
   id: string;
-  groupId: string;
+  userId: string;
   name: string;
   address?: string;
   phone?: string;

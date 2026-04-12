@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { useParams } from 'react-router-dom';
 import {
   Box, Button, Container, TextField, Typography, Dialog, DialogTitle,
   DialogContent, DialogActions, Card, CardContent, Grid, Chip, Link, Skeleton, Alert,
@@ -12,7 +11,6 @@ import { useNotification } from '../../context/NotificationContext';
 import { useInfiniteScroll } from '../../hooks/useInfiniteScroll';
 
 export function VetsPage() {
-  const { groupId } = useParams<{ groupId: string }>();
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ name: '', address: '', phone: '', workHours: '', googleMapsUrl: '', notes: '' });
@@ -23,11 +21,10 @@ export function VetsPage() {
   const { showError } = useNotification();
 
   const { data, isLoading, isError: listError, error: listErrorObj, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteQuery({
-    queryKey: ['vets', groupId],
-    queryFn: ({ pageParam }) => vetsApi.list(groupId!, { pageParam }),
+    queryKey: ['vets'],
+    queryFn: ({ pageParam }) => vetsApi.list({ pageParam }),
     initialPageParam: 1,
     getNextPageParam: (lastPage) => lastPage.nextPage ?? undefined,
-    enabled: !!groupId,
   });
 
   const vets = data?.pages.flatMap((p) => p.items) ?? [];
@@ -38,7 +35,7 @@ export function VetsPage() {
   );
 
   const mutation = useMutation({
-    mutationFn: () => vetsApi.create(groupId!, {
+    mutationFn: () => vetsApi.create({
       name: form.name,
       address: form.address || undefined,
       phone: form.phone || undefined,
@@ -47,7 +44,7 @@ export function VetsPage() {
       notes: form.notes || undefined,
     }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['vets', groupId] });
+      queryClient.invalidateQueries({ queryKey: ['vets'] });
       setOpen(false);
       setForm({ name: '', address: '', phone: '', workHours: '', googleMapsUrl: '', notes: '' });
     },

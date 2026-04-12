@@ -1,16 +1,16 @@
 import { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import {
   Box, Button, Container, TextField, Typography, Dialog,
   DialogTitle, DialogContent, DialogActions, Card, CardContent, CardActionArea,
   Grid, Skeleton, List, ListItemButton, Divider, Avatar, Chip,
 } from '@mui/material';
-import { Add, CalendarMonth, ChevronRight, Email, MedicalServices, Pets } from '@mui/icons-material';
+import { Add, CalendarMonth, ChevronRight, MedicalServices, Pets } from '@mui/icons-material';
 import { useMutation, useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query';
 import { petsApi } from '../../api/pets';
 import { healthApi } from '../../api/health';
 import { vetsApi } from '../../api/vets';
-import { apiClient, getApiError } from '../../api/client';
+import { getApiError } from '../../api/client';
 import { useNotification } from '../../context/NotificationContext';
 import { useInfiniteScroll } from '../../hooks/useInfiniteScroll';
 
@@ -32,7 +32,6 @@ function daysUntil(iso: string) {
 }
 
 export function PetsPage() {
-  const { groupId } = useParams<{ groupId: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
@@ -40,11 +39,10 @@ export function PetsPage() {
 
   // Pets (infinite)
   const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteQuery({
-    queryKey: ['pets', groupId],
-    queryFn: ({ pageParam }) => petsApi.list(groupId!, { pageParam }),
+    queryKey: ['pets'],
+    queryFn: ({ pageParam }) => petsApi.list({ pageParam }),
     initialPageParam: 1,
     getNextPageParam: (lastPage) => lastPage.nextPage ?? undefined,
-    enabled: !!groupId,
   });
   const pets = data?.pages.flatMap((p) => p.items) ?? [];
   const sentinelRef = useInfiniteScroll(
@@ -54,38 +52,30 @@ export function PetsPage() {
 
   // Upcoming vet visits
   const { data: upcomingVisits = [], isLoading: visitsLoading } = useQuery({
-    queryKey: ['upcoming-vet-visits', groupId],
-    queryFn: () => healthApi.listUpcomingVetVisits(groupId!),
-    enabled: !!groupId,
+    queryKey: ['upcoming-vet-visits'],
+    queryFn: () => healthApi.listUpcomingVetVisits(),
   });
 
   // Vets (for resolving vet names)
   const { data: vets = [] } = useQuery({
-    queryKey: ['vets-all', groupId],
-    queryFn: () => vetsApi.listAll(groupId!),
-    enabled: !!groupId,
+    queryKey: ['vets-all'],
+    queryFn: () => vetsApi.listAll(),
   });
 
   // Pet map for resolving pet names on visits
   const petMap = Object.fromEntries(pets.map((p) => [p.id, p]));
 
-  const { showError, showSuccess } = useNotification();
-
-  const testEmailMutation = useMutation({
-    mutationFn: () => apiClient.post('/dev/test-email/vet-visit').then((r) => r.data as { sentTo: string }),
-    onSuccess: (data) => showSuccess(`Test email sent to ${data.sentTo}`),
-    onError: (err) => showError(getApiError(err)),
-  });
+  const { showError } = useNotification();
 
   const mutation = useMutation({
-    mutationFn: (data: typeof form) => petsApi.create(groupId!, {
+    mutationFn: (data: typeof form) => petsApi.create({
       name: data.name,
       species: data.species,
       breed: data.breed || undefined,
       birthDate: data.birthDate || undefined,
     }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['pets', groupId] });
+      queryClient.invalidateQueries({ queryKey: ['pets'] });
       setOpen(false);
       setForm({ name: '', species: '', breed: '', birthDate: '' });
     },
@@ -98,23 +88,10 @@ export function PetsPage() {
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Typography variant="h5">Pets</Typography>
         <Box sx={{ display: 'flex', gap: 1 }}>
-          {import.meta.env.DEV && (
-            <Button
-              variant="outlined"
-              color="warning"
-              size="small"
-              startIcon={<Email sx={{ fontSize: 17 }} />}
-              onClick={() => testEmailMutation.mutate()}
-              disabled={testEmailMutation.isPending}
-              title="DEV: Send test vet visit reminder email"
-            >
-              Test Email
-            </Button>
-          )}
           <Button
             variant="outlined"
             startIcon={<MedicalServices sx={{ fontSize: 17 }} />}
-            onClick={() => navigate(`/groups/${groupId}/vets`)}
+            onClick={() => navigate('/vets')}
             size="small"
           >
             Vets
@@ -148,7 +125,7 @@ export function PetsPage() {
           {pets.map((pet) => (
             <Grid size={{ xs: 12, sm: 6, md: 4 }} key={pet.id}>
               <Card elevation={1} sx={{ '&:hover': { boxShadow: 4 } }}>
-                <CardActionArea onClick={() => navigate(`/groups/${groupId}/pets/${pet.id}`)}>
+                <CardActionArea onClick={() => navigate(`/pets/${pet.id}`)}>
                   <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 1.5, py: 2 }}>
                     <Avatar
                       src={pet.photoUrl ? `${serverUrl}${pet.photoUrl}` : undefined}
@@ -200,12 +177,14 @@ export function PetsPage() {
               const vet = vets.find((v) => v.id === visit.vetId);
               const vetName = vet?.name ?? visit.clinic;
               const until = daysUntil(visit.nextVisitDate!);
-              const isUrgent = new Date(visit.nextVisitDate!).getTime() - Date.now() < 3 * 86_400_000;
+              const [y, mo, d] = visit.nextVisitDate!.split('T')[0].split('-').map(Number);
+              const daysLeft = Math.round((new Date(y, mo - 1, d).getTime() - (() => { const t = new Date(); t.setHours(0,0,0,0); return t.getTime(); })()) / 86_400_000);
+              const isUrgent = daysLeft <= 3;
               return (
                 <Box key={visit.id}>
                   {i > 0 && <Divider />}
                   <ListItemButton
-                    onClick={() => pet && navigate(`/groups/${groupId}/pets/${pet.id}`)}
+                    onClick={() => pet && navigate(`/pets/${pet.id}?tab=vet-visits&visitId=${visit.id}`)}
                     sx={{ py: 1.75, px: 2, borderRadius: 0 }}
                   >
                     <Box sx={{ flex: 1, minWidth: 0 }}>

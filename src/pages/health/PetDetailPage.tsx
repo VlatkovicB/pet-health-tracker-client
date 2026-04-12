@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import {
   Box, Button, Container, Tab, Tabs, Typography, Dialog, DialogTitle,
@@ -58,7 +58,7 @@ function calcAge(birthDate: string): string {
 }
 
 export function PetDetailPage() {
-  const { petId, groupId } = useParams<{ petId: string; groupId: string }>();
+  const { petId } = useParams<{ petId: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
   const queryClient = useQueryClient();
   const { showError } = useNotification();
@@ -75,16 +75,15 @@ export function PetDetailPage() {
 
   // Pet info
   const { data: pet } = useQuery({
-    queryKey: ['pet', groupId, petId],
-    queryFn: () => petsApi.get(groupId!, petId!),
-    enabled: !!groupId && !!petId,
+    queryKey: ['pet', petId],
+    queryFn: () => petsApi.get(petId!),
+    enabled: !!petId,
   });
 
   // Vets for dropdown
   const { data: vets = [] } = useQuery({
-    queryKey: ['vets-all', groupId],
-    queryFn: () => vetsApi.listAll(groupId!),
-    enabled: !!groupId,
+    queryKey: ['vets-all'],
+    queryFn: () => vetsApi.listAll(),
   });
 
   // Vet visits
@@ -96,15 +95,22 @@ export function PetDetailPage() {
     enabled: !!petId,
   });
   const vetVisits = vetVisitsQuery.data?.pages.flatMap((p) => p.items) ?? [];
+
+  // Auto-open a visit when navigated from the upcoming visits list
+  const visitIdParam = searchParams.get('visitId');
+  useEffect(() => {
+    if (!visitIdParam || !vetVisits.length) return;
+    const match = vetVisits.find((v) => v.id === visitIdParam);
+    if (match) {
+      setDetailVisit(match);
+      setSearchParams((prev) => { prev.delete('visitId'); return prev; }, { replace: true });
+    }
+  }, [visitIdParam, vetVisits]);
+
   const vetVisitsSentinel = useInfiniteScroll(
     () => { if (vetVisitsQuery.hasNextPage && !vetVisitsQuery.isFetchingNextPage) vetVisitsQuery.fetchNextPage(); },
     tab === 'vet-visits' && vetVisitsQuery.hasNextPage,
   );
-
-  const nextVisit = vetVisits
-    .filter((v) => v.nextVisitDate && daysUntilNum(v.nextVisitDate) >= 0)
-    .sort((a, b) => daysUntilNum(a.nextVisitDate!) - daysUntilNum(b.nextVisitDate!))[0];
-  const nextVisitDays = nextVisit ? daysUntilNum(nextVisit.nextVisitDate!) : null;
 
   // Medications
   const medicationsQuery = useQuery({
@@ -135,10 +141,10 @@ export function PetDetailPage() {
 
   // Edit pet mutation
   const editMutation = useMutation({
-    mutationFn: (data: Partial<Omit<Pet, 'id' | 'groupId' | 'createdAt' | 'photoUrl'>>) =>
-      petsApi.update(groupId!, petId!, data),
+    mutationFn: (data: Partial<Omit<Pet, 'id' | 'userId' | 'createdAt' | 'photoUrl'>>) =>
+      petsApi.update(petId!, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['pet', groupId, petId] });
+      queryClient.invalidateQueries({ queryKey: ['pet', petId] });
       setEditOpen(false);
     },
     onError: (err) => showError(getApiError(err)),
@@ -146,8 +152,8 @@ export function PetDetailPage() {
 
   // Pet photo upload mutation
   const photoMutation = useMutation({
-    mutationFn: (file: File) => petsApi.uploadPhoto(groupId!, petId!, file),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['pet', groupId, petId] }),
+    mutationFn: (file: File) => petsApi.uploadPhoto(petId!, file),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['pet', petId] }),
     onError: (err) => showError(getApiError(err)),
   });
 
@@ -283,32 +289,7 @@ export function PetDetailPage() {
       {/* Tabs */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
         <Tabs value={tab} onChange={(_, v) => setTab(v)}>
-          <Tab
-            value="vet-visits"
-            label={
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-                Vet Visits
-                {nextVisitDays !== null && (
-                  <Tooltip
-                    title={`Next visit: ${fmtDate(nextVisit!.nextVisitDate!)} · ${daysUntilLabel(nextVisitDays)}`}
-                    arrow
-                  >
-                    <Box
-                      component="span"
-                      sx={{
-                        display: 'inline-block',
-                        width: 10,
-                        height: 10,
-                        borderRadius: '50%',
-                        bgcolor: getVisitBubbleColor(nextVisitDays),
-                        flexShrink: 0,
-                      }}
-                    />
-                  </Tooltip>
-                )}
-              </Box>
-            }
-          />
+          <Tab value="vet-visits" label="Vet Visits" />
           <Tab label="Medications" value="medications" />
         </Tabs>
         {tab === 'vet-visits' && (
@@ -336,6 +317,8 @@ export function PetDetailPage() {
                   {vetVisits.map((v, i) => {
                     const vet = vets.find((vt) => vt.id === v.vetId);
                     const vetName = vet ? vet.name : (v.clinic ?? null);
+                    const days = v.nextVisitDate ? daysUntilNum(v.nextVisitDate) : null;
+                    const hasFutureVisit = days !== null && days >= 0;
                     return (
                       <Box key={v.id}>
                         {i > 0 && <Divider />}
@@ -344,9 +327,35 @@ export function PetDetailPage() {
                             <Typography variant="body2" sx={{ fontWeight: 500 }} noWrap>{v.reason}</Typography>
                             {vetName && <Typography variant="caption" color="text.secondary" noWrap>{vetName}</Typography>}
                           </Box>
-                          <Typography variant="caption" color="text.secondary" sx={{ ml: 2, whiteSpace: 'nowrap' }}>
-                            {fmtDate(v.visitDate)}
-                          </Typography>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, ml: 2, flexShrink: 0 }}>
+                            {hasFutureVisit && (
+                              <Tooltip title={`Next: ${fmtDate(v.nextVisitDate!)} · ${daysUntilLabel(days!)}`} arrow>
+                                <Box
+                                  component="span"
+                                  sx={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    width: 18,
+                                    height: 18,
+                                    borderRadius: '50%',
+                                    bgcolor: getVisitBubbleColor(days!),
+                                    flexShrink: 0,
+                                    cursor: 'help',
+                                    fontSize: '0.6rem',
+                                    fontWeight: 700,
+                                    color: '#fff',
+                                    lineHeight: 1,
+                                  }}
+                                >
+                                  ?
+                                </Box>
+                              </Tooltip>
+                            )}
+                            <Typography variant="caption" color="text.secondary" sx={{ whiteSpace: 'nowrap' }}>
+                              {fmtDate(v.visitDate)}
+                            </Typography>
+                          </Box>
                         </ListItemButton>
                       </Box>
                     );
@@ -460,7 +469,7 @@ function EditPetDialog({ pet, open, saving, onClose, onSave }: {
   open: boolean;
   saving: boolean;
   onClose: () => void;
-  onSave: (data: Partial<Omit<Pet, 'id' | 'groupId' | 'createdAt' | 'photoUrl'>>) => void;
+  onSave: (data: Partial<Omit<Pet, 'id' | 'userId' | 'createdAt' | 'photoUrl'>>) => void;
 }) {
   const [form, setForm] = useState({
     name: pet.name,
