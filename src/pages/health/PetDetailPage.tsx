@@ -6,7 +6,8 @@ import {
   Divider, Skeleton, Checkbox, FormControlLabel, Switch, IconButton, Avatar, Chip, Tooltip,
   CircularProgress, Alert,
 } from '@mui/material';
-import { Add, AddAPhoto, Edit, Pets, Close, Medication as MedicationIcon } from '@mui/icons-material';
+import { Add, AddAPhoto, Edit, Pets, Close } from '@mui/icons-material';
+import { Medication as MedicationIcon } from '@mui/icons-material';
 import { useMutation, useQuery, useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import { healthApi } from '../../api/health';
 import { vetsApi } from '../../api/vets';
@@ -16,6 +17,8 @@ import { getApiError } from '../../api/client';
 import { useNotification } from '../../context/NotificationContext';
 import { useInfiniteScroll } from '../../hooks/useInfiniteScroll';
 import type { Medication, Pet, VetVisit } from '../../types';
+import { ScheduledVisitDetailDialog } from '../../components/ScheduledVisitDetailDialog';
+import { MedicationDetailDialog } from '../../components/MedicationDetailDialog';
 
 type TabValue = 'vet-visits' | 'medications';
 
@@ -31,20 +34,6 @@ function daysUntilNum(iso: string): number {
   today.setHours(0, 0, 0, 0);
   const [year, month, day] = iso.split('T')[0].split('-').map(Number);
   return Math.round((new Date(year, month - 1, day).getTime() - today.getTime()) / 86_400_000);
-}
-
-function daysUntilLabel(days: number): string {
-  if (days === 0) return 'Today';
-  if (days === 1) return 'Tomorrow';
-  return `In ${days} days`;
-}
-
-function getVisitBubbleColor(days: number): string {
-  if (days <= 3) return '#4caf50';
-  if (days <= 10) return '#81c784';
-  if (days <= 20) return '#a5d6a7';
-  if (days < 30) return '#bdbdbd';
-  return '#9e9e9e';
 }
 
 function calcAge(birthDate: string): string {
@@ -67,9 +56,10 @@ export function PetDetailPage() {
   const setTab = (value: TabValue) => setSearchParams({ tab: value }, { replace: true });
   const [addOpen, setAddOpen] = useState(false);
   const [addMedOpen, setAddMedOpen] = useState(false);
-  const [editMed, setEditMed] = useState<Medication | null>(null);
   const [editOpen, setEditOpen] = useState(false);
   const [detailVisit, setDetailVisit] = useState<VetVisit | null>(null);
+  const [scheduledVisit, setScheduledVisit] = useState<VetVisit | null>(null);
+  const [detailMed, setDetailMed] = useState<Medication | null>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
 
@@ -95,6 +85,10 @@ export function PetDetailPage() {
     enabled: !!petId,
   });
   const vetVisits = vetVisitsQuery.data?.pages.flatMap((p) => p.items) ?? [];
+  const scheduledVisits = vetVisits
+    .filter((v) => v.type === 'scheduled')
+    .sort((a, b) => new Date(a.visitDate).getTime() - new Date(b.visitDate).getTime());
+  const loggedVisits = vetVisits.filter((v) => v.type === 'logged');
 
   // Auto-open a visit when navigated from the upcoming visits list
   const visitIdParam = searchParams.get('visitId');
@@ -102,7 +96,8 @@ export function PetDetailPage() {
     if (!visitIdParam || !vetVisits.length) return;
     const match = vetVisits.find((v) => v.id === visitIdParam);
     if (match) {
-      setDetailVisit(match);
+      if (match.type === 'scheduled') setScheduledVisit(match);
+      else setDetailVisit(match);
       setSearchParams((prev) => { prev.delete('visitId'); return prev; }, { replace: true });
     }
   }, [visitIdParam, vetVisits]);
@@ -125,16 +120,6 @@ export function PetDetailPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['medications', petId] });
       setAddMedOpen(false);
-    },
-    onError: (err) => showError(getApiError(err)),
-  });
-
-  const editMedMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: UpdateMedicationInput }) =>
-      medicationsApi.update(petId!, id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['medications', petId] });
-      setEditMed(null);
     },
     onError: (err) => showError(getApiError(err)),
   });
@@ -165,19 +150,29 @@ export function PetDetailPage() {
 
   // Vet visit form
   const [hasNextVisit, setHasNextVisit] = useState(false);
-  const [vetForm, setVetForm] = useState({ vetId: '', reason: '', notes: '', visitDate: todayNoon(), nextVisitDate: weekFromNow() });
+  const [vetForm, setVetForm] = useState({ vetId: '', reason: '', notes: '', visitDate: todayNoon(), nextVisitDate: weekFromNow(), nextReason: '' });
+  const isScheduling = vetForm.visitDate ? new Date(vetForm.visitDate + ':00') > new Date() : false;
+
   const vetMutation = useMutation({
-    mutationFn: () => healthApi.createVetVisit(petId!, {
-      vetId: vetForm.vetId || undefined,
-      reason: vetForm.reason,
-      notes: vetForm.notes || undefined,
-      visitDate: toIso(vetForm.visitDate),
-      nextVisitDate: hasNextVisit && vetForm.nextVisitDate ? toIso(vetForm.nextVisitDate) : undefined,
-    }),
+    mutationFn: () =>
+      healthApi.createVetVisit(petId!, {
+        vetId: vetForm.vetId || undefined,
+        reason: vetForm.reason,
+        notes: !isScheduling && vetForm.notes ? vetForm.notes : undefined,
+        visitDate: toIso(vetForm.visitDate),
+        scheduleNextVisit:
+          !isScheduling && hasNextVisit && vetForm.nextVisitDate
+            ? {
+                visitDate: toIso(vetForm.nextVisitDate),
+                reason: vetForm.nextReason || vetForm.reason,
+                vetId: vetForm.vetId || undefined,
+              }
+            : undefined,
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['vet-visits', petId] });
       setAddOpen(false);
-      setVetForm({ vetId: '', reason: '', notes: '', visitDate: todayNoon(), nextVisitDate: weekFromNow() });
+      setVetForm({ vetId: '', reason: '', notes: '', visitDate: todayNoon(), nextVisitDate: weekFromNow(), nextReason: '' });
       setHasNextVisit(false);
     },
     onError: (err) => showError(getApiError(err)),
@@ -185,7 +180,7 @@ export function PetDetailPage() {
 
   // Vet visit update mutation
   const updateVisitMutation = useMutation({
-    mutationFn: ({ visitId, data }: { visitId: string; data: Partial<Omit<VetVisit, 'id' | 'petId' | 'createdAt' | 'imageUrls'>> }) =>
+    mutationFn: ({ visitId, data }: { visitId: string; data: Partial<Omit<VetVisit, 'id' | 'petId' | 'createdAt' | 'imageUrls' | 'type'>> }) =>
       healthApi.updateVetVisit(petId!, visitId, data),
     onSuccess: (updatedVisit) => {
       queryClient.invalidateQueries({ queryKey: ['vet-visits', petId] });
@@ -210,8 +205,6 @@ export function PetDetailPage() {
     if (file && detailVisit) imageMutation.mutate({ visitId: detailVisit.id, file });
     e.target.value = '';
   };
-
-  const canSaveVetVisit = !!(vetForm.reason && vetForm.visitDate);
 
   return (
     <Container maxWidth="md" sx={{ mt: 4 }}>
@@ -309,58 +302,105 @@ export function PetDetailPage() {
       }}>
         {tab === 'vet-visits' && (
           <>
-            {vetVisitsQuery.isLoading ? <LoadingState /> : vetVisitsQuery.isError ? (
-              <Box sx={{ p: 2 }}><Alert severity="error">{getApiError(vetVisitsQuery.error)}</Alert></Box>
-            ) : !vetVisits.length ? <EmptyState /> : (
+            {vetVisitsQuery.isLoading ? (
+              <LoadingState />
+            ) : vetVisitsQuery.isError ? (
+              <Box sx={{ p: 2 }}>
+                <Alert severity="error">{getApiError(vetVisitsQuery.error)}</Alert>
+              </Box>
+            ) : (
               <>
-                <List disablePadding>
-                  {vetVisits.map((v, i) => {
-                    const vet = vets.find((vt) => vt.id === v.vetId);
-                    const vetName = vet ? vet.name : (v.clinic ?? null);
-                    const days = v.nextVisitDate ? daysUntilNum(v.nextVisitDate) : null;
-                    const hasFutureVisit = days !== null && days >= 0;
-                    return (
-                      <Box key={v.id}>
-                        {i > 0 && <Divider />}
-                        <ListItemButton onClick={() => setDetailVisit(v)} sx={{ py: 1, px: 2 }}>
-                          <Box sx={{ flex: 1, minWidth: 0 }}>
-                            <Typography variant="body2" sx={{ fontWeight: 500 }} noWrap>{v.reason}</Typography>
-                            {vetName && <Typography variant="caption" color="text.secondary" noWrap>{vetName}</Typography>}
-                          </Box>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, ml: 2, flexShrink: 0 }}>
-                            {hasFutureVisit && (
-                              <Tooltip title={`Next: ${fmtDate(v.nextVisitDate!)} · ${daysUntilLabel(days!)}`} arrow>
-                                <Box
-                                  component="span"
-                                  sx={{
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    width: 18,
-                                    height: 18,
-                                    borderRadius: '50%',
-                                    bgcolor: getVisitBubbleColor(days!),
-                                    flexShrink: 0,
-                                    cursor: 'help',
-                                    fontSize: '0.6rem',
-                                    fontWeight: 700,
-                                    color: '#fff',
-                                    lineHeight: 1,
-                                  }}
-                                >
-                                  ?
-                                </Box>
-                              </Tooltip>
-                            )}
-                            <Typography variant="caption" color="text.secondary" sx={{ whiteSpace: 'nowrap' }}>
-                              {fmtDate(v.visitDate)}
+                {/* Upcoming banner */}
+                {scheduledVisits.length > 0 && (
+                  <Box
+                    sx={{
+                      p: 1.5,
+                      borderBottom: '1px solid rgba(255,255,255,0.07)',
+                      background: 'rgba(42,157,143,0.06)',
+                    }}
+                  >
+                    <Typography
+                      variant="caption"
+                      sx={{ fontWeight: 600, color: 'primary.main', px: 0.5, display: 'block', mb: 1 }}
+                    >
+                      UPCOMING
+                    </Typography>
+                    <Box sx={{ display: 'flex', gap: 1, overflowX: 'auto', pb: 0.5 }}>
+                      {scheduledVisits.map((v) => {
+                        const days = daysUntilNum(v.visitDate);
+                        return (
+                          <Box
+                            key={v.id}
+                            onClick={() => setScheduledVisit(v)}
+                            sx={{
+                              flexShrink: 0,
+                              background: 'rgba(42,157,143,0.15)',
+                              border: '1px solid rgba(42,157,143,0.3)',
+                              borderRadius: 2,
+                              px: 1.5,
+                              py: 1,
+                              cursor: 'pointer',
+                              '&:hover': { background: 'rgba(42,157,143,0.25)' },
+                            }}
+                          >
+                            <Typography variant="body2" sx={{ fontWeight: 600, whiteSpace: 'nowrap' }}>
+                              {v.reason}
+                            </Typography>
+                            <Typography variant="caption" color="primary">
+                              {days === 0
+                                ? 'Today'
+                                : days === 1
+                                ? 'Tomorrow'
+                                : `In ${days} days`}
                             </Typography>
                           </Box>
-                        </ListItemButton>
-                      </Box>
-                    );
-                  })}
-                </List>
+                        );
+                      })}
+                    </Box>
+                  </Box>
+                )}
+
+                {/* History list */}
+                {loggedVisits.length === 0 && scheduledVisits.length === 0 ? (
+                  <EmptyState />
+                ) : loggedVisits.length === 0 ? (
+                  <Box sx={{ p: 2, textAlign: 'center' }}>
+                    <Typography variant="body2" color="text.secondary">
+                      No visit history yet
+                    </Typography>
+                  </Box>
+                ) : (
+                  <List disablePadding>
+                    {loggedVisits.map((v, i) => {
+                      const vet = vets.find((vt) => vt.id === v.vetId);
+                      const vetName = vet ? vet.name : (v.clinic ?? null);
+                      return (
+                        <Box key={v.id}>
+                          {i > 0 && <Divider />}
+                          <ListItemButton onClick={() => setDetailVisit(v)} sx={{ py: 1, px: 2 }}>
+                            <Box sx={{ flex: 1, minWidth: 0 }}>
+                              <Typography variant="body2" sx={{ fontWeight: 500 }} noWrap>
+                                {v.reason}
+                              </Typography>
+                              {vetName && (
+                                <Typography variant="caption" color="text.secondary" noWrap>
+                                  {vetName}
+                                </Typography>
+                              )}
+                            </Box>
+                            <Typography
+                              variant="caption"
+                              color="text.secondary"
+                              sx={{ whiteSpace: 'nowrap', ml: 2, flexShrink: 0 }}
+                            >
+                              {fmtDate(v.visitDate)}
+                            </Typography>
+                          </ListItemButton>
+                        </Box>
+                      );
+                    })}
+                  </List>
+                )}
                 <div ref={vetVisitsSentinel} />
                 {vetVisitsQuery.isFetchingNextPage && <ListSkeleton />}
               </>
@@ -378,8 +418,8 @@ export function PetDetailPage() {
                   {i > 0 && <Divider />}
                   <MedicationRow
                     med={m}
-                    onEdit={() => setEditMed(m)}
-                    onToggleActive={(active) => editMedMutation.mutate({ id: m.id, data: { active } })}
+                    onEdit={() => setDetailMed(m)}
+                    onToggleActive={() => {/* handled by MedicationDetailDialog */}}
                   />
                 </Box>
               ))}
@@ -402,28 +442,95 @@ export function PetDetailPage() {
 
       {/* Add vet visit dialog */}
       <Dialog open={addOpen} onClose={() => setAddOpen(false)} fullWidth maxWidth="sm">
-        <DialogTitle>Add Vet Visit</DialogTitle>
+        <DialogTitle>
+          {isScheduling ? 'Schedule Vet Visit' : 'Log Vet Visit'}
+        </DialogTitle>
         <DialogContent>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
-            <TextField select label="Vet / Clinic" value={vetForm.vetId} onChange={(e) => setVetForm({ ...vetForm, vetId: e.target.value })} fullWidth>
+            <TextField
+              select
+              label="Vet / Clinic"
+              value={vetForm.vetId}
+              onChange={(e) => setVetForm({ ...vetForm, vetId: e.target.value })}
+              fullWidth
+            >
               <MenuItem value="">— None —</MenuItem>
-              {vets.map((v) => <MenuItem key={v.id} value={v.id}>{v.name}</MenuItem>)}
+              {vets.map((v) => (
+                <MenuItem key={v.id} value={v.id}>
+                  {v.name}
+                </MenuItem>
+              ))}
             </TextField>
-            <TextField label="Reason" value={vetForm.reason} onChange={(e) => setVetForm({ ...vetForm, reason: e.target.value })} fullWidth required />
-            <TextField label="Visit Date" type="datetime-local" value={vetForm.visitDate} onChange={(e) => setVetForm({ ...vetForm, visitDate: e.target.value })} fullWidth slotProps={{ inputLabel: { shrink: true } }} required />
-            <FormControlLabel
-              control={<Checkbox checked={hasNextVisit} onChange={(e) => setHasNextVisit(e.target.checked)} />}
-              label="Schedule next visit"
+            <TextField
+              label="Reason"
+              value={vetForm.reason}
+              onChange={(e) => setVetForm({ ...vetForm, reason: e.target.value })}
+              fullWidth
+              required
             />
-            {hasNextVisit && (
-              <TextField label="Next Visit Date" type="datetime-local" value={vetForm.nextVisitDate} onChange={(e) => setVetForm({ ...vetForm, nextVisitDate: e.target.value })} fullWidth slotProps={{ inputLabel: { shrink: true } }} />
+            <TextField
+              label="Visit Date"
+              type="datetime-local"
+              value={vetForm.visitDate}
+              onChange={(e) => setVetForm({ ...vetForm, visitDate: e.target.value })}
+              fullWidth
+              slotProps={{ inputLabel: { shrink: true } }}
+              required
+              helperText={isScheduling ? 'Future date — will be saved as a scheduled visit' : 'Past or today — will be logged as history'}
+            />
+            {!isScheduling && (
+              <TextField
+                label="Notes"
+                value={vetForm.notes}
+                onChange={(e) => setVetForm({ ...vetForm, notes: e.target.value })}
+                fullWidth
+                multiline
+                rows={3}
+              />
             )}
-            <TextField label="Notes" value={vetForm.notes} onChange={(e) => setVetForm({ ...vetForm, notes: e.target.value })} fullWidth multiline rows={3} />
+            {!isScheduling && (
+              <>
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={hasNextVisit}
+                      onChange={(e) => setHasNextVisit(e.target.checked)}
+                    />
+                  }
+                  label="Also schedule next visit"
+                />
+                {hasNextVisit && (
+                  <>
+                    <TextField
+                      label="Next Visit Date"
+                      type="datetime-local"
+                      value={vetForm.nextVisitDate}
+                      onChange={(e) => setVetForm({ ...vetForm, nextVisitDate: e.target.value })}
+                      fullWidth
+                      slotProps={{ inputLabel: { shrink: true } }}
+                    />
+                    <TextField
+                      label="Reason for next visit"
+                      placeholder={vetForm.reason || 'Same as current'}
+                      value={vetForm.nextReason}
+                      onChange={(e) => setVetForm({ ...vetForm, nextReason: e.target.value })}
+                      fullWidth
+                    />
+                  </>
+                )}
+              </>
+            )}
           </Box>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setAddOpen(false)}>Cancel</Button>
-          <Button variant="contained" onClick={() => vetMutation.mutate()} disabled={!canSaveVetVisit}>Save</Button>
+          <Button
+            variant="contained"
+            onClick={() => vetMutation.mutate()}
+            disabled={!vetForm.reason || !vetForm.visitDate || vetMutation.isPending}
+          >
+            {vetMutation.isPending ? 'Saving…' : 'Save'}
+          </Button>
         </DialogActions>
       </Dialog>
 
@@ -435,18 +542,7 @@ export function PetDetailPage() {
         onSave={(data) => addMedMutation.mutate(data)}
       />
 
-      {/* Edit medication dialog */}
-      {editMed && (
-        <EditMedicationDialog
-          key={editMed.id}
-          med={editMed}
-          saving={editMedMutation.isPending}
-          onClose={() => setEditMed(null)}
-          onSave={(data) => editMedMutation.mutate({ id: editMed.id, data })}
-        />
-      )}
-
-      {/* Vet visit detail dialog */}
+      {/* Vet visit detail dialog (logged visits) */}
       {detailVisit && (
         <VetVisitDetailDialog
           key={detailVisit.id}
@@ -458,6 +554,27 @@ export function PetDetailPage() {
           onClose={() => setDetailVisit(null)}
           onAddPhoto={() => imageInputRef.current?.click()}
           onSave={(data) => updateVisitMutation.mutate({ visitId: detailVisit.id, data })}
+        />
+      )}
+
+      {/* Scheduled visit detail dialog */}
+      {scheduledVisit && (
+        <ScheduledVisitDetailDialog
+          key={scheduledVisit.id}
+          visit={scheduledVisit}
+          petId={petId!}
+          vets={vets}
+          onClose={() => setScheduledVisit(null)}
+        />
+      )}
+
+      {/* Medication detail dialog */}
+      {detailMed && (
+        <MedicationDetailDialog
+          key={detailMed.id}
+          med={detailMed}
+          petId={petId!}
+          onClose={() => setDetailMed(null)}
         />
       )}
     </Container>
@@ -513,8 +630,6 @@ type VetVisitEditForm = {
   reason: string;
   notes: string;
   visitDate: string;
-  nextVisitDate: string;
-  hasNextVisit: boolean;
 };
 
 function visitToForm(visit: VetVisit): VetVisitEditForm {
@@ -523,8 +638,6 @@ function visitToForm(visit: VetVisit): VetVisitEditForm {
     reason: visit.reason,
     notes: visit.notes ?? '',
     visitDate: visit.visitDate ? new Date(visit.visitDate).toISOString().slice(0, 16) : '',
-    nextVisitDate: visit.nextVisitDate ? new Date(visit.nextVisitDate).toISOString().slice(0, 16) : weekFromNow(),
-    hasNextVisit: !!visit.nextVisitDate,
   };
 }
 
@@ -542,7 +655,7 @@ function VetVisitDetailDialog({
   saving: boolean;
   onClose: () => void;
   onAddPhoto: () => void;
-  onSave: (data: Partial<Omit<VetVisit, 'id' | 'petId' | 'createdAt' | 'imageUrls'>>) => void;
+  onSave: (data: Partial<Omit<VetVisit, 'id' | 'petId' | 'createdAt' | 'imageUrls' | 'type'>>) => void;
 }) {
   const serverUrl = import.meta.env.VITE_SERVER_URL ?? 'http://localhost:3000';
   const [editing, setEditing] = useState(false);
@@ -564,9 +677,6 @@ function VetVisitDetailDialog({
       reason: form.reason,
       notes: form.notes || undefined,
       visitDate: form.visitDate ? new Date(form.visitDate + ':00').toISOString() : undefined,
-      nextVisitDate: form.hasNextVisit && form.nextVisitDate
-        ? new Date(form.nextVisitDate + ':00').toISOString()
-        : (form.hasNextVisit ? undefined : null as any),
     });
     setEditing(false);
   };
@@ -613,17 +723,6 @@ function VetVisitDetailDialog({
                 onChange={(e) => setForm({ ...form, visitDate: e.target.value })}
                 fullWidth slotProps={{ inputLabel: { shrink: true } }}
               />
-              <FormControlLabel
-                control={<Checkbox checked={form.hasNextVisit} onChange={(e) => setForm({ ...form, hasNextVisit: e.target.checked })} />}
-                label="Schedule next visit"
-              />
-              {form.hasNextVisit && (
-                <TextField
-                  label="Next Visit Date" type="datetime-local" value={form.nextVisitDate}
-                  onChange={(e) => setForm({ ...form, nextVisitDate: e.target.value })}
-                  fullWidth slotProps={{ inputLabel: { shrink: true } }}
-                />
-              )}
               <TextField
                 label="Notes" value={form.notes}
                 onChange={(e) => setForm({ ...form, notes: e.target.value })}
@@ -636,11 +735,6 @@ function VetVisitDetailDialog({
                 <Typography variant="body2" color="text.secondary">{vetName ?? '—'}</Typography>
                 <Typography variant="body2" color="text.secondary">{fmtDateTime(visit.visitDate)}</Typography>
               </Box>
-              {visit.nextVisitDate && (
-                <Typography variant="body2" color="primary" sx={{ mb: 1.5 }}>
-                  Next visit: {fmtDateTime(visit.nextVisitDate)}
-                </Typography>
-              )}
               {visit.notes && (
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>{visit.notes}</Typography>
               )}
@@ -829,94 +923,6 @@ function AddMedicationDialog({ open, saving, onClose, onSave }: {
             <TextField label="End date" type="date" value={form.endDate} onChange={(e) => set('endDate', e.target.value)} fullWidth slotProps={{ inputLabel: { shrink: true } }} />
           )}
           <TextField label="Notes" value={form.notes} onChange={(e) => set('notes', e.target.value)} fullWidth multiline rows={2} />
-        </Box>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose}>Cancel</Button>
-        <Button variant="contained" disabled={!canSave || saving} onClick={handleSave}>
-          {saving ? 'Saving…' : 'Save'}
-        </Button>
-      </DialogActions>
-    </Dialog>
-  );
-}
-
-function EditMedicationDialog({ med, saving, onClose, onSave }: {
-  med: Medication;
-  saving: boolean;
-  onClose: () => void;
-  onSave: (data: UpdateMedicationInput) => void;
-}) {
-  const [form, setForm] = useState({
-    name: med.name,
-    dosageAmount: String(med.dosage.amount),
-    dosageUnit: med.dosage.unit,
-    startDate: med.startDate.slice(0, 10),
-    endDate: med.endDate ? med.endDate.slice(0, 10) : '',
-    notes: med.notes ?? '',
-  });
-  const [frequency, setFrequency] = useState<{ type: FreqType; interval: number }>({
-    type: med.frequency.type as FreqType,
-    interval: med.frequency.interval,
-  });
-  const [hasEndDate, setHasEndDate] = useState(!!med.endDate);
-  const [active, setActive] = useState(med.active);
-
-  const set = (field: string, value: string) => setForm((f) => ({ ...f, [field]: value }));
-  const canSave = !!(form.name && form.dosageAmount && form.dosageUnit && form.startDate);
-
-  const handleSave = () => {
-    onSave({
-      name: form.name,
-      dosageAmount: parseFloat(form.dosageAmount),
-      dosageUnit: form.dosageUnit,
-      frequency,
-      startDate: new Date(form.startDate).toISOString(),
-      endDate: hasEndDate && form.endDate ? new Date(form.endDate).toISOString() : null,
-      notes: form.notes || null,
-      active,
-    });
-  };
-
-  return (
-    <Dialog open onClose={onClose} fullWidth maxWidth="sm">
-      <DialogTitle>Edit Medication</DialogTitle>
-      <DialogContent>
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
-          <TextField label="Medication name" value={form.name} onChange={(e) => set('name', e.target.value)} fullWidth required />
-          <Box sx={{ display: 'flex', gap: 1 }}>
-            <TextField
-              label="Dose" type="number" value={form.dosageAmount}
-              onChange={(e) => set('dosageAmount', e.target.value)}
-              sx={{ flex: 1 }} required
-              slotProps={{ htmlInput: { min: 0, step: 'any' } }}
-            />
-            <TextField
-              select label="Unit" value={form.dosageUnit}
-              onChange={(e) => set('dosageUnit', e.target.value)}
-              sx={{ width: 130 }}
-            >
-              {DOSAGE_UNITS.map((u) => <MenuItem key={u} value={u}>{u}</MenuItem>)}
-            </TextField>
-          </Box>
-          <FrequencyPicker
-            onChange={setFrequency}
-            initialType={med.frequency.type as FreqType}
-            initialInterval={med.frequency.interval}
-          />
-          <TextField label="Start date" type="date" value={form.startDate} onChange={(e) => set('startDate', e.target.value)} fullWidth required slotProps={{ inputLabel: { shrink: true } }} />
-          <FormControlLabel
-            control={<Checkbox checked={hasEndDate} onChange={(e) => setHasEndDate(e.target.checked)} />}
-            label="Set end date"
-          />
-          {hasEndDate && (
-            <TextField label="End date" type="date" value={form.endDate} onChange={(e) => set('endDate', e.target.value)} fullWidth slotProps={{ inputLabel: { shrink: true } }} />
-          )}
-          <TextField label="Notes" value={form.notes} onChange={(e) => set('notes', e.target.value)} fullWidth multiline rows={2} />
-          <FormControlLabel
-            control={<Switch checked={active} onChange={(e) => setActive(e.target.checked)} />}
-            label="Active"
-          />
         </Box>
       </DialogContent>
       <DialogActions>
