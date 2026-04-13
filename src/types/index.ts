@@ -72,6 +72,29 @@ export interface Vet {
   createdAt: string;
 }
 
+export type CalendarEvent =
+  | {
+      kind: 'vet-visit';
+      id: string;
+      petId: string;
+      date: string;
+      type: 'logged' | 'scheduled';
+      reason: string;
+      vetName?: string;
+      clinic?: string;
+    }
+  | {
+      kind: 'medication';
+      id: string;
+      petId: string;
+      startDate: string;
+      endDate?: string;
+      name: string;
+      dosageLabel: string;
+      frequencyLabel: string;
+      hasReminder: boolean;
+    };
+
 export interface AuthTokens {
   token: string;
 }

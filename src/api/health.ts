@@ -47,6 +47,9 @@ export const healthApi = {
   listUpcomingVetVisits: () =>
     apiClient.get<VetVisit[]>('/vet-visits/upcoming').then((r) => r.data),
 
+  listVetVisitsByMonth: (from: string, to: string) =>
+    apiClient.get<VetVisit[]>('/vet-visits', { params: { from, to } }).then((r) => r.data),
+
   // Medications
   createMedication: (petId: string, data: Omit<Medication, 'id' | 'petId' | 'createdAt'>) =>
     apiClient.post<Medication>(`/pets/${petId}/medications`, data).then((r) => r.data),
