@@ -1,14 +1,15 @@
 import { useState } from 'react';
 import {
   AppBar, Box, Breadcrumbs, IconButton, Link, Menu, MenuItem,
-  Toolbar, Tooltip, Typography, Avatar, Switch, FormControlLabel,
+  Toolbar, Tooltip, Typography, Avatar,
 } from '@mui/material';
-import { NavigateNext, Pets } from '@mui/icons-material';
+import { Menu as MenuIcon, NavigateNext, Pets } from '@mui/icons-material';
 import { Link as RouterLink, useNavigate, useParams, useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../context/AuthContext';
 import { useAppTheme } from '../context/ThemeContext';
 import { petsApi } from '../api/pets';
+import { NavigationDrawer } from './NavigationDrawer';
 
 function AppBreadcrumbs() {
   const { petId } = useParams<{ petId?: string }>();
@@ -34,7 +35,7 @@ function AppBreadcrumbs() {
           color="text.secondary"
           sx={{ fontSize: '0.8125rem', fontWeight: 500 }}
         >
-          Pets
+          Home
         </Link>
         {petId && (
           <Typography sx={{ fontSize: '0.8125rem', fontWeight: 600, color: 'text.primary' }}>
@@ -53,12 +54,22 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
   const { logout } = useAuth();
   const { mode, toggleTheme } = useAppTheme();
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
 
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
       <AppBar position="sticky" sx={{ zIndex: 10 }}>
         <Toolbar sx={{ px: { xs: 2, sm: 3 } }}>
+          <IconButton
+            edge="start"
+            color="inherit"
+            onClick={() => setDrawerOpen(true)}
+            sx={{ mr: 1 }}
+            aria-label="Open navigation"
+          >
+            <MenuIcon />
+          </IconButton>
           <Box
             sx={{
               width: 34, height: 34, borderRadius: 2, mr: 1.5, flexShrink: 0,
@@ -79,11 +90,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
             Pet Health
           </Typography>
           <Tooltip title="Account">
-            <IconButton
-              onClick={(e) => setMenuAnchor(e.currentTarget)}
-              size="small"
-              sx={{ ml: 1 }}
-            >
+            <IconButton onClick={(e) => setMenuAnchor(e.currentTarget)} size="small" sx={{ ml: 1 }}>
               <Avatar sx={{ width: 32, height: 32, bgcolor: 'primary.light', fontSize: 14, fontWeight: 700, color: '#fff' }}>
                 U
               </Avatar>
@@ -97,23 +104,18 @@ export function Layout({ children }: { children: React.ReactNode }) {
             transformOrigin={{ vertical: 'top', horizontal: 'right' }}
             slotProps={{ paper: { sx: { mt: 0.5, minWidth: 160, borderRadius: 2, boxShadow: '0 8px 24px rgba(0,0,0,0.12)' } } }}
           >
-            <MenuItem onClick={() => { setMenuAnchor(null); navigate('/'); }} sx={{ fontSize: '0.9rem' }}>My Pets</MenuItem>
             <MenuItem onClick={toggleTheme} sx={{ fontSize: '0.9rem' }}>
-              <FormControlLabel
-                control={<Switch checked={mode === 'dark'} size="small" sx={{ ml: 0, mr: 1 }} />}
-                label="Dark mode"
-                sx={{ m: 0, pointerEvents: 'none', fontSize: '0.9rem' }}
-              />
-            </MenuItem>
-            <MenuItem
-              onClick={() => { setMenuAnchor(null); logout(); navigate('/login'); }}
-              sx={{ color: 'error.main', fontSize: '0.9rem' }}
-            >
-              Logout
+              {mode === 'dark' ? 'Light mode' : 'Dark mode'}
             </MenuItem>
           </Menu>
         </Toolbar>
       </AppBar>
+
+      <NavigationDrawer
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        onLogout={() => { logout(); navigate('/login'); }}
+      />
 
       <AppBreadcrumbs />
 
