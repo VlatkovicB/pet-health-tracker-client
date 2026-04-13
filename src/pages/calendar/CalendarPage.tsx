@@ -70,9 +70,9 @@ export function CalendarPage() {
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(currentMonth);
 
-  // Pets (page 1 — sufficient for filter chips)
+  // Pets (page 1 — sufficient for filter chips; distinct key from PetsPage infinite query)
   const { data: petsPage } = useQuery({
-    queryKey: ['pets'],
+    queryKey: ['pets-calendar'],
     queryFn: () => petsApi.list({ pageParam: 1 }),
   });
   const pets = petsPage?.items ?? [];
