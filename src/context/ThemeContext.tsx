@@ -1,4 +1,5 @@
-import { createContext, useContext, useState, useEffect, useMemo, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useMemo } from 'react';
+import type { ReactNode } from 'react';
 import { ThemeProvider as MuiThemeProvider } from '@mui/material';
 import { createAppTheme } from '../theme';
 import { usersApi } from '../api/users';

@@ -12,7 +12,7 @@ import { useMutation, useQuery, useInfiniteQuery, useQueryClient } from '@tansta
 import { healthApi } from '../../api/health';
 import { vetsApi } from '../../api/vets';
 import { petsApi } from '../../api/pets';
-import { medicationsApi, type CreateMedicationInput, type UpdateMedicationInput } from '../../api/medications';
+import { medicationsApi, type CreateMedicationInput } from '../../api/medications';
 import { getApiError } from '../../api/client';
 import { useNotification } from '../../context/NotificationContext';
 import { useInfiniteScroll } from '../../hooks/useInfiniteScroll';

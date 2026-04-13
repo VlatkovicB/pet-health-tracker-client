@@ -206,7 +206,7 @@ export function PetsPage() {
                         {until}
                       </Typography>
                       <Typography variant="caption" color="text.secondary">
-                        {fmtDate(visit.nextVisitDate!)}
+                        {fmtDate(visit.visitDate)}
                       </Typography>
                     </Box>
                   </ListItemButton>
