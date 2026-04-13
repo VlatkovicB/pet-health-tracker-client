@@ -19,14 +19,31 @@ export interface Pet {
 export interface VetVisit {
   id: string;
   petId: string;
+  type: 'logged' | 'scheduled';
   vetId?: string;
   clinic?: string;
   vetName?: string;
   reason: string;
   notes?: string;
   visitDate: string;
-  nextVisitDate?: string;
   imageUrls: string[];
+  createdAt: string;
+}
+
+export type DayOfWeek = 'MON' | 'TUE' | 'WED' | 'THU' | 'FRI' | 'SAT' | 'SUN';
+
+export type ReminderScheduleProps =
+  | { type: 'daily'; times: string[] }
+  | { type: 'weekly'; days: DayOfWeek[]; times: string[] }
+  | { type: 'monthly'; daysOfMonth: number[]; times: string[] };
+
+export interface Reminder {
+  id: string;
+  entityType: 'medication' | 'vet_visit';
+  entityId: string;
+  schedule: ReminderScheduleProps;
+  enabled: boolean;
+  notifyUserIds: string[];
   createdAt: string;
 }
 
