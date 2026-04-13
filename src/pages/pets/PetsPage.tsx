@@ -176,8 +176,8 @@ export function PetsPage() {
               const pet = petMap[visit.petId];
               const vet = vets.find((v) => v.id === visit.vetId);
               const vetName = vet?.name ?? visit.clinic;
-              const until = daysUntil(visit.nextVisitDate!);
-              const [y, mo, d] = visit.nextVisitDate!.split('T')[0].split('-').map(Number);
+              const until = daysUntil(visit.visitDate);
+              const [y, mo, d] = visit.visitDate.split('T')[0].split('-').map(Number);
               const daysLeft = Math.round((new Date(y, mo - 1, d).getTime() - (() => { const t = new Date(); t.setHours(0,0,0,0); return t.getTime(); })()) / 86_400_000);
               const isUrgent = daysLeft <= 3;
               return (
