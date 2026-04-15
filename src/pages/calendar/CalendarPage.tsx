@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Box, Container, IconButton, Typography } from '@mui/material';
 import { ChevronLeft, ChevronRight } from '@mui/icons-material';
-import { useQuery, useQueries } from '@tanstack/react-query';
+import { useQuery, useQueries, useQueryClient } from '@tanstack/react-query';
 import { format, startOfMonth, endOfMonth, addMonths, subMonths } from 'date-fns';
 import { petsApi } from '../../api/pets';
 import { healthApi } from '../../api/health';
@@ -9,7 +9,7 @@ import { medicationsApi } from '../../api/medications';
 import { remindersApi } from '../../api/reminders';
 import { MonthCalendar } from './MonthCalendar';
 import { PetFilterChips } from './PetFilterChips';
-import { CalendarEventPopup } from '../../components/CalendarEventPopup';
+import { DayDetailModal } from '../../components/DayDetailModal';
 import type { CalendarEvent, Pet, VetVisit, Medication } from '../../types';
 
 const PET_COLORS = ['#f4a261', '#e76f51', '#457b9d', '#e9c46a', '#6d6875', '#a8dadc'];
@@ -64,7 +64,9 @@ function toCalendarEvents(
 export function CalendarPage() {
   const [currentMonth, setCurrentMonth] = useState(() => startOfMonth(new Date()));
   const [selectedPetId, setSelectedPetId] = useState<string | null>(null);
-  const [popup, setPopup] = useState<{ event: CalendarEvent; anchor: HTMLElement } | null>(null);
+  const [selectedDay, setSelectedDay] = useState<{ date: Date; events: CalendarEvent[] } | null>(null);
+
+  const queryClient = useQueryClient();
 
   const monthKey = format(currentMonth, 'yyyy-MM');
   const monthStart = startOfMonth(currentMonth);
@@ -163,14 +165,20 @@ export function CalendarPage() {
         petNames={petNames}
         loading={loading}
         error={error}
-        onEventClick={(event, anchor) => setPopup({ event, anchor })}
+        onDayClick={(date, events) => setSelectedDay({ date, events })}
       />
 
-      <CalendarEventPopup
-        event={popup?.event ?? null}
-        anchor={popup?.anchor ?? null}
+      <DayDetailModal
+        date={selectedDay?.date ?? null}
+        events={selectedDay?.events ?? []}
         petNames={petNames}
-        onClose={() => setPopup(null)}
+        petColors={petColors}
+        pets={pets}
+        onClose={() => setSelectedDay(null)}
+        onScheduled={() => {
+          queryClient.invalidateQueries({ queryKey: ['calendar-vet-visits', monthKey] });
+          setSelectedDay(null);
+        }}
       />
     </Container>
   );
