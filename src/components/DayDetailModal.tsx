@@ -36,6 +36,7 @@ export function DayDetailModal({ date, events, petNames, petColors, pets, onClos
   const medications = events.filter((e): e is CalendarEvent & { kind: 'medication' } => e.kind === 'medication');
 
   const { mutate: scheduleVisit, isPending } = useMutation({
+    retry: 0,
     mutationFn: () =>
       healthApi.createVetVisit(selectedPetId!, {
         visitDate: format(date!, 'yyyy-MM-dd'),
@@ -159,68 +160,72 @@ export function DayDetailModal({ date, events, petNames, petColors, pets, onClos
           </Box>
         )}
 
-        <Divider sx={{ my: 1.25 }} />
+        {pets.length > 0 && (
+          <>
+            <Divider sx={{ my: 1.25 }} />
 
-        <Box>
-          <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 0.5 }}>
-            Schedule vet visit
-          </Typography>
+            <Box>
+              <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                Schedule vet visit
+              </Typography>
 
-          <Box sx={{ mt: 0.75 }}>
-            {/* Pet chips */}
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75, mb: 1 }}>
-              {pets.map((pet) => {
-                const selected = selectedPetId === pet.id;
-                const color = petColors[pet.id] ?? '#888';
-                return (
-                  <Chip
-                    key={pet.id}
-                    label={pet.name}
-                    size="small"
-                    onClick={() => setSelectedPetId(selected ? null : pet.id)}
-                    sx={{
-                      bgcolor: selected ? color : 'transparent',
-                      color: selected ? '#fff' : color,
-                      border: `1px solid ${color}`,
-                      fontWeight: 600,
-                      fontSize: '0.7rem',
-                      height: 22,
-                      '& .MuiChip-label': { px: 0.75 },
-                      '&:hover': { bgcolor: selected ? color : `${color}22` },
-                    }}
-                  />
-                );
-              })}
+              <Box sx={{ mt: 0.75 }}>
+                {/* Pet chips */}
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75, mb: 1 }}>
+                  {pets.map((pet) => {
+                    const selected = selectedPetId === pet.id;
+                    const color = petColors[pet.id] ?? '#888';
+                    return (
+                      <Chip
+                        key={pet.id}
+                        label={pet.name}
+                        size="small"
+                        onClick={() => setSelectedPetId(selected ? null : pet.id)}
+                        sx={{
+                          bgcolor: selected ? color : 'transparent',
+                          color: selected ? '#fff' : color,
+                          border: `1px solid ${color}`,
+                          fontWeight: 600,
+                          fontSize: '0.7rem',
+                          height: 22,
+                          '& .MuiChip-label': { px: 0.75 },
+                          '&:hover': { bgcolor: selected ? color : `${color}22` },
+                        }}
+                      />
+                    );
+                  })}
+                </Box>
+
+                {/* Date (read-only) */}
+                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
+                  {date ? format(date, 'EEEE, MMMM d, yyyy') : ''}
+                </Typography>
+
+                {/* Reason */}
+                <TextField
+                  size="small"
+                  fullWidth
+                  placeholder="Reason (optional)"
+                  value={reason}
+                  onChange={(e) => setReason(e.target.value)}
+                  sx={{ mb: 1 }}
+                  slotProps={{ htmlInput: { maxLength: 200 } }}
+                />
+
+                <Button
+                  variant="contained"
+                  size="small"
+                  fullWidth
+                  disabled={!selectedPetId || isPending}
+                  onClick={() => scheduleVisit()}
+                  startIcon={isPending ? <CircularProgress size={14} color="inherit" /> : null}
+                >
+                  {isPending ? 'Saving…' : 'Schedule visit'}
+                </Button>
+              </Box>
             </Box>
-
-            {/* Date (read-only) */}
-            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
-              {date ? format(date, 'EEEE, MMMM d, yyyy') : ''}
-            </Typography>
-
-            {/* Reason */}
-            <TextField
-              size="small"
-              fullWidth
-              placeholder="Reason (optional)"
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-              sx={{ mb: 1 }}
-              slotProps={{ htmlInput: { maxLength: 200 } }}
-            />
-
-            <Button
-              variant="contained"
-              size="small"
-              fullWidth
-              disabled={!selectedPetId || isPending}
-              onClick={() => scheduleVisit()}
-              startIcon={isPending ? <CircularProgress size={14} color="inherit" /> : null}
-            >
-              {isPending ? 'Saving…' : 'Schedule visit'}
-            </Button>
-          </Box>
-        </Box>
+          </>
+        )}
       </DialogContent>
     </Dialog>
   );
