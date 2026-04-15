@@ -147,13 +147,13 @@ export function CalendarPage() {
       />
 
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1, py: 1 }}>
-        <IconButton size="small" onClick={() => setCurrentMonth((m) => subMonths(m, 1))} aria-label="Previous month">
+        <IconButton size="small" onClick={() => { setCurrentMonth((m) => subMonths(m, 1)); setSelectedDay(null); }} aria-label="Previous month">
           <ChevronLeft />
         </IconButton>
         <Typography variant="h6" sx={{ minWidth: 140, textAlign: 'center', fontWeight: 700, fontSize: '1rem' }}>
           {format(currentMonth, 'MMMM yyyy')}
         </Typography>
-        <IconButton size="small" onClick={() => setCurrentMonth((m) => addMonths(m, 1))} aria-label="Next month">
+        <IconButton size="small" onClick={() => { setCurrentMonth((m) => addMonths(m, 1)); setSelectedDay(null); }} aria-label="Next month">
           <ChevronRight />
         </IconButton>
       </Box>

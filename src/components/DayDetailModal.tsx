@@ -205,7 +205,9 @@ export function DayDetailModal({ date, events, petNames, petColors, pets, onClos
                 <TextField
                   size="small"
                   fullWidth
-                  placeholder="Reason (optional)"
+                  placeholder="Reason"
+                  required
+                  helperText="Required"
                   value={reason}
                   onChange={(e) => setReason(e.target.value)}
                   sx={{ mb: 1 }}
@@ -216,7 +218,7 @@ export function DayDetailModal({ date, events, petNames, petColors, pets, onClos
                   variant="contained"
                   size="small"
                   fullWidth
-                  disabled={!selectedPetId || isPending}
+                  disabled={!selectedPetId || !reason.trim() || isPending}
                   onClick={() => scheduleVisit()}
                   startIcon={isPending ? <CircularProgress size={14} color="inherit" /> : null}
                 >
