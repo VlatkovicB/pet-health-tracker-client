@@ -157,7 +157,7 @@ export function MonthCalendar({ month, events, petColors, petNames, loading, err
                               border: `2px dashed ${petColor}`,
                             }
                           : {
-                              bgcolor: isVet ? petColor : (petColors[e.petId] ?? '#888'),
+                              bgcolor: petColor,
                             }),
                         display: 'flex',
                         alignItems: 'center',
