@@ -2,11 +2,12 @@ import { useMemo } from 'react';
 import { Box, Typography, Skeleton, Alert } from '@mui/material';
 import {
   startOfMonth, endOfMonth, startOfWeek, endOfWeek,
-  eachDayOfInterval, isSameMonth, isToday, format,
+  eachDayOfInterval, isSameMonth, isToday, format, startOfToday,
 } from 'date-fns';
 import type { CalendarEvent } from '../../types';
 
 const DAY_HEADERS = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
+const MAX_RIBBONS = 3;
 
 interface MonthCalendarProps {
   month: Date;
@@ -15,7 +16,7 @@ interface MonthCalendarProps {
   petNames: Record<string, string>;
   loading?: boolean;
   error?: boolean;
-  onEventClick: (event: CalendarEvent, anchor: HTMLElement) => void;
+  onDayClick: (date: Date, events: CalendarEvent[]) => void;
 }
 
 function buildGrid(month: Date): Date[] {
@@ -27,24 +28,23 @@ function buildGrid(month: Date): Date[] {
   });
 }
 
-export function MonthCalendar({ month, events, petColors, petNames, loading, error, onEventClick }: MonthCalendarProps) {
+function toLocalDate(s: string): Date {
+  const [y, m, d] = s.split('-').map(Number);
+  return new Date(y, m - 1, d);
+}
+
+function getEventsForDay(day: Date, events: CalendarEvent[]): CalendarEvent[] {
+  const dateKey = format(day, 'yyyy-MM-dd');
+  return events.filter((e) => {
+    if (e.kind === 'vet-visit') return e.date.slice(0, 10) === dateKey;
+    const start = toLocalDate(e.startDate);
+    const end = e.endDate ? toLocalDate(e.endDate) : null;
+    return day >= start && (end === null || day <= end);
+  });
+}
+
+export function MonthCalendar({ month, events, petColors, petNames, loading, error, onDayClick }: MonthCalendarProps) {
   const days = useMemo(() => buildGrid(month), [month]);
-
-  const vetVisitsByDay = useMemo(() => {
-    const map: Record<string, (CalendarEvent & { kind: 'vet-visit' })[]> = {};
-    events
-      .filter((e): e is CalendarEvent & { kind: 'vet-visit' } => e.kind === 'vet-visit')
-      .forEach((e) => {
-        const key = e.date.slice(0, 10);
-        (map[key] ??= []).push(e);
-      });
-    return map;
-  }, [events]);
-
-  const medications = useMemo(
-    () => events.filter((e): e is CalendarEvent & { kind: 'medication' } => e.kind === 'medication'),
-    [events],
-  );
 
   if (error) {
     return <Alert severity="error" sx={{ mx: { xs: 2, sm: 3 }, mt: 1 }}>Failed to load calendar data.</Alert>;
@@ -63,97 +63,151 @@ export function MonthCalendar({ month, events, petColors, petNames, loading, err
 
       {/* Calendar grid */}
       {loading ? (
-        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 0.5 }}>
+        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '1px' }}>
           {Array.from({ length: 35 }).map((_, i) => (
-            <Skeleton key={i} variant="rectangular" height={44} sx={{ borderRadius: 1 }} />
+            <Skeleton key={i} variant="rectangular" height={80} />
           ))}
         </Box>
       ) : (
-        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 0.5 }}>
-          {days.map((day) => {
+        <Box
+          sx={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(7, 1fr)',
+            border: '1px solid',
+            borderColor: 'divider',
+            borderRadius: 1,
+            overflow: 'hidden',
+          }}
+        >
+          {days.map((day, idx) => {
             const dateKey = format(day, 'yyyy-MM-dd');
             const inMonth = isSameMonth(day, month);
             const today = isToday(day);
-            const dayVisits = vetVisitsByDay[dateKey] ?? [];
-            const visibleDots = dayVisits.slice(0, 3);
-            const overflow = dayVisits.length - visibleDots.length;
+            const dayEvents = getEventsForDay(day, events);
+            const visible = dayEvents.slice(0, MAX_RIBBONS);
+            const overflow = dayEvents.length - visible.length;
+            const col = idx % 7;
+            const row = Math.floor(idx / 7);
 
             return (
               <Box
                 key={dateKey}
+                onClick={() => onDayClick(day, dayEvents)}
                 sx={{
-                  minHeight: 44,
-                  borderRadius: 1,
+                  minHeight: 80,
                   p: 0.5,
                   display: 'flex',
                   flexDirection: 'column',
-                  alignItems: 'center',
-                  bgcolor: today ? 'primary.main' : 'transparent',
-                  opacity: inMonth ? 1 : 0.3,
+                  gap: '2px',
+                  cursor: 'pointer',
+                  bgcolor: today ? 'primary.light' : 'background.paper',
+                  opacity: inMonth ? 1 : 0.4,
+                  borderRight: col < 6 ? '1px solid' : 'none',
+                  borderBottom: row < Math.floor((days.length - 1) / 7) ? '1px solid' : 'none',
+                  borderColor: 'divider',
+                  '&:hover': { bgcolor: today ? 'primary.light' : 'action.hover' },
+                  transition: 'background-color 0.1s',
                 }}
               >
-                <Typography
-                  variant="caption"
-                  sx={{
-                    fontWeight: today ? 700 : 500,
-                    color: today ? '#fff' : inMonth ? 'text.primary' : 'text.disabled',
-                    lineHeight: 1.6,
-                    fontSize: '0.75rem',
-                  }}
-                >
-                  {format(day, 'd')}
-                </Typography>
-                {dayVisits.length > 0 && (
-                  <Box sx={{ display: 'flex', gap: '2px', flexWrap: 'wrap', justifyContent: 'center', mt: 0.25 }}>
-                    {visibleDots.map((v) => (
-                      <Box
-                        key={v.id}
-                        component="span"
-                        onClick={(e) => onEventClick(v, e.currentTarget as HTMLElement)}
-                        sx={{
-                          width: 6, height: 6, borderRadius: '50%', cursor: 'pointer',
-                          bgcolor: v.type === 'scheduled' ? '#457b9d' : 'text.disabled',
-                          flexShrink: 0,
-                        }}
-                      />
-                    ))}
-                    {overflow > 0 && (
-                      <Typography variant="caption" sx={{ fontSize: '0.6rem', color: today ? '#fff' : 'text.secondary', lineHeight: 1 }}>
-                        +{overflow}
-                      </Typography>
-                    )}
+                {/* Day number */}
+                <Box sx={{ alignSelf: 'flex-start' }}>
+                  <Box
+                    sx={{
+                      width: 22, height: 22,
+                      borderRadius: '50%',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      bgcolor: today ? 'primary.main' : 'transparent',
+                    }}
+                  >
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        fontWeight: today ? 700 : 500,
+                        color: today ? '#fff' : 'text.primary',
+                        fontSize: '0.72rem',
+                        lineHeight: 1,
+                      }}
+                    >
+                      {format(day, 'd')}
+                    </Typography>
                   </Box>
+                </Box>
+
+                {/* Event ribbons */}
+                {visible.map((e) => {
+                  const isVet = e.kind === 'vet-visit';
+                  const petColor = petColors[e.petId] ?? '#888';
+
+                  const isOverdue = isVet && e.type === 'scheduled' && toLocalDate(e.date) < startOfToday();
+                  const isScheduled = isVet && e.type === 'scheduled';
+
+                  const label = isVet ? (petNames[e.petId] ?? 'Vet') : e.name;
+
+                  return (
+                    <Box
+                      key={e.id}
+                      sx={{
+                        borderRadius: 0.5,
+                        px: 0.5,
+                        py: '1px',
+                        overflow: 'hidden',
+                        ...(isScheduled
+                          ? {
+                              bgcolor: 'transparent',
+                              border: `2px dashed ${petColor}`,
+                            }
+                          : {
+                              bgcolor: isVet ? petColor : (petColors[e.petId] ?? '#888'),
+                            }),
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '3px',
+                      }}
+                    >
+                      {isOverdue && (
+                        <Box
+                          sx={{
+                            width: 12,
+                            height: 12,
+                            borderRadius: '50%',
+                            bgcolor: '#e63946',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            flexShrink: 0,
+                          }}
+                        >
+                          <Typography sx={{ color: '#fff', fontSize: '0.5rem', fontWeight: 900, lineHeight: 1 }}>!</Typography>
+                        </Box>
+                      )}
+                      {e.kind === 'medication' && e.hasReminder && (
+                        <Typography variant="caption" sx={{ fontSize: '0.62rem', lineHeight: 1.4 }}>🔔</Typography>
+                      )}
+                      <Typography
+                        variant="caption"
+                        noWrap
+                        sx={{
+                          color: isScheduled ? petColor : '#fff',
+                          fontSize: '0.62rem',
+                          fontWeight: 600,
+                          display: 'block',
+                          lineHeight: 1.4,
+                        }}
+                      >
+                        {label}
+                      </Typography>
+                    </Box>
+                  );
+                })}
+
+                {overflow > 0 && (
+                  <Typography variant="caption" sx={{ fontSize: '0.6rem', color: 'text.secondary', pl: 0.25, lineHeight: 1.4 }}>
+                    +{overflow} more
+                  </Typography>
                 )}
               </Box>
             );
           })}
-        </Box>
-      )}
-
-      {/* Medication span bars */}
-      {!loading && medications.length > 0 && (
-        <Box sx={{ mt: 1.5, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-          {medications.map((med) => (
-            <Box
-              key={med.id}
-              onClick={(e) => onEventClick(med, e.currentTarget as HTMLElement)}
-              sx={{
-                display: 'flex', alignItems: 'center', gap: 0.75,
-                bgcolor: petColors[med.petId] ?? 'primary.main',
-                color: '#fff',
-                borderRadius: 0.75,
-                px: 1, py: 0.5,
-                cursor: 'pointer',
-                '&:hover': { filter: 'brightness(0.92)' },
-              }}
-            >
-              <span>💊</span>
-              <Typography variant="caption" sx={{ fontWeight: 700, color: '#fff', flex: 1, fontSize: '0.75rem' }} noWrap>
-                {petNames[med.petId] ? `${petNames[med.petId]} · ` : ''}{med.name}
-              </Typography>
-              {med.hasReminder && <span style={{ fontSize: '0.8rem' }}>🔔</span>}
-            </Box>
-          ))}
         </Box>
       )}
 
@@ -162,20 +216,6 @@ export function MonthCalendar({ month, events, petColors, petNames, loading, err
         <Typography variant="body2" color="text.disabled" sx={{ textAlign: 'center', mt: 3, mb: 1 }}>
           No events this month
         </Typography>
-      )}
-
-      {/* Legend */}
-      {!loading && (
-        <Box sx={{ display: 'flex', gap: 2, mt: 1.5, px: 0.5 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-            <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#457b9d' }} />
-            <Typography variant="caption" color="text.secondary">Scheduled visit</Typography>
-          </Box>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-            <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: 'text.disabled' }} />
-            <Typography variant="caption" color="text.secondary">Past visit</Typography>
-          </Box>
-        </Box>
       )}
     </Box>
   );
