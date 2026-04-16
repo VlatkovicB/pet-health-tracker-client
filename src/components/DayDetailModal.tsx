@@ -1,13 +1,15 @@
 import { useState } from 'react';
 import {
-  Dialog, DialogTitle, DialogContent, Box, Typography, Chip,
-  IconButton, Divider, TextField, Button, CircularProgress,
+  Autocomplete,
+  Box, Button, Chip, CircularProgress,
+  Dialog, DialogTitle, DialogContent,
+  Divider, IconButton, TextField, Typography,
 } from '@mui/material';
 import { Close, NotificationsNone } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import { useMutation } from '@tanstack/react-query';
-import type { CalendarEvent, Pet } from '../types';
+import type { CalendarEvent, Pet, Vet } from '../types';
 import { healthApi } from '../api/health';
 import { useNotification } from '../context/NotificationContext';
 
@@ -17,6 +19,7 @@ interface DayDetailModalProps {
   petNames: Record<string, string>;
   petColors: Record<string, string>;
   pets: Pet[];
+  vets: Vet[];
   onClose: () => void;
   onScheduled: () => void;
 }
@@ -26,11 +29,13 @@ function formatIso(s: string) {
   return format(new Date(y, m - 1, d), 'MMM d, yyyy');
 }
 
-export function DayDetailModal({ date, events, petNames, petColors, pets, onClose, onScheduled }: DayDetailModalProps) {
+export function DayDetailModal({ date, events, petNames, petColors, pets, vets, onClose, onScheduled }: DayDetailModalProps) {
   const navigate = useNavigate();
   const { showSuccess, showError } = useNotification();
   const [selectedPetId, setSelectedPetId] = useState<string | null>(null);
   const [reason, setReason] = useState('');
+  const [time, setTime] = useState('09:00');
+  const [selectedVet, setSelectedVet] = useState<Vet | null>(null);
 
   const vetVisits = events.filter((e): e is CalendarEvent & { kind: 'vet-visit' } => e.kind === 'vet-visit');
   const medications = events.filter((e): e is CalendarEvent & { kind: 'medication' } => e.kind === 'medication');
@@ -39,13 +44,16 @@ export function DayDetailModal({ date, events, petNames, petColors, pets, onClos
     retry: 0,
     mutationFn: () =>
       healthApi.createVetVisit(selectedPetId!, {
-        visitDate: format(date!, 'yyyy-MM-dd'),
-        reason: reason.trim() || '',
+        visitDate: `${format(date!, 'yyyy-MM-dd')}T${time}:00`,
+        vetId: selectedVet?.id,
+        reason: reason.trim(),
       }),
     onSuccess: () => {
       showSuccess('Vet visit scheduled');
       setSelectedPetId(null);
       setReason('');
+      setTime('09:00');
+      setSelectedVet(null);
       onScheduled();
     },
     onError: () => {
@@ -56,6 +64,8 @@ export function DayDetailModal({ date, events, petNames, petColors, pets, onClos
   function handleClose() {
     setSelectedPetId(null);
     setReason('');
+    setTime('09:00');
+    setSelectedVet(null);
     onClose();
   }
 
@@ -196,10 +206,54 @@ export function DayDetailModal({ date, events, petNames, petColors, pets, onClos
                   })}
                 </Box>
 
-                {/* Date (read-only) */}
-                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
-                  {date ? format(date, 'EEEE, MMMM d, yyyy') : ''}
-                </Typography>
+                {/* Date + Time */}
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                  <Typography variant="caption" color="text.secondary" sx={{ flex: 1 }}>
+                    {date ? format(date, 'EEE, MMM d, yyyy') : ''}
+                  </Typography>
+                  <input
+                    type="time"
+                    value={time}
+                    onChange={(e) => setTime(e.target.value)}
+                    style={{
+                      border: '1px solid #ccc',
+                      borderRadius: 4,
+                      padding: '3px 6px',
+                      fontSize: 12,
+                      background: 'transparent',
+                      color: 'inherit',
+                      fontFamily: 'inherit',
+                    }}
+                  />
+                </Box>
+
+                {/* Vet (optional) */}
+                <Autocomplete<Vet>
+                  options={vets}
+                  value={selectedVet}
+                  onChange={(_e, v) => setSelectedVet(v)}
+                  getOptionLabel={(v) => v.name}
+                  isOptionEqualToValue={(a, b) => a.id === b.id}
+                  renderOption={(props, v) => (
+                    <Box component="li" {...props} key={v.id}>
+                      <Box>
+                        <Typography variant="body2" sx={{ fontWeight: 600, fontSize: '0.8rem' }}>{v.name}</Typography>
+                      </Box>
+                    </Box>
+                  )}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      size="small"
+                      placeholder="Search vets… (optional)"
+                      sx={{ mb: 1 }}
+                    />
+                  )}
+                  size="small"
+                  fullWidth
+                  clearOnEscape
+                  noOptionsText="No vets found"
+                />
 
                 {/* Reason */}
                 <TextField
