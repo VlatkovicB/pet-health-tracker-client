@@ -5,6 +5,7 @@ import {
   eachDayOfInterval, isSameMonth, isToday, format, startOfToday,
 } from 'date-fns';
 import type { CalendarEvent } from '../../types';
+import { getContrastText } from '../../utils/color';
 
 const DAY_HEADERS = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
 const MAX_RIBBONS = 3;
@@ -153,7 +154,7 @@ export function MonthCalendar({ month, events, petColors, petNames, loading, err
                         overflow: 'hidden',
                         ...(isScheduled
                           ? {
-                              bgcolor: 'transparent',
+                              bgcolor: `${petColor}33`,
                               border: `2px dashed ${petColor}`,
                             }
                           : {
@@ -187,7 +188,7 @@ export function MonthCalendar({ month, events, petColors, petNames, loading, err
                         variant="caption"
                         noWrap
                         sx={{
-                          color: isScheduled ? petColor : '#fff',
+                          color: isScheduled ? petColor : getContrastText(petColor),
                           fontSize: '0.62rem',
                           fontWeight: 600,
                           display: 'block',
