@@ -12,6 +12,7 @@ export interface Pet {
   breed?: string;
   birthDate?: string;
   photoUrl?: string;
+  color?: string;
   userId: string;
   createdAt: string;
 }

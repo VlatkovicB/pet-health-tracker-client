@@ -11,12 +11,13 @@ import { vetsApi } from '../../api/vets';
 import { MonthCalendar } from './MonthCalendar';
 import { PetFilterChips } from './PetFilterChips';
 import { DayDetailModal } from '../../components/DayDetailModal';
+import { PET_COLOR_PALETTE } from '../../utils/color';
 import type { CalendarEvent, Pet, Vet, VetVisit, Medication } from '../../types';
 
-const PET_COLORS = ['#f4a261', '#e76f51', '#457b9d', '#e9c46a', '#6d6875', '#a8dadc'];
-
 function buildPetColors(pets: Pet[]): Record<string, string> {
-  return Object.fromEntries(pets.map((p, i) => [p.id, PET_COLORS[i % PET_COLORS.length]]));
+  return Object.fromEntries(
+    pets.map((p, i) => [p.id, p.color ?? PET_COLOR_PALETTE[i % PET_COLOR_PALETTE.length]])
+  );
 }
 
 function buildPetNames(pets: Pet[]): Record<string, string> {
