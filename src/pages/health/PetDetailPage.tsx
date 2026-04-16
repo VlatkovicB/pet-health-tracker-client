@@ -17,6 +17,7 @@ import { getApiError } from '../../api/client';
 import { useNotification } from '../../context/NotificationContext';
 import { useInfiniteScroll } from '../../hooks/useInfiniteScroll';
 import type { Medication, Pet, VetVisit } from '../../types';
+import { PET_COLOR_PALETTE } from '../../utils/color';
 import { ScheduledVisitDetailDialog } from '../../components/ScheduledVisitDetailDialog';
 import { MedicationDetailDialog } from '../../components/MedicationDetailDialog';
 
@@ -593,6 +594,7 @@ function EditPetDialog({ pet, open, saving, onClose, onSave }: {
     species: pet.species,
     breed: pet.breed ?? '',
     birthDate: pet.birthDate ? new Date(pet.birthDate).toISOString().slice(0, 10) : '',
+    color: pet.color ?? PET_COLOR_PALETTE[0],
   });
 
   return (
@@ -604,6 +606,31 @@ function EditPetDialog({ pet, open, saving, onClose, onSave }: {
           <TextField label="Species" value={form.species} onChange={(e) => setForm({ ...form, species: e.target.value })} fullWidth required />
           <TextField label="Breed" value={form.breed} onChange={(e) => setForm({ ...form, breed: e.target.value })} fullWidth />
           <TextField label="Birth Date" type="date" value={form.birthDate} onChange={(e) => setForm({ ...form, birthDate: e.target.value })} fullWidth slotProps={{ inputLabel: { shrink: true } }} />
+          <Box>
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
+              Calendar color
+            </Typography>
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75 }}>
+              {PET_COLOR_PALETTE.map((c) => (
+                <Box
+                  key={c}
+                  onClick={() => setForm({ ...form, color: c })}
+                  sx={{
+                    width: 24,
+                    height: 24,
+                    borderRadius: '50%',
+                    bgcolor: c,
+                    cursor: 'pointer',
+                    ...(form.color === c && {
+                      outline: '3px solid',
+                      outlineColor: 'text.primary',
+                      outlineOffset: '2px',
+                    }),
+                  }}
+                />
+              ))}
+            </Box>
+          </Box>
         </Box>
       </DialogContent>
       <DialogActions>
@@ -616,6 +643,7 @@ function EditPetDialog({ pet, open, saving, onClose, onSave }: {
             species: form.species,
             breed: form.breed || undefined,
             birthDate: form.birthDate ? new Date(form.birthDate).toISOString() : undefined,
+            color: form.color,
           })}
         >
           Save
