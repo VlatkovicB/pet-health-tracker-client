@@ -213,6 +213,7 @@ export function DayDetailModal({ date, events, petNames, petColors, pets, vets, 
                   </Typography>
                   <input
                     type="time"
+                    aria-label="Visit time"
                     value={time}
                     onChange={(e) => setTime(e.target.value)}
                     style={{
@@ -272,7 +273,7 @@ export function DayDetailModal({ date, events, petNames, petColors, pets, vets, 
                   variant="contained"
                   size="small"
                   fullWidth
-                  disabled={!selectedPetId || !reason.trim() || isPending}
+                  disabled={!selectedPetId || !reason.trim() || !time || isPending}
                   onClick={() => scheduleVisit()}
                   startIcon={isPending ? <CircularProgress size={14} color="inherit" /> : null}
                 >
