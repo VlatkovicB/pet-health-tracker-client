@@ -7,10 +7,11 @@ import { petsApi } from '../../api/pets';
 import { healthApi } from '../../api/health';
 import { medicationsApi } from '../../api/medications';
 import { remindersApi } from '../../api/reminders';
+import { vetsApi } from '../../api/vets';
 import { MonthCalendar } from './MonthCalendar';
 import { PetFilterChips } from './PetFilterChips';
 import { DayDetailModal } from '../../components/DayDetailModal';
-import type { CalendarEvent, Pet, VetVisit, Medication } from '../../types';
+import type { CalendarEvent, Pet, Vet, VetVisit, Medication } from '../../types';
 
 const PET_COLORS = ['#f4a261', '#e76f51', '#457b9d', '#e9c46a', '#6d6875', '#a8dadc'];
 
@@ -80,6 +81,13 @@ export function CalendarPage() {
   const pets = petsPage?.items ?? [];
   const petColors = useMemo(() => buildPetColors(pets), [pets]);
   const petNames = useMemo(() => buildPetNames(pets), [pets]);
+
+  // All vets (for schedule form autocomplete)
+  const { data: vets = [] } = useQuery<Vet[]>({
+    queryKey: ['vets-all'],
+    queryFn: () => vetsApi.listAll(),
+    staleTime: 10 * 60 * 1000,
+  });
 
   // Vet visits for the month
   const { data: vetVisits = [], isLoading: visitsLoading, isError: visitsError } = useQuery({
@@ -174,6 +182,7 @@ export function CalendarPage() {
         petNames={petNames}
         petColors={petColors}
         pets={pets}
+        vets={vets}
         onClose={() => setSelectedDay(null)}
         onScheduled={() => {
           queryClient.invalidateQueries({ queryKey: ['calendar-vet-visits', monthKey] });
