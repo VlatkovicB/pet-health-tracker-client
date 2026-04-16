@@ -432,7 +432,7 @@ export function PetDetailPage() {
       {/* Edit pet dialog */}
       {pet && (
         <EditPetDialog
-          key={`${pet.name}|${pet.species}|${pet.breed ?? ''}|${pet.birthDate ?? ''}`}
+          key={`${pet.name}|${pet.species}|${pet.breed ?? ''}|${pet.birthDate ?? ''}|${pet.color ?? ''}`}
           pet={pet}
           open={editOpen}
           saving={editMutation.isPending}
