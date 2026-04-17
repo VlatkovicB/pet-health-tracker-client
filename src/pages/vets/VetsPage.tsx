@@ -6,7 +6,7 @@ import {
 import { Add, Phone, LocationOn, AccessTime, Map, MedicalServices, Star } from '@mui/icons-material';
 import { useMutation, useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import { vetsApi } from '../../api/vets';
-import { placesApi, PlaceSearchResult, PlaceDetails } from '../../api/places';
+import { placesApi, type PlaceSearchResult, type PlaceDetails } from '../../api/places';
 import { getApiError } from '../../api/client';
 import { useNotification } from '../../context/NotificationContext';
 import { useInfiniteScroll } from '../../hooks/useInfiniteScroll';
