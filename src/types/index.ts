@@ -69,6 +69,7 @@ export interface Vet {
   phone?: string;
   workHours?: string;
   googleMapsUrl?: string;
+  rating?: number;
   notes?: string;
   createdAt: string;
 }

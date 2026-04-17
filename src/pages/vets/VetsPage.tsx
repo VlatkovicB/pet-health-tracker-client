@@ -3,7 +3,7 @@ import {
   Box, Button, Container, TextField, Typography, Dialog, DialogTitle,
   DialogContent, DialogActions, Card, CardContent, Grid, Chip, Link, Skeleton, Alert,
 } from '@mui/material';
-import { Add, Phone, LocationOn, AccessTime, Map, MedicalServices } from '@mui/icons-material';
+import { Add, Phone, LocationOn, AccessTime, Map, MedicalServices, Star } from '@mui/icons-material';
 import { useMutation, useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import { vetsApi } from '../../api/vets';
 import { getApiError } from '../../api/client';
@@ -107,10 +107,18 @@ export function VetsPage() {
                       )}
                     </Box>
                   </Box>
-                  {(vet.phone || vet.workHours || vet.address || vet.googleMapsUrl) && (
+                  {(vet.phone || vet.rating || vet.workHours || vet.address || vet.googleMapsUrl) && (
                     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
                       {vet.phone && (
                         <Chip icon={<Phone sx={{ fontSize: '14px !important' }} />} label={vet.phone} size="small" variant="outlined" />
+                      )}
+                      {vet.rating && (
+                        <Chip
+                          icon={<Star sx={{ fontSize: '14px !important', color: 'warning.main !important' }} />}
+                          label={vet.rating.toFixed(1)}
+                          size="small"
+                          variant="outlined"
+                        />
                       )}
                       {vet.workHours && (
                         <Chip icon={<AccessTime sx={{ fontSize: '14px !important' }} />} label={vet.workHours} size="small" variant="outlined" />
