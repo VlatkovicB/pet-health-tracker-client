@@ -16,7 +16,7 @@ import { medicationsApi, type CreateMedicationInput } from '../../api/medication
 import { getApiError } from '../../api/client';
 import { useNotification } from '../../context/NotificationContext';
 import { useInfiniteScroll } from '../../hooks/useInfiniteScroll';
-import type { Medication, Pet, VetVisit } from '../../types';
+import type { Medication, Pet, VetVisit, Vet, Reminder, ReminderScheduleProps, VetWorkHours, DayOfWeek } from '../../types';
 import { PET_COLOR_PALETTE } from '../../utils/color';
 import { ScheduledVisitDetailDialog } from '../../components/ScheduledVisitDetailDialog';
 import { MedicationDetailDialog } from '../../components/MedicationDetailDialog';
@@ -45,6 +45,39 @@ function calcAge(birthDate: string): string {
   if (months < 24) return `${months} month${months !== 1 ? 's' : ''}`;
   const y = Math.floor(months / 12);
   return `${y} year${y !== 1 ? 's' : ''}`;
+}
+
+const DAY_INDEX_TO_DOW: Record<number, DayOfWeek> = {
+  0: 'SUN', 1: 'MON', 2: 'TUE', 3: 'WED', 4: 'THU', 5: 'FRI', 6: 'SAT',
+};
+
+const DOW_LABELS: Record<DayOfWeek, string> = {
+  MON: 'Mon', TUE: 'Tue', WED: 'Wed', THU: 'Thu', FRI: 'Fri', SAT: 'Sat', SUN: 'Sun',
+};
+
+function getWorkHoursHint(
+  vets: Vet[],
+  vetId: string,
+  visitDate: string,
+): { label: string; isOutside: boolean } | null {
+  if (!vetId || !visitDate) return null;
+  const vet = vets.find((v) => v.id === vetId);
+  if (!vet?.workHours?.length) return null;
+
+  const dow = DAY_INDEX_TO_DOW[new Date(visitDate + ':00').getDay()];
+  const dayLabel = DOW_LABELS[dow];
+  const entry: VetWorkHours | undefined = vet.workHours.find((wh) => wh.dayOfWeek === dow);
+
+  if (!entry || !entry.open) {
+    return { label: `${dayLabel}: Closed`, isOutside: true };
+  }
+
+  const time = visitDate.slice(11, 16); // "HH:MM"
+  const isOutside = !!entry.startTime && !!entry.endTime && (time < entry.startTime || time > entry.endTime);
+  return {
+    label: `${dayLabel}: ${entry.startTime}–${entry.endTime}`,
+    isOutside,
+  };
 }
 
 export function PetDetailPage() {
@@ -479,6 +512,18 @@ export function PetDetailPage() {
               required
               helperText={isScheduling ? 'Future date — will be saved as a scheduled visit' : 'Past or today — will be logged as history'}
             />
+            {isScheduling && (() => {
+              const hint = getWorkHoursHint(vets, vetForm.vetId, vetForm.visitDate);
+              if (!hint) return null;
+              return (
+                <Box>
+                  <Typography variant="caption" color="text.secondary">{hint.label}</Typography>
+                  {hint.isOutside && (
+                    <Alert severity="warning" sx={{ mt: 0.5, py: 0.5 }}>Outside working hours</Alert>
+                  )}
+                </Box>
+              );
+            })()}
             {!isScheduling && (
               <TextField
                 label="Notes"
