@@ -33,6 +33,13 @@ export interface VetVisit {
 
 export type DayOfWeek = 'MON' | 'TUE' | 'WED' | 'THU' | 'FRI' | 'SAT' | 'SUN';
 
+export interface VetWorkHours {
+  dayOfWeek: DayOfWeek;
+  open: boolean;
+  startTime?: string;
+  endTime?: string;
+}
+
 export type ReminderScheduleProps =
   | { type: 'daily'; times: string[] }
   | { type: 'weekly'; days: DayOfWeek[]; times: string[] }
@@ -67,7 +74,7 @@ export interface Vet {
   name: string;
   address?: string;
   phone?: string;
-  workHours?: string;
+  workHours?: VetWorkHours[];
   googleMapsUrl?: string;
   rating?: number;
   notes?: string;

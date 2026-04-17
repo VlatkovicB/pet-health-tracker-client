@@ -10,4 +10,7 @@ export const vetsApi = {
 
   create: (data: Omit<Vet, 'id' | 'userId' | 'createdAt'>) =>
     apiClient.post<Vet>('/vets', data).then((r) => r.data),
+
+  update: (id: string, data: Omit<Vet, 'id' | 'userId' | 'createdAt'>) =>
+    apiClient.put<Vet>(`/vets/${id}`, data).then((r) => r.data),
 };
