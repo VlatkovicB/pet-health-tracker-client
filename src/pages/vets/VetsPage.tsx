@@ -28,6 +28,7 @@ const emptyForm = {
   googleMapsUrl: '',
   notes: '',
   rating: '',
+  placeId: '',
 };
 
 export function VetsPage() {
@@ -111,6 +112,7 @@ export function VetsPage() {
         phone: details.phone || f.phone,
         googleMapsUrl: details.googleMapsUrl || f.googleMapsUrl,
         rating: details.rating !== undefined ? String(details.rating) : f.rating,
+        placeId,
       }));
       setSearchState('done');
     } catch {
@@ -142,6 +144,7 @@ export function VetsPage() {
       workHours: form.workHours.length > 0 ? form.workHours : undefined,
       googleMapsUrl: form.googleMapsUrl || undefined,
       rating: form.rating ? Number(form.rating) : undefined,
+      placeId: form.placeId || undefined,
       notes: form.notes || undefined,
     }),
     onSuccess: () => {

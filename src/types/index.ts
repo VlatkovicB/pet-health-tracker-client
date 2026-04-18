@@ -77,6 +77,7 @@ export interface Vet {
   workHours?: VetWorkHours[];
   googleMapsUrl?: string;
   rating?: number;
+  placeId?: string;
   notes?: string;
   createdAt: string;
 }
