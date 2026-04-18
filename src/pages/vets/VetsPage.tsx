@@ -3,11 +3,11 @@ import { useEffect, useState } from 'react';
 import {
   Alert, Box, Button, Card, CardContent, Chip, Container,
   Dialog, DialogActions, DialogContent, DialogTitle,
-  Grid, Skeleton, TextField, Typography,
+  Grid, IconButton, Skeleton, TextField, Tooltip, Typography,
 } from '@mui/material';
 import {
   Add, AccessTime, Edit, ExpandMore, LocationOn, Map,
-  MedicalServices, Phone, Star,
+  MedicalServices, Phone, Star, Sync, TravelExplore,
 } from '@mui/icons-material';
 import { useMutation, useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import { vetsApi } from '../../api/vets';
@@ -16,6 +16,7 @@ import { getApiError } from '../../api/client';
 import { useNotification } from '../../context/NotificationContext';
 import { useInfiniteScroll } from '../../hooks/useInfiniteScroll';
 import { WorkHoursEditor } from '../../components/WorkHoursEditor';
+import { PlacesSyncDialog } from '../../components/PlacesSyncDialog';
 import type { Vet, VetWorkHours } from '../../types';
 
 type SearchState = 'idle' | 'searching' | 'done';
@@ -49,6 +50,9 @@ export function VetsPage() {
   // Edit vet state
   const [editVet, setEditVet] = useState<Vet | null>(null);
   const [editForm, setEditForm] = useState(emptyForm);
+
+  // Sync vet state
+  const [syncVet, setSyncVet] = useState<Vet | null>(null);
 
   useEffect(() => {
     if (editVet) {
@@ -296,7 +300,7 @@ export function VetsPage() {
                           <Typography variant="caption" color="text.disabled">No hours set</Typography>
                         )}
 
-                        <Box sx={{ display: 'flex', gap: 1, mt: 0.5 }}>
+                        <Box sx={{ display: 'flex', gap: 1, mt: 0.5, alignItems: 'center' }}>
                           {vet.googleMapsUrl && (
                             <Button
                               size="small"
@@ -316,6 +320,14 @@ export function VetsPage() {
                           >
                             Edit
                           </Button>
+                          <Tooltip title={vet.placeId ? 'Refresh from Google Places' : 'Find on Google Places'}>
+                            <IconButton
+                              size="small"
+                              onClick={(e) => { e.stopPropagation(); setSyncVet(vet); }}
+                            >
+                              {vet.placeId ? <Sync fontSize="small" /> : <TravelExplore fontSize="small" />}
+                            </IconButton>
+                          </Tooltip>
                         </Box>
                       </Box>
                     )}
@@ -433,6 +445,19 @@ export function VetsPage() {
             </Button>
           </DialogActions>
         </Dialog>
+      )}
+
+      {syncVet && (
+        <PlacesSyncDialog
+          vet={syncVet}
+          open={Boolean(syncVet)}
+          onClose={() => setSyncVet(null)}
+          onSynced={() => {
+            queryClient.invalidateQueries({ queryKey: ['vets'] });
+            queryClient.invalidateQueries({ queryKey: ['vets-all'] });
+            setSyncVet(null);
+          }}
+        />
       )}
     </Container>
   );
