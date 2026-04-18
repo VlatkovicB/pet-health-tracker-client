@@ -60,6 +60,7 @@ export function VetsPage() {
         googleMapsUrl: editVet.googleMapsUrl ?? '',
         notes: editVet.notes ?? '',
         rating: editVet.rating != null ? String(editVet.rating) : '',
+        placeId: editVet.placeId ?? '',
       });
     }
   }, [editVet]);
@@ -165,6 +166,7 @@ export function VetsPage() {
       workHours: editForm.workHours.length > 0 ? editForm.workHours : undefined,
       googleMapsUrl: editForm.googleMapsUrl || undefined,
       rating: editForm.rating ? Number(editForm.rating) : undefined,
+      placeId: editForm.placeId || undefined,
       notes: editForm.notes || undefined,
     }),
     onSuccess: () => {
