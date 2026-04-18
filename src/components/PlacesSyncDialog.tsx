@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   Alert, Box, Button, CircularProgress,
   Dialog, DialogActions, DialogContent, DialogTitle,
@@ -27,7 +27,7 @@ export function PlacesSyncDialog({ vet, open, onClose, onSynced }: PlacesSyncDia
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<PlaceSearchResult[]>([]);
 
-  const doRefresh = async (placeId?: string) => {
+  const doRefresh = useCallback(async (placeId?: string) => {
     const id = placeId ?? vet.placeId!;
     setLoading(true);
     setError(null);
@@ -50,16 +50,14 @@ export function PlacesSyncDialog({ vet, open, onClose, onSynced }: PlacesSyncDia
     } finally {
       setLoading(false);
     }
-  };
+  }, [vet, onSynced, onClose]);
 
   // Auto-refresh for linked vets — defined after doRefresh to avoid hoisting issue
   useEffect(() => {
-    if (!open) return;
+    if (!open || !isLinked) return;
     setError(null);
-    if (isLinked) {
-      doRefresh();
-    }
-  }, [open]);
+    doRefresh();
+  }, [open, isLinked, doRefresh]);
 
   const handleSearch = async () => {
     if (!query.trim()) return;
@@ -84,6 +82,7 @@ export function PlacesSyncDialog({ vet, open, onClose, onSynced }: PlacesSyncDia
     setQuery('');
     setResults([]);
     setError(null);
+    setLoading(false);
     onClose();
   };
 
@@ -127,7 +126,10 @@ export function PlacesSyncDialog({ vet, open, onClose, onSynced }: PlacesSyncDia
             {results.map((r) => (
               <Box
                 key={r.placeId}
+                role="button"
+                tabIndex={0}
                 onClick={() => handlePick(r.placeId)}
+                onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && handlePick(r.placeId)}
                 sx={{ px: 1.5, py: 1, borderRadius: 1, cursor: 'pointer', '&:hover': { bgcolor: 'action.hover' } }}
               >
                 <Typography variant="body2" sx={{ fontWeight: 600 }}>{r.name}</Typography>
