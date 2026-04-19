@@ -98,7 +98,7 @@ export function ScheduledVisitDetailDialog({ visit, petId, vets, onClose }: Prop
       <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1.5 }}>
         <Divider />
 
-        <Typography variant="subtitle2" color="text.secondary">
+        <Typography sx={{ fontWeight: 800, fontSize: '0.6875rem', color: 'text.disabled', letterSpacing: '2px', textTransform: 'uppercase', mb: 0 }}>
           Repeating reminder
         </Typography>
 
@@ -118,7 +118,9 @@ export function ScheduledVisitDetailDialog({ visit, petId, vets, onClose }: Prop
 
         {markingDone ? (
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-            <Typography variant="subtitle2">Add visit notes (optional)</Typography>
+            <Typography sx={{ fontWeight: 800, fontSize: '0.6875rem', color: 'text.disabled', letterSpacing: '2px', textTransform: 'uppercase' }}>
+              Visit notes (optional)
+            </Typography>
             <TextField
               label="Notes"
               multiline

@@ -130,9 +130,12 @@ export function PlacesSyncDialog({ vet, open, onClose, onSynced }: PlacesSyncDia
                 tabIndex={0}
                 onClick={() => handlePick(r.placeId)}
                 onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && handlePick(r.placeId)}
-                sx={{ px: 1.5, py: 1, borderRadius: 1, cursor: 'pointer', '&:hover': { bgcolor: 'action.hover' } }}
+                sx={{
+                  cursor: 'pointer', p: 1.5, borderRadius: 1.5,
+                  '&:hover': { bgcolor: 'background.default' },
+                }}
               >
-                <Typography variant="body2" sx={{ fontWeight: 600 }}>{r.name}</Typography>
+                <Typography variant="body2" sx={{ fontWeight: 800, color: 'primary.main' }}>{r.name}</Typography>
                 <Typography variant="caption" color="text.secondary">{r.address}</Typography>
               </Box>
             ))}

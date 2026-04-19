@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import {
-  Box, Button, Checkbox, CircularProgress, Dialog, DialogActions, DialogContent,
-  DialogTitle, FormControlLabel, MenuItem, Switch, Tab, Tabs, TextField,
+  Box, Button, Checkbox, Chip, CircularProgress, Dialog, DialogActions, DialogContent,
+  DialogTitle, FormControlLabel, MenuItem, Switch, Tab, Tabs, TextField, Typography,
 } from '@mui/material';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { Medication, ReminderScheduleProps } from '../types';
@@ -106,7 +106,14 @@ export function MedicationDetailDialog({ med, petId, onClose }: Props) {
 
   return (
     <Dialog open onClose={onClose} fullWidth maxWidth="sm">
-      <DialogTitle sx={{ pb: 0 }}>{med.name}</DialogTitle>
+      <DialogTitle sx={{ pb: 0, display: 'flex', alignItems: 'center', gap: 1.5 }}>
+        {med.name}
+        {active ? (
+          <Chip label="Active" size="small" sx={{ fontWeight: 800, borderRadius: 5, fontSize: '0.6875rem', bgcolor: '#34d39922', color: '#059669' }} />
+        ) : (
+          <Chip label="Inactive" size="small" sx={{ fontWeight: 800, borderRadius: 5, fontSize: '0.6875rem', bgcolor: '#f3f4f6', color: 'text.disabled' }} />
+        )}
+      </DialogTitle>
 
       <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ px: 3 }}>
         <Tab value="details" label="Details" />
@@ -116,6 +123,9 @@ export function MedicationDetailDialog({ med, petId, onClose }: Props) {
       <DialogContent sx={{ pt: 2 }}>
         {tab === 'details' && (
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <Typography sx={{ fontWeight: 800, fontSize: '0.6875rem', color: 'text.disabled', letterSpacing: '2px', textTransform: 'uppercase', mb: -0.5 }}>
+              Medication Details
+            </Typography>
             <TextField
               label="Medication name"
               value={form.name}

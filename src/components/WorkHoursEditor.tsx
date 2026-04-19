@@ -48,7 +48,7 @@ export function WorkHoursEditor({ value, onChange }: Props) {
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-      <Typography variant="caption" color="text.secondary" sx={{ mb: 0.5 }}>
+      <Typography sx={{ fontWeight: 800, fontSize: '0.6875rem', color: 'text.disabled', letterSpacing: '2px', textTransform: 'uppercase', mb: 0.5 }}>
         Working Hours
       </Typography>
       {DAYS.map(({ key, label }) => {
@@ -61,6 +61,7 @@ export function WorkHoursEditor({ value, onChange }: Props) {
               control={
                 <Checkbox
                   size="small"
+                  color="primary"
                   checked={isOpen}
                   onChange={() => toggleOpen(key, !isOpen)}
                 />

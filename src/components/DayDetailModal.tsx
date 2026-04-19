@@ -89,7 +89,7 @@ export function DayDetailModal({ date, events, petNames, petColors, pets, vets, 
 
         {vetVisits.length > 0 && (
           <Box sx={{ mb: 1.5 }}>
-            <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+            <Typography variant="caption" sx={{ fontWeight: 800, fontSize: '0.6875rem', color: 'text.disabled', letterSpacing: '2px', textTransform: 'uppercase', mb: 1 }}>
               Vet Visits
             </Typography>
             <Box sx={{ mt: 0.75, display: 'flex', flexDirection: 'column', gap: 0.75 }}>
@@ -106,15 +106,28 @@ export function DayDetailModal({ date, events, petNames, petColors, pets, vets, 
                     <Typography variant="body2" sx={{ fontWeight: 700, flex: 1 }}>
                       {petNames[v.petId] ?? 'Pet'}
                     </Typography>
-                    <Chip
-                      label={v.type === 'scheduled' ? 'Scheduled' : 'Past'}
-                      size="small"
-                      sx={{
-                        bgcolor: v.type === 'scheduled' ? '#457b9d' : '#9e9e9e',
-                        color: '#fff', height: 18, fontSize: '0.62rem',
-                        '& .MuiChip-label': { px: 0.75 },
-                      }}
-                    />
+                    {v.type === 'scheduled' ? (
+                      <Chip
+                        label="Scheduled"
+                        size="small"
+                        sx={{
+                          fontWeight: 800, borderRadius: 5, fontSize: '0.6875rem',
+                          bgcolor: (t) => t.palette.mode === 'dark' ? '#3d3580' : '#ede9fe',
+                          color: 'primary.main',
+                          border: '1px solid',
+                          borderColor: (t) => t.palette.mode === 'dark' ? '#5a5478' : '#d4d0f8',
+                        }}
+                      />
+                    ) : (
+                      <Chip
+                        label="Logged"
+                        size="small"
+                        sx={{
+                          fontWeight: 800, borderRadius: 5, fontSize: '0.6875rem',
+                          bgcolor: '#34d39922', color: '#059669',
+                        }}
+                      />
+                    )}
                   </Box>
                   {v.reason && (
                     <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>{v.reason}</Typography>
@@ -137,7 +150,7 @@ export function DayDetailModal({ date, events, petNames, petColors, pets, vets, 
 
         {medications.length > 0 && (
           <Box>
-            <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+            <Typography variant="caption" sx={{ fontWeight: 800, fontSize: '0.6875rem', color: 'text.disabled', letterSpacing: '2px', textTransform: 'uppercase', mb: 1 }}>
               Medications
             </Typography>
             <Box sx={{ mt: 0.75, display: 'flex', flexDirection: 'column', gap: 0.75 }}>
@@ -175,7 +188,7 @@ export function DayDetailModal({ date, events, petNames, petColors, pets, vets, 
             <Divider sx={{ my: 1.25 }} />
 
             <Box>
-              <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+              <Typography variant="caption" sx={{ fontWeight: 800, fontSize: '0.6875rem', color: 'text.disabled', letterSpacing: '2px', textTransform: 'uppercase', mb: 1 }}>
                 Schedule vet visit
               </Typography>
 
@@ -184,23 +197,16 @@ export function DayDetailModal({ date, events, petNames, petColors, pets, vets, 
                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75, mb: 1 }}>
                   {pets.map((pet) => {
                     const selected = selectedPetId === pet.id;
-                    const color = petColors[pet.id] ?? '#888';
                     return (
                       <Chip
                         key={pet.id}
                         label={pet.name}
                         size="small"
                         onClick={() => setSelectedPetId(selected ? null : pet.id)}
-                        sx={{
-                          bgcolor: selected ? color : 'transparent',
-                          color: selected ? '#fff' : color,
-                          border: `1px solid ${color}`,
-                          fontWeight: 600,
-                          fontSize: '0.7rem',
-                          height: 22,
-                          '& .MuiChip-label': { px: 0.75 },
-                          '&:hover': { bgcolor: selected ? color : `${color}22` },
-                        }}
+                        sx={selected
+                          ? { fontWeight: 800, bgcolor: 'primary.main', color: 'white' }
+                          : { fontWeight: 800, bgcolor: 'background.default', color: 'text.secondary' }
+                        }
                       />
                     );
                   })}
