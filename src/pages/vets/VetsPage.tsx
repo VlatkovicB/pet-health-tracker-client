@@ -1,13 +1,12 @@
 // pet-health-tracker-client/src/pages/vets/VetsPage.tsx
 import { useEffect, useState } from 'react';
 import {
-  Alert, Box, Button, Card, CardContent, Chip, Container,
+  Alert, Box, Button, Card, CardContent,
   Dialog, DialogActions, DialogContent, DialogTitle,
-  Grid, IconButton, Skeleton, TextField, Tooltip, Typography,
+  Grid, Skeleton, TextField, Typography,
 } from '@mui/material';
 import {
-  Add, AccessTime, Edit, ExpandMore, LocationOn, Map,
-  MedicalServices, Phone, Star, Sync, TravelExplore,
+  Add, Map, MedicalServices,
 } from '@mui/icons-material';
 import { useMutation, useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import { vetsApi } from '../../api/vets';
@@ -53,6 +52,9 @@ export function VetsPage() {
 
   // Sync vet state
   const [syncVet, setSyncVet] = useState<Vet | null>(null);
+
+  // Search filter state
+  const [search, setSearch] = useState('');
 
   useEffect(() => {
     if (editVet) {
@@ -136,6 +138,8 @@ export function VetsPage() {
 
   const vets = data?.pages.flatMap((p) => p.items) ?? [];
 
+  const filteredVets = vets.filter((v) => v.name.toLowerCase().includes(search.toLowerCase()));
+
   const sentinelRef = useInfiniteScroll(
     () => { if (hasNextPage && !isFetchingNextPage) fetchNextPage(); },
     hasNextPage,
@@ -185,163 +189,118 @@ export function VetsPage() {
     setExpandedVetId((prev) => (prev === id ? null : id));
 
   return (
-    <Container maxWidth="md" sx={{ mt: 4, px: { xs: 2, sm: 3 } }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h5">Vets</Typography>
-        <Button variant="contained" startIcon={<Add />} onClick={() => setOpen(true)}>
-          Add Vet
-        </Button>
+    <Box>
+      {/* Page header */}
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2, px: { xs: 2, md: 3 }, pt: 2.5 }}>
+        <Box>
+          <Typography sx={{ fontWeight: 900, fontSize: '1.5rem', color: 'text.primary', letterSpacing: '-0.8px' }}>Vets</Typography>
+          <Typography sx={{ fontWeight: 600, fontSize: '0.8125rem', color: 'text.secondary', mt: 0.25 }}>Your trusted veterinarians</Typography>
+        </Box>
+        <Button variant="contained" startIcon={<Add />} onClick={() => setOpen(true)} size="small">Add Vet</Button>
+      </Box>
+
+      {/* Search bar */}
+      <Box sx={{ px: { xs: 2, md: 3 }, mb: 2 }}>
+        <TextField
+          placeholder="Search vets…"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          size="small"
+          fullWidth
+          sx={{ maxWidth: { md: 320 } }}
+        />
       </Box>
 
       {listError && (
-        <Alert severity="error" sx={{ mb: 2 }}>{getApiError(listErrorObj)}</Alert>
+        <Box sx={{ px: { xs: 2, md: 3 }, mb: 2 }}>
+          <Alert severity="error">{getApiError(listErrorObj)}</Alert>
+        </Box>
       )}
 
       {isLoading ? (
-        <Grid container spacing={2}>
-          {[1, 2].map((i) => (
-            <Grid size={{ xs: 12 }} key={i}>
-              <Skeleton variant="rectangular" height={72} sx={{ borderRadius: 2 }} />
-            </Grid>
-          ))}
-        </Grid>
-      ) : vets.length === 0 ? (
-        <Card elevation={1}>
-          <CardContent sx={{ textAlign: 'center', py: 5 }}>
-            <MedicalServices sx={{ fontSize: 32, color: 'primary.main', mb: 1, opacity: 0.5 }} />
-            <Typography variant="subtitle2" color="text.secondary">No vets added yet</Typography>
-            <Typography variant="body2" color="text.disabled" sx={{ mt: 0.5 }}>
-              Add a vet to link them to visits and get reminders
-            </Typography>
-          </CardContent>
-        </Card>
-      ) : (
-        <Grid container spacing={2}>
-          {vets.map((vet) => {
-            const expanded = expandedVetId === vet.id;
-            return (
-              <Grid size={{ xs: 12 }} key={vet.id}>
-                <Card
-                  elevation={1}
-                  sx={{ cursor: 'pointer', '&:hover': { boxShadow: 3 } }}
-                  onClick={() => toggleExpand(vet.id)}
-                >
-                  <CardContent sx={{ pb: '16px !important' }}>
-                    {/* Collapsed header */}
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                      <Box sx={{
-                        width: 40, height: 40, borderRadius: 2, flexShrink: 0,
-                        bgcolor: 'rgba(42,157,143,0.1)',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      }}>
-                        <MedicalServices sx={{ color: 'primary.main', fontSize: 20 }} />
-                      </Box>
-                      <Box sx={{ flex: 1, minWidth: 0 }}>
-                        <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>{vet.name}</Typography>
-                        {vet.notes && (
-                          <Typography variant="body2" color="text.secondary" noWrap>{vet.notes}</Typography>
-                        )}
-                      </Box>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flexShrink: 0 }}>
-                        {vet.phone && (
-                          <Chip
-                            icon={<Phone sx={{ fontSize: '14px !important' }} />}
-                            label={vet.phone}
-                            size="small"
-                            variant="outlined"
-                            onClick={(e) => e.stopPropagation()}
-                          />
-                        )}
-                        {vet.rating != null && (
-                          <Chip
-                            icon={<Star sx={{ fontSize: '14px !important', color: 'warning.main !important' }} />}
-                            label={vet.rating.toFixed(1)}
-                            size="small"
-                            variant="outlined"
-                            onClick={(e) => e.stopPropagation()}
-                          />
-                        )}
-                        <ExpandMore sx={{
-                          color: 'text.secondary',
-                          transform: expanded ? 'rotate(180deg)' : 'none',
-                          transition: 'transform 0.2s',
-                          fontSize: 20,
-                        }} />
-                      </Box>
-                    </Box>
-
-                    {/* Expanded detail */}
-                    {expanded && (
-                      <Box sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-                        {vet.address && (
-                          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
-                            <LocationOn sx={{ fontSize: 16, color: 'text.secondary', mt: 0.25, flexShrink: 0 }} />
-                            <Typography variant="body2" color="text.secondary">{vet.address}</Typography>
-                          </Box>
-                        )}
-
-                        {vet.workHours && vet.workHours.length > 0 ? (
-                          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
-                            <AccessTime sx={{ fontSize: 16, color: 'text.secondary', mt: 0.25, flexShrink: 0 }} />
-                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.25 }}>
-                              {vet.workHours.map((wh) => (
-                                <Box key={wh.dayOfWeek} sx={{ display: 'flex', gap: 1.5 }}>
-                                  <Typography variant="caption" sx={{ width: 28, color: 'text.secondary', flexShrink: 0 }}>
-                                    {wh.dayOfWeek.charAt(0) + wh.dayOfWeek.slice(1, 3).toLowerCase()}
-                                  </Typography>
-                                  <Typography variant="caption" color={wh.open ? 'text.primary' : 'text.disabled'}>
-                                    {wh.open ? `${wh.startTime}–${wh.endTime}` : 'Closed'}
-                                  </Typography>
-                                </Box>
-                              ))}
-                            </Box>
-                          </Box>
-                        ) : (
-                          <Typography variant="caption" color="text.disabled">No hours set</Typography>
-                        )}
-
-                        <Box sx={{ display: 'flex', gap: 1, mt: 0.5, alignItems: 'center' }}>
-                          {vet.googleMapsUrl && (
-                            <Button
-                              size="small"
-                              startIcon={<Map />}
-                              href={vet.googleMapsUrl}
-                              target="_blank"
-                              rel="noopener"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              Maps
-                            </Button>
-                          )}
-                          <Button
-                            size="small"
-                            startIcon={<Edit />}
-                            onClick={(e) => { e.stopPropagation(); setEditVet(vet); }}
-                          >
-                            Edit
-                          </Button>
-                          <Tooltip title={vet.placeId ? 'Refresh from Google Places' : 'Find on Google Places'}>
-                            <IconButton
-                              size="small"
-                              onClick={(e) => { e.stopPropagation(); setSyncVet(vet); }}
-                            >
-                              {vet.placeId ? <Sync fontSize="small" /> : <TravelExplore fontSize="small" />}
-                            </IconButton>
-                          </Tooltip>
-                        </Box>
-                      </Box>
-                    )}
-                  </CardContent>
-                </Card>
+        <Box sx={{ px: { xs: 2, md: 3 } }}>
+          <Grid container spacing={2}>
+            {[1, 2].map((i) => (
+              <Grid size={{ xs: 12 }} key={i}>
+                <Skeleton variant="rectangular" height={72} sx={{ borderRadius: 2 }} />
               </Grid>
+            ))}
+          </Grid>
+        </Box>
+      ) : vets.length === 0 ? (
+        <Box sx={{ px: { xs: 2, md: 3 } }}>
+          <Card elevation={1}>
+            <CardContent sx={{ textAlign: 'center', py: 5 }}>
+              <MedicalServices sx={{ fontSize: 32, color: 'primary.main', mb: 1, opacity: 0.5 }} />
+              <Typography variant="subtitle2" color="text.secondary">No vets added yet</Typography>
+              <Typography variant="body2" color="text.disabled" sx={{ mt: 0.5 }}>
+                Add a vet to link them to visits and get reminders
+              </Typography>
+            </CardContent>
+          </Card>
+        </Box>
+      ) : (
+        <Box sx={{ px: { xs: 2, md: 3 }, pb: 4 }}>
+          {filteredVets.map((vet) => {
+            const isExpanded = expandedVetId === vet.id;
+
+            return (
+              <Box
+                key={vet.id}
+                sx={{
+                  bgcolor: 'background.paper', borderRadius: 2,
+                  boxShadow: (t) => t.palette.mode === 'dark'
+                    ? '0 2px 12px rgba(0,0,0,0.25)'
+                    : '0 2px 12px rgba(108,99,255,0.08)',
+                  mb: 1.5, overflow: 'hidden',
+                }}
+              >
+                {/* Card header (always visible) */}
+                <Box sx={{ p: 1.75, cursor: 'pointer' }} onClick={() => toggleExpand(vet.id)}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                      <Typography sx={{ fontWeight: 800, fontSize: '0.9375rem', color: 'text.primary' }}>{vet.name}</Typography>
+                      {vet.phone && <Typography sx={{ fontWeight: 600, fontSize: '0.75rem', color: 'text.secondary', mt: 0.25 }}>{vet.phone}</Typography>}
+                      {vet.rating != null && (
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5 }}>
+                          <Typography sx={{ color: '#fbbf24', fontSize: '0.75rem' }}>{'★'.repeat(Math.round(vet.rating))}</Typography>
+                          <Typography sx={{ fontWeight: 600, fontSize: '0.6875rem', color: 'text.secondary' }}>{vet.rating.toFixed(1)}</Typography>
+                        </Box>
+                      )}
+                    </Box>
+                  </Box>
+                </Box>
+
+                {/* Expanded actions */}
+                {isExpanded && (
+                  <Box sx={{ px: 1.75, pb: 1.75, display: 'flex', gap: 0.75, flexWrap: 'wrap' }}>
+                    <Box
+                      onClick={() => setEditVet(vet)}
+                      sx={{ bgcolor: (t) => t.palette.mode === 'dark' ? '#3d3580' : '#ede9fe', color: 'primary.main', fontSize: '0.75rem', fontWeight: 800, px: 1.25, py: 0.5, borderRadius: 1, cursor: 'pointer' }}
+                    >Edit</Box>
+                    {vet.googleMapsUrl && (
+                      <Box
+                        component="a" href={vet.googleMapsUrl} target="_blank" rel="noreferrer"
+                        sx={{ bgcolor: (t) => t.palette.mode === 'dark' ? '#3d3580' : '#ede9fe', color: 'primary.main', fontSize: '0.75rem', fontWeight: 800, px: 1.25, py: 0.5, borderRadius: 1, textDecoration: 'none' }}
+                      >🗺 Maps</Box>
+                    )}
+                    {vet.placeId && (
+                      <Box
+                        onClick={() => setSyncVet(vet)}
+                        sx={{ bgcolor: (t) => t.palette.mode === 'dark' ? '#3d3580' : '#ede9fe', color: 'primary.main', fontSize: '0.75rem', fontWeight: 800, px: 1.25, py: 0.5, borderRadius: 1, cursor: 'pointer' }}
+                      >Sync</Box>
+                    )}
+                  </Box>
+                )}
+              </Box>
             );
           })}
-        </Grid>
+        </Box>
       )}
 
       <div ref={sentinelRef} />
       {isFetchingNextPage && (
-        <Box sx={{ mt: 2 }}>
+        <Box sx={{ px: { xs: 2, md: 3 }, mt: 2 }}>
           <Skeleton variant="rectangular" height={72} sx={{ borderRadius: 2 }} />
         </Box>
       )}
@@ -459,6 +418,6 @@ export function VetsPage() {
           }}
         />
       )}
-    </Container>
+    </Box>
   );
 }
