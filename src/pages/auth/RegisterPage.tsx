@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Box, Button, TextField, Typography, Alert, Paper, Divider } from '@mui/material';
-import { Pets } from '@mui/icons-material';
+import { Box, Button, TextField, Typography, Alert } from '@mui/material';
 import { useMutation } from '@tanstack/react-query';
 import { authApi } from '../../api/auth';
 import { useAuth } from '../../context/AuthContext';
@@ -9,16 +8,13 @@ import { useAuth } from '../../context/AuthContext';
 export function RegisterPage() {
   const navigate = useNavigate();
   const { login } = useAuth();
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
+  const [name,     setName]     = useState('');
+  const [email,    setEmail]    = useState('');
   const [password, setPassword] = useState('');
 
   const mutation = useMutation({
     mutationFn: authApi.register,
-    onSuccess: ({ token }) => {
-      login(token);
-      navigate('/');
-    },
+    onSuccess: ({ token }) => { login(token); navigate('/'); },
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -29,103 +25,64 @@ export function RegisterPage() {
   return (
     <Box
       sx={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        bgcolor: 'background.default',
-        p: 2,
+        minHeight: '100vh', display: 'flex', alignItems: 'center',
+        justifyContent: 'center', bgcolor: 'background.default', p: 2,
       }}
     >
-      <Paper
-        elevation={2}
-        sx={{
-          px: { xs: 3, sm: 4 },
-          py: 4.5,
-          width: '100%',
-          maxWidth: 400,
-          borderRadius: 3,
-        }}
-      >
-        {/* Logo */}
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25, mb: 3.5 }}>
-          <Box
-            sx={{
-              width: 40, height: 40, borderRadius: 2,
-              bgcolor: 'primary.main',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              boxShadow: '0 2px 8px rgba(42,157,143,0.3)',
-            }}
-          >
-            <Pets sx={{ color: '#fff', fontSize: 21 }} />
-          </Box>
-          <Typography variant="h6" sx={{ fontWeight: 700, letterSpacing: '-0.3px' }} color="text.primary">
-            Pet Health
+      <Box component="form" onSubmit={handleSubmit} sx={{ width: '100%', maxWidth: 400, display: 'flex', flexDirection: 'column', gap: 3 }}>
+        <Box>
+          <Typography sx={{ fontWeight: 900, fontSize: '1.5rem', color: 'text.primary', letterSpacing: '-0.8px' }}>
+            Create account
+          </Typography>
+          <Typography sx={{ fontWeight: 600, fontSize: '0.875rem', color: 'text.secondary', mt: 0.5 }}>
+            Join PetPal today
           </Typography>
         </Box>
 
-        <Typography variant="h5" sx={{ fontWeight: 700 }} color="text.primary" gutterBottom>
-          Create account
-        </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-          Start tracking your pets' health for free
-        </Typography>
+        <Box
+          sx={{
+            background: (t) => t.palette.mode === 'dark'
+              ? 'linear-gradient(135deg, rgba(108,99,255,0.12), rgba(167,139,250,0.08))'
+              : 'linear-gradient(135deg, rgba(108,99,255,0.06), rgba(167,139,250,0.04))',
+            borderRadius: 3, p: 3, display: 'flex', flexDirection: 'column', gap: 2,
+          }}
+        >
+          {mutation.isError && (
+            <Alert severity="error">Registration failed. Please try again.</Alert>
+          )}
 
-        {mutation.isError && (
-          <Alert severity="error" sx={{ mb: 2.5 }}>
-            Registration failed. Please try again.
-          </Alert>
-        )}
+          {[
+            { label: 'Name',     value: name,     setter: setName,     type: 'text',     ac: 'name' },
+            { label: 'Email',    value: email,    setter: setEmail,    type: 'email',    ac: 'email' },
+            { label: 'Password', value: password, setter: setPassword, type: 'password', ac: 'new-password' },
+          ].map(({ label, value, setter, type, ac }) => (
+            <Box key={label}>
+              <Typography sx={{ fontWeight: 800, fontSize: '0.6875rem', color: 'primary.main', letterSpacing: '1.5px', textTransform: 'uppercase', mb: 0.75 }}>
+                {label}
+              </Typography>
+              <TextField
+                type={type} value={value} onChange={(e) => setter(e.target.value)}
+                required fullWidth autoComplete={ac} size="small"
+              />
+            </Box>
+          ))}
 
-        <Box component="form" onSubmit={handleSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-          <TextField
-            label="Full name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            required
-            fullWidth
-            autoComplete="name"
-            autoFocus
-          />
-          <TextField
-            label="Email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            fullWidth
-            autoComplete="email"
-          />
-          <TextField
-            label="Password"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            fullWidth
-            autoComplete="new-password"
-          />
           <Button
-            type="submit"
-            variant="contained"
+            type="submit" variant="contained" fullWidth size="large"
             loading={mutation.isPending}
-            fullWidth
-            size="large"
-            sx={{ mt: 0.5, py: 1.3 }}
+            sx={{ mt: 0.5, py: 1.25, fontSize: '0.9375rem' }}
           >
-            Create account
+            Create Account
           </Button>
         </Box>
 
-        <Divider sx={{ my: 3 }} />
-
-        <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center' }}>
+        <Typography sx={{ textAlign: 'center', fontWeight: 600, fontSize: '0.875rem', color: 'text.secondary' }}>
           Already have an account?{' '}
-          <Link to="/login" style={{ color: '#2a9d8f', textDecoration: 'none', fontWeight: 600 }}>
+          <Link to="/login" style={{ color: '#6c63ff', textDecoration: 'none', fontWeight: 800 }}>
             Sign in
           </Link>
         </Typography>
-      </Paper>
+      </Box>
     </Box>
   );
 }
