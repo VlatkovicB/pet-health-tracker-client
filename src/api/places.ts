@@ -1,4 +1,5 @@
 import { apiClient } from './client';
+import type { VetWorkHours } from '../types';
 
 export interface PlaceSearchResult {
   placeId: string;
@@ -10,7 +11,7 @@ export interface PlaceDetails {
   name: string;
   address: string;
   phone?: string;
-  workHours?: string;
+  workHours?: VetWorkHours[];
   rating?: number;
   googleMapsUrl?: string;
 }

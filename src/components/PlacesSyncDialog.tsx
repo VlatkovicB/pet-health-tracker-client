@@ -40,7 +40,7 @@ export function PlacesSyncDialog({ vet, open, onClose, onSynced }: PlacesSyncDia
         googleMapsUrl: details.googleMapsUrl || vet.googleMapsUrl,
         rating: details.rating ?? vet.rating,
         placeId: id,
-        workHours: vet.workHours,
+        workHours: details.workHours ?? vet.workHours,
         notes: vet.notes,
       });
       onSynced();
