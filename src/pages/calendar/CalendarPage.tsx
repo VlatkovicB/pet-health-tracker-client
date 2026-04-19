@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Box, Container, Typography } from '@mui/material';
+import { Box, Typography, useTheme, useMediaQuery } from '@mui/material';
 import { useQuery, useQueries, useQueryClient } from '@tanstack/react-query';
 import { format, startOfMonth, endOfMonth, addMonths, subMonths } from 'date-fns';
 import { petsApi } from '../../api/pets';
@@ -8,6 +8,7 @@ import { medicationsApi } from '../../api/medications';
 import { remindersApi } from '../../api/reminders';
 import { vetsApi } from '../../api/vets';
 import { MonthCalendar } from './MonthCalendar';
+import { MobileCalendarView } from './MobileCalendarView';
 import { PetFilterChips } from './PetFilterChips';
 import { DayDetailModal } from '../../components/DayDetailModal';
 import { PET_COLOR_PALETTE } from '../../utils/color';
@@ -68,6 +69,8 @@ export function CalendarPage() {
   const [selectedDay, setSelectedDay] = useState<{ date: Date; events: CalendarEvent[] } | null>(null);
 
   const queryClient = useQueryClient();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
   const monthKey = format(currentMonth, 'yyyy-MM');
   const monthStart = startOfMonth(currentMonth);
@@ -146,40 +149,63 @@ export function CalendarPage() {
   );
 
   return (
-    <Container maxWidth="md" sx={{ pt: 1, px: { xs: 1, sm: 2 } }}>
-      <PetFilterChips
-        pets={pets}
-        petColors={petColors}
-        selectedPetId={selectedPetId}
-        onChange={setSelectedPetId}
-      />
+    <Box sx={{
+      display: 'flex',
+      flexDirection: 'column',
+      height: { xs: 'calc(100vh - 56px)', md: '100vh' },
+      overflow: 'hidden',
+      px: { xs: 1, sm: 2 },
+      pt: 1,
+    }}>
+      {isMobile ? (
+        <MobileCalendarView
+          events={visibleEvents}
+          petColors={petColors}
+          petNames={petNames}
+          pets={pets}
+          selectedPetId={selectedPetId}
+          onPetChange={setSelectedPetId}
+          loading={loading}
+          error={error}
+          onDayClick={(date, evts) => setSelectedDay({ date, events: evts })}
+        />
+      ) : (
+        <>
+          <PetFilterChips
+            pets={pets}
+            petColors={petColors}
+            selectedPetId={selectedPetId}
+            onChange={setSelectedPetId}
+          />
 
-      {/* Page header */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', px: { xs: 2, md: 3 }, pt: 2.5, pb: 1 }}>
-        <Typography sx={{ fontWeight: 900, fontSize: { xs: '1.25rem', md: '1.5rem' }, color: 'text.primary', letterSpacing: '-0.8px' }}>
-          {format(currentMonth, 'MMMM yyyy')}
-        </Typography>
-        <Box sx={{ display: 'flex', gap: 0.75 }}>
-          <Box
-            onClick={() => { setCurrentMonth((m) => subMonths(m, 1)); setSelectedDay(null); }}
-            sx={{ width: 32, height: 32, borderRadius: 1.5, bgcolor: 'background.paper', border: '1.5px solid', borderColor: 'divider', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'primary.main', fontWeight: 900, fontSize: '1rem', userSelect: 'none', '&:hover': { bgcolor: (t) => t.palette.mode === 'dark' ? '#3d3580' : '#ede9fe' } }}
-          >‹</Box>
-          <Box
-            onClick={() => { setCurrentMonth((m) => addMonths(m, 1)); setSelectedDay(null); }}
-            sx={{ width: 32, height: 32, borderRadius: 1.5, bgcolor: 'background.paper', border: '1.5px solid', borderColor: 'divider', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'primary.main', fontWeight: 900, fontSize: '1rem', userSelect: 'none', '&:hover': { bgcolor: (t) => t.palette.mode === 'dark' ? '#3d3580' : '#ede9fe' } }}
-          >›</Box>
-        </Box>
-      </Box>
+          {/* Page header */}
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', px: { xs: 2, md: 3 }, pt: 2.5, pb: 1, flexShrink: 0 }}>
+            <Typography sx={{ fontWeight: 900, fontSize: { xs: '1.25rem', md: '1.5rem' }, color: 'text.primary', letterSpacing: '-0.8px' }}>
+              {format(currentMonth, 'MMMM yyyy')}
+            </Typography>
+            <Box sx={{ display: 'flex', gap: 0.75 }}>
+              <Box
+                onClick={() => { setCurrentMonth((m) => subMonths(m, 1)); setSelectedDay(null); }}
+                sx={{ width: 32, height: 32, borderRadius: 1.5, bgcolor: 'background.paper', border: '1.5px solid', borderColor: 'divider', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'primary.main', fontWeight: 900, fontSize: '1rem', userSelect: 'none', '&:hover': { bgcolor: (t) => t.palette.mode === 'dark' ? '#3d3580' : '#ede9fe' } }}
+              >‹</Box>
+              <Box
+                onClick={() => { setCurrentMonth((m) => addMonths(m, 1)); setSelectedDay(null); }}
+                sx={{ width: 32, height: 32, borderRadius: 1.5, bgcolor: 'background.paper', border: '1.5px solid', borderColor: 'divider', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'primary.main', fontWeight: 900, fontSize: '1rem', userSelect: 'none', '&:hover': { bgcolor: (t) => t.palette.mode === 'dark' ? '#3d3580' : '#ede9fe' } }}
+              >›</Box>
+            </Box>
+          </Box>
 
-      <MonthCalendar
-        month={currentMonth}
-        events={visibleEvents}
-        petColors={petColors}
-        petNames={petNames}
-        loading={loading}
-        error={error}
-        onDayClick={(date, events) => setSelectedDay({ date, events })}
-      />
+          <MonthCalendar
+            month={currentMonth}
+            events={visibleEvents}
+            petColors={petColors}
+            petNames={petNames}
+            loading={loading}
+            error={error}
+            onDayClick={(date, evts) => setSelectedDay({ date, events: evts })}
+          />
+        </>
+      )}
 
       <DayDetailModal
         date={selectedDay?.date ?? null}
@@ -194,6 +220,6 @@ export function CalendarPage() {
           setSelectedDay(null);
         }}
       />
-    </Container>
+    </Box>
   );
 }
