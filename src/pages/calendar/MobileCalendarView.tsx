@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Box, Typography, useTheme } from '@mui/material';
 import {
   format, startOfToday, startOfWeek, addDays, isToday, isSameDay,
@@ -46,7 +46,11 @@ export function MobileCalendarView({
   );
 
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
-  const isCurrentWeek = weekStart.getTime() === startOfWeek(startOfToday(), { weekStartsOn: 1 }).getTime();
+  const currentWeekStart = useMemo(
+    () => startOfWeek(startOfToday(), { weekStartsOn: 1 }),
+    []
+  );
+  const isCurrentWeek = weekStart.getTime() === currentWeekStart.getTime();
   const dayEvents = getEventsForDay(selectedDay, events);
   const sortedEvents = sortEvents(dayEvents);
 
@@ -63,7 +67,7 @@ export function MobileCalendarView({
             sx={{ width: 30, height: 30, borderRadius: 1.5, bgcolor: 'background.paper', border: '1.5px solid', borderColor: 'divider', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'primary.main', fontWeight: 900, fontSize: '1rem', userSelect: 'none', '&:hover': { bgcolor: isDark ? '#3d3580' : '#ede9fe' } }}
           >‹</Box>
           <Box
-            onClick={() => { if (!isCurrentWeek) { const today = startOfToday(); setWeekStart(startOfWeek(today, { weekStartsOn: 1 })); setSelectedDay(today); } }}
+            onClick={() => { if (!isCurrentWeek) { setWeekStart(currentWeekStart); setSelectedDay(startOfToday()); } }}
             sx={{
               px: 1.25, height: 30, borderRadius: 1.5, bgcolor: 'background.paper',
               border: '1.5px solid', borderColor: 'divider',
