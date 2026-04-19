@@ -256,15 +256,15 @@ export function VetsPage() {
                 }}
               >
                 {/* Card header (always visible) */}
-                <Box sx={{ p: 1.75, cursor: 'pointer' }} onClick={() => toggleExpand(vet.id)}>
+                <Box sx={{ p: 2, cursor: 'pointer' }} onClick={() => toggleExpand(vet.id)}>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                     <Box sx={{ flex: 1, minWidth: 0 }}>
-                      <Typography sx={{ fontWeight: 800, fontSize: '0.9375rem', color: 'text.primary' }}>{vet.name}</Typography>
-                      {vet.phone && <Typography sx={{ fontWeight: 600, fontSize: '0.75rem', color: 'text.secondary', mt: 0.25 }}>{vet.phone}</Typography>}
+                      <Typography sx={{ fontWeight: 800, fontSize: '1rem', color: 'text.primary' }}>{vet.name}</Typography>
+                      {vet.phone && <Typography sx={{ fontWeight: 600, fontSize: '0.8125rem', color: 'text.secondary', mt: 0.375 }}>{vet.phone}</Typography>}
                       {vet.rating != null && (
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5 }}>
-                          <Typography sx={{ color: '#fbbf24', fontSize: '0.75rem' }}>{'★'.repeat(Math.round(vet.rating))}</Typography>
-                          <Typography sx={{ fontWeight: 600, fontSize: '0.6875rem', color: 'text.secondary' }}>{vet.rating.toFixed(1)}</Typography>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.625 }}>
+                          <Typography sx={{ color: '#fbbf24', fontSize: '0.875rem' }}>{'★'.repeat(Math.round(vet.rating))}</Typography>
+                          <Typography sx={{ fontWeight: 600, fontSize: '0.75rem', color: 'text.secondary' }}>{vet.rating.toFixed(1)}</Typography>
                         </Box>
                       )}
                     </Box>
@@ -273,21 +273,21 @@ export function VetsPage() {
 
                 {/* Expanded actions */}
                 {isExpanded && (
-                  <Box sx={{ px: 1.75, pb: 1.75, display: 'flex', gap: 0.75, flexWrap: 'wrap' }}>
+                  <Box sx={{ px: 2, pb: 2, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
                     <Box
                       onClick={() => setEditVet(vet)}
-                      sx={{ bgcolor: (t) => t.palette.mode === 'dark' ? '#3d3580' : '#ede9fe', color: 'primary.main', fontSize: '0.75rem', fontWeight: 800, px: 1.25, py: 0.5, borderRadius: 1, cursor: 'pointer' }}
+                      sx={{ bgcolor: (t) => t.palette.mode === 'dark' ? '#3d3580' : '#ede9fe', color: 'primary.main', fontSize: '0.8125rem', fontWeight: 800, px: 1.5, py: 0.625, borderRadius: 1.5, cursor: 'pointer' }}
                     >Edit</Box>
                     {vet.googleMapsUrl && (
                       <Box
                         component="a" href={vet.googleMapsUrl} target="_blank" rel="noreferrer"
-                        sx={{ bgcolor: (t) => t.palette.mode === 'dark' ? '#3d3580' : '#ede9fe', color: 'primary.main', fontSize: '0.75rem', fontWeight: 800, px: 1.25, py: 0.5, borderRadius: 1, textDecoration: 'none' }}
+                        sx={{ bgcolor: (t) => t.palette.mode === 'dark' ? '#3d3580' : '#ede9fe', color: 'primary.main', fontSize: '0.8125rem', fontWeight: 800, px: 1.5, py: 0.625, borderRadius: 1.5, textDecoration: 'none' }}
                       >🗺 Maps</Box>
                     )}
                     {vet.placeId && (
                       <Box
                         onClick={() => setSyncVet(vet)}
-                        sx={{ bgcolor: (t) => t.palette.mode === 'dark' ? '#3d3580' : '#ede9fe', color: 'primary.main', fontSize: '0.75rem', fontWeight: 800, px: 1.25, py: 0.5, borderRadius: 1, cursor: 'pointer' }}
+                        sx={{ bgcolor: (t) => t.palette.mode === 'dark' ? '#3d3580' : '#ede9fe', color: 'primary.main', fontSize: '0.8125rem', fontWeight: 800, px: 1.5, py: 0.625, borderRadius: 1.5, cursor: 'pointer' }}
                       >Sync</Box>
                     )}
                   </Box>

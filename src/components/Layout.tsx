@@ -74,10 +74,10 @@ function Sidebar() {
           key={item.path}
           onClick={() => navigate(item.path)}
           sx={{
-            display: 'flex', alignItems: 'center', gap: 1.25,
-            px: 1.5, py: 1.125,
+            display: 'flex', alignItems: 'center', gap: 1.5,
+            px: 1.5, py: 1.25,
             borderRadius: 1.5,
-            mb: 0.25,
+            mb: 0.5,
             cursor: 'pointer',
             bgcolor: activeIndex === i ? activeNav : 'transparent',
             color: activeIndex === i ? primaryMain : 'text.secondary',

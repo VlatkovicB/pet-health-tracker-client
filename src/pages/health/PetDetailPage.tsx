@@ -357,7 +357,7 @@ export function PetDetailPage() {
                             key={v.id}
                             onClick={() => isScheduled ? setScheduledVisit(v) : setDetailVisit(v)}
                             sx={{
-                              bgcolor: 'background.paper', borderRadius: 2, p: 1.75, mb: 1,
+                              bgcolor: 'background.paper', borderRadius: 2, p: 2, mb: 1.25,
                               boxShadow: isDark
                                 ? '0 2px 12px rgba(0,0,0,0.25)'
                                 : '0 2px 12px rgba(108,99,255,0.08)',
@@ -367,8 +367,8 @@ export function PetDetailPage() {
                             }}
                           >
                             <Box sx={{ flex: 1, minWidth: 0 }}>
-                              <Typography sx={{ fontWeight: 800, fontSize: '0.875rem', color: 'text.primary' }} noWrap>{v.reason}</Typography>
-                              <Typography sx={{ fontWeight: 600, fontSize: '0.75rem', color: 'text.secondary', mt: 0.25 }}>
+                              <Typography sx={{ fontWeight: 800, fontSize: '0.9375rem', color: 'text.primary' }} noWrap>{v.reason}</Typography>
+                              <Typography sx={{ fontWeight: 600, fontSize: '0.8125rem', color: 'text.secondary', mt: 0.375 }}>
                                 {fmtDate(v.visitDate)}{clinicLabel ? ` · ${clinicLabel}` : ''}
                               </Typography>
                             </Box>
@@ -377,7 +377,7 @@ export function PetDetailPage() {
                                 label={isScheduled ? 'Scheduled' : 'Logged'}
                                 size="small"
                                 sx={{
-                                  fontWeight: 800, borderRadius: 5, fontSize: '0.6875rem',
+                                  fontWeight: 800, borderRadius: 5, fontSize: '0.75rem',
                                   bgcolor: isScheduled
                                     ? (isDark ? '#3d3580' : '#ede9fe')
                                     : '#34d39922',
@@ -409,7 +409,7 @@ export function PetDetailPage() {
                   key={m.id}
                   onClick={() => setDetailMed(m)}
                   sx={{
-                    bgcolor: 'background.paper', borderRadius: 2, p: 1.75, mb: 1,
+                    bgcolor: 'background.paper', borderRadius: 2, p: 2, mb: 1.25,
                     boxShadow: isDark
                       ? '0 2px 12px rgba(0,0,0,0.25)'
                       : '0 2px 12px rgba(108,99,255,0.08)',
@@ -419,8 +419,8 @@ export function PetDetailPage() {
                   }}
                 >
                   <Box sx={{ flex: 1, minWidth: 0 }}>
-                    <Typography sx={{ fontWeight: 800, fontSize: '0.875rem', color: 'text.primary' }}>{m.name}</Typography>
-                    <Typography sx={{ fontWeight: 600, fontSize: '0.75rem', color: 'text.secondary', mt: 0.25 }}>
+                    <Typography sx={{ fontWeight: 800, fontSize: '0.9375rem', color: 'text.primary' }}>{m.name}</Typography>
+                    <Typography sx={{ fontWeight: 600, fontSize: '0.8125rem', color: 'text.secondary', mt: 0.375 }}>
                       {m.dosage.amount} {m.dosage.unit} · {m.frequency.label}
                     </Typography>
                   </Box>
@@ -429,7 +429,7 @@ export function PetDetailPage() {
                       label={m.active ? 'Active' : 'Inactive'}
                       size="small"
                       sx={{
-                        fontWeight: 800, borderRadius: 5, fontSize: '0.6875rem',
+                        fontWeight: 800, borderRadius: 5, fontSize: '0.75rem',
                         bgcolor: m.active ? '#34d39922' : (isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'),
                         color: m.active ? '#059669' : 'text.disabled',
                         border: 'none',

@@ -54,18 +54,18 @@ function StatusBadge({ pet, upcomingVisits }: { pet: Pet; upcomingVisits: VetVis
     const isUrgent = days <= 3;
     const label = days === 0 ? 'Today' : days === 1 ? 'Tomorrow' : `In ${days} days`;
     return (
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5 }}>
-        <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: isUrgent ? 'secondary.main' : 'primary.main', flexShrink: 0 }} />
-        <Typography sx={{ fontSize: '0.6875rem', fontWeight: 700, color: isUrgent ? 'secondary.main' : 'primary.main' }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mt: 0.625 }}>
+        <Box sx={{ width: 7, height: 7, borderRadius: '50%', bgcolor: isUrgent ? 'secondary.main' : 'primary.main', flexShrink: 0 }} />
+        <Typography sx={{ fontSize: '0.75rem', fontWeight: 700, color: isUrgent ? 'secondary.main' : 'primary.main' }}>
           {visit.reason} · {label}
         </Typography>
       </Box>
     );
   }
   return (
-    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5 }}>
-      <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: '#34d399', flexShrink: 0 }} />
-      <Typography sx={{ fontSize: '0.6875rem', fontWeight: 700, color: '#059669' }}>All clear</Typography>
+    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mt: 0.625 }}>
+      <Box sx={{ width: 7, height: 7, borderRadius: '50%', bgcolor: '#34d399', flexShrink: 0 }} />
+      <Typography sx={{ fontSize: '0.75rem', fontWeight: 700, color: '#059669' }}>All clear</Typography>
     </Box>
   );
 }
@@ -84,7 +84,7 @@ function PetCard({ pet, upcomingVisits }: { pet: Pet; upcomingVisits: VetVisit[]
       sx={{
         bgcolor: 'background.paper',
         borderRadius: 2,
-        p: 1.75,
+        p: 2,
         cursor: 'pointer',
         boxShadow: (t) => t.palette.mode === 'dark'
           ? '0 2px 12px rgba(0,0,0,0.25)'
@@ -98,11 +98,11 @@ function PetCard({ pet, upcomingVisits }: { pet: Pet; upcomingVisits: VetVisit[]
         },
       }}
     >
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
         {/* Avatar */}
         <Box
           sx={{
-            width: 48, height: 48, borderRadius: 1.75, flexShrink: 0,
+            width: 56, height: 56, borderRadius: 2, flexShrink: 0,
             bgcolor: pet.color ? `${pet.color}22` : avatarBg,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             overflow: 'hidden',
@@ -111,16 +111,16 @@ function PetCard({ pet, upcomingVisits }: { pet: Pet; upcomingVisits: VetVisit[]
           {pet.photoUrl ? (
             <img src={`${serverUrl}${pet.photoUrl}`} alt={pet.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           ) : (
-            <Pets sx={{ fontSize: 24, color: pet.color ?? (speciesKey === 'cat' ? '#6c63ff' : speciesKey === 'dog' ? '#fb7185' : '#34d399') }} />
+            <Pets sx={{ fontSize: 28, color: pet.color ?? (speciesKey === 'cat' ? '#6c63ff' : speciesKey === 'dog' ? '#fb7185' : '#34d399') }} />
           )}
         </Box>
 
         {/* Info */}
         <Box sx={{ flex: 1, minWidth: 0 }}>
-          <Typography sx={{ fontWeight: 800, fontSize: '0.9375rem', color: 'text.primary', letterSpacing: '-0.3px' }} noWrap>
+          <Typography sx={{ fontWeight: 800, fontSize: '1rem', color: 'text.primary', letterSpacing: '-0.3px' }} noWrap>
             {pet.name}
           </Typography>
-          <Typography sx={{ fontWeight: 600, fontSize: '0.6875rem', color: 'text.secondary' }} noWrap>
+          <Typography sx={{ fontWeight: 600, fontSize: '0.8125rem', color: 'text.secondary', mt: 0.125 }} noWrap>
             {pet.species}{age ? ` · ${age}` : ''}
           </Typography>
           <StatusBadge pet={pet} upcomingVisits={upcomingVisits} />
@@ -131,12 +131,12 @@ function PetCard({ pet, upcomingVisits }: { pet: Pet; upcomingVisits: VetVisit[]
           sx={{
             background: tagGradient,
             color: tagColor,
-            fontSize: '0.5625rem',
+            fontSize: '0.6875rem',
             fontWeight: 800,
-            px: 1,
-            py: 0.375,
+            px: 1.25,
+            py: 0.5,
             borderRadius: 5,
-            letterSpacing: '0.5px',
+            letterSpacing: '0.25px',
             flexShrink: 0,
             textTransform: 'uppercase',
           }}

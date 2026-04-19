@@ -96,8 +96,8 @@ export function MonthCalendar({ month, events, petColors, petNames, loading, err
                 key={dateKey}
                 onClick={() => onDayClick(day, dayEvents)}
                 sx={{
-                  minHeight: { xs: 36, md: 64 },
-                  p: '4px 5px',
+                  minHeight: { xs: 44, md: 72 },
+                  p: '5px 6px',
                   display: 'flex',
                   flexDirection: 'column',
                   gap: '2px',
@@ -115,11 +115,11 @@ export function MonthCalendar({ month, events, petColors, petNames, loading, err
                 {/* Day number */}
                 <Typography
                   sx={{
-                    fontSize: '0.625rem',
+                    fontSize: '0.6875rem',
                     fontWeight: today ? 900 : 800,
                     color: today ? 'primary.main' : 'text.primary',
                     lineHeight: 1,
-                    mb: '2px',
+                    mb: '3px',
                   }}
                 >
                   {format(day, 'd')}
@@ -170,7 +170,7 @@ export function MonthCalendar({ month, events, petColors, petNames, loading, err
                             flexShrink: 0,
                           }}
                         >
-                          <Typography sx={{ color: '#fff', fontSize: '0.5rem', fontWeight: 900, lineHeight: 1 }}>!</Typography>
+                          <Typography sx={{ color: '#fff', fontSize: '0.5625rem', fontWeight: 900, lineHeight: 1 }}>!</Typography>
                         </Box>
                       )}
                       {e.kind === 'medication' && e.hasReminder && (
@@ -183,7 +183,7 @@ export function MonthCalendar({ month, events, petColors, petNames, loading, err
                           borderRadius: '4px',
                           px: '3px',
                           py: '1px',
-                          fontSize: '0.5rem',
+                          fontSize: '0.625rem',
                           fontWeight: 800,
                           color: isScheduled ? petColor : 'white',
                           whiteSpace: 'nowrap',
@@ -201,7 +201,7 @@ export function MonthCalendar({ month, events, petColors, petNames, loading, err
                 })}
 
                 {overflow > 0 && (
-                  <Typography variant="caption" sx={{ fontSize: '0.6rem', color: 'text.secondary', pl: 0.25, lineHeight: 1.4 }}>
+                  <Typography variant="caption" sx={{ fontSize: '0.625rem', color: 'text.secondary', pl: 0.25, lineHeight: 1.4 }}>
                     +{overflow} more
                   </Typography>
                 )}
