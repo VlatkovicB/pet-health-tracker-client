@@ -1,3 +1,4 @@
+import { type ReactNode } from 'react';
 import {
   Box, BottomNavigation, BottomNavigationAction, Typography, useMediaQuery, useTheme,
 } from '@mui/material';
@@ -5,7 +6,6 @@ import {
   CalendarMonth, Pets, LocalHospital, Person,
 } from '@mui/icons-material';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
 
 const NAV_ITEMS = [
   { label: 'Calendar', icon: <CalendarMonth />, path: '/' },
@@ -14,24 +14,25 @@ const NAV_ITEMS = [
   { label: 'Profile',  icon: <Person />,        path: '/profile' },
 ];
 
+function getActiveIndex(pathname: string): number {
+  return NAV_ITEMS.findIndex((item) =>
+    item.path === '/'
+      ? pathname === '/'
+      : pathname.startsWith(item.path),
+  );
+}
+
 function Sidebar() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user } = useAuth() as any;
   const theme = useTheme();
   const isDark = theme.palette.mode === 'dark';
   const activeNav = isDark ? '#3d3580' : '#ede9fe';
   const primaryMain = isDark ? '#a78bfa' : '#6c63ff';
 
-  const activeIndex = NAV_ITEMS.findIndex((item) =>
-    item.path === '/'
-      ? location.pathname === '/'
-      : location.pathname.startsWith(item.path),
-  );
+  const activeIndex = getActiveIndex(location.pathname);
 
-  const initials = user?.name
-    ? user.name.split(' ').map((w: string) => w[0]).join('').toUpperCase().slice(0, 2)
-    : 'U';
+  const initials = 'U';
 
   return (
     <Box
@@ -118,12 +119,7 @@ function Sidebar() {
           <Typography
             sx={{ fontWeight: 800, fontSize: '0.75rem', color: 'text.primary', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
           >
-            {user?.name ?? 'Account'}
-          </Typography>
-          <Typography
-            sx={{ fontWeight: 600, fontSize: '0.65rem', color: 'text.secondary', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
-          >
-            {user?.email ?? ''}
+            Account
           </Typography>
         </Box>
       </Box>
@@ -131,17 +127,13 @@ function Sidebar() {
   );
 }
 
-export function Layout({ children }: { children: React.ReactNode }) {
+export function Layout({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const location = useLocation();
   const theme = useTheme();
   const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
 
-  const activeIndex = NAV_ITEMS.findIndex((item) =>
-    item.path === '/'
-      ? location.pathname === '/'
-      : location.pathname.startsWith(item.path),
-  );
+  const activeIndex = getActiveIndex(location.pathname);
 
   return (
     <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: 'background.default' }}>
