@@ -5,6 +5,7 @@ import {
   eachDayOfInterval, isSameMonth, isToday, format, startOfToday,
 } from 'date-fns';
 import type { CalendarEvent } from '../../types';
+import { toLocalDate, getEventsForDay } from './calendarUtils';
 
 const DAY_HEADERS = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
 const MAX_RIBBONS = 5;
@@ -25,21 +26,6 @@ function buildGrid(month: Date): Date[] {
   return eachDayOfInterval({
     start: startOfWeek(monthStart, { weekStartsOn: 1 }),
     end: endOfWeek(monthEnd, { weekStartsOn: 1 }),
-  });
-}
-
-export function toLocalDate(s: string): Date {
-  const [y, m, d] = s.split('-').map(Number);
-  return new Date(y, m - 1, d);
-}
-
-export function getEventsForDay(day: Date, events: CalendarEvent[]): CalendarEvent[] {
-  const dateKey = format(day, 'yyyy-MM-dd');
-  return events.filter((e) => {
-    if (e.kind === 'vet-visit') return e.date.slice(0, 10) === dateKey;
-    const start = toLocalDate(e.startDate);
-    const end = e.endDate ? toLocalDate(e.endDate) : null;
-    return day >= start && (end === null || day <= end);
   });
 }
 

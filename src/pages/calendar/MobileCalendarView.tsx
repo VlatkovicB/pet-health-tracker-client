@@ -4,7 +4,7 @@ import {
   format, startOfToday, startOfWeek, addDays, isToday, isSameDay,
 } from 'date-fns';
 import { PetFilterChips } from './PetFilterChips';
-import { getEventsForDay, toLocalDate } from './MonthCalendar';
+import { getEventsForDay, toLocalDate } from './calendarUtils';
 import type { CalendarEvent, Pet } from '../../types';
 
 const DAY_LABELS = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
