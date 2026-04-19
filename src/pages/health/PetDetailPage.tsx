@@ -29,12 +29,6 @@ const todayNoon = () => { const d = new Date(); d.setHours(12, 0, 0, 0); return 
 const weekFromNow = () => { const d = new Date(); d.setDate(d.getDate() + 7); d.setHours(12, 0, 0, 0); return d.toISOString().slice(0, 16); };
 const serverUrl = import.meta.env.VITE_SERVER_URL ?? 'http://localhost:3000';
 
-function daysUntilNum(iso: string): number {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const [year, month, day] = iso.split('T')[0].split('-').map(Number);
-  return Math.round((new Date(year, month - 1, day).getTime() - today.getTime()) / 86_400_000);
-}
 
 function calcAge(birthDate: string): string {
   const birth = new Date(birthDate);
@@ -120,10 +114,6 @@ export function PetDetailPage() {
     enabled: !!petId,
   });
   const vetVisits = vetVisitsQuery.data?.pages.flatMap((p) => p.items) ?? [];
-  const scheduledVisits = vetVisits
-    .filter((v) => v.type === 'scheduled')
-    .sort((a, b) => new Date(a.visitDate).getTime() - new Date(b.visitDate).getTime());
-  const loggedVisits = vetVisits.filter((v) => v.type === 'logged');
 
   // Auto-open a visit when navigated from the upcoming visits list
   const visitIdParam = searchParams.get('visitId');
@@ -348,105 +338,58 @@ export function PetDetailPage() {
               </Box>
             ) : (
               <>
-                {/* Upcoming banner */}
-                {scheduledVisits.length > 0 && (
-                  <Box
-                    sx={{
-                      p: 1.5, mb: 1.5,
-                      borderRadius: 2,
-                      background: isDark ? 'rgba(42,157,143,0.1)' : 'rgba(42,157,143,0.06)',
-                      border: '1px solid rgba(42,157,143,0.2)',
-                    }}
-                  >
-                    <Typography
-                      sx={{ fontWeight: 800, fontSize: '0.6875rem', color: 'text.disabled', letterSpacing: '2px', textTransform: 'uppercase', mb: 1 }}
-                    >
-                      Upcoming
-                    </Typography>
-                    <Box sx={{ display: 'flex', gap: 1, overflowX: 'auto', pb: 0.5 }}>
-                      {scheduledVisits.map((v) => {
-                        const days = daysUntilNum(v.visitDate);
+                {/* Unified visit list: scheduled first (ascending), then logged (descending) */}
+                {vetVisits.length === 0 ? (
+                  <EmptyState />
+                ) : (
+                  <>
+                    {[...vetVisits]
+                      .sort((a, b) => {
+                        if (a.type === b.type) return b.visitDate.localeCompare(a.visitDate);
+                        return a.type === 'scheduled' ? -1 : 1;
+                      })
+                      .map((v) => {
+                        const vet = vets.find((vt) => vt.id === v.vetId);
+                        const clinicLabel = vet ? vet.name : (v.clinic ?? null);
+                        const isScheduled = v.type === 'scheduled';
                         return (
                           <Box
                             key={v.id}
-                            onClick={() => setScheduledVisit(v)}
+                            onClick={() => isScheduled ? setScheduledVisit(v) : setDetailVisit(v)}
                             sx={{
-                              flexShrink: 0,
-                              background: 'rgba(42,157,143,0.15)',
-                              border: '1px solid rgba(42,157,143,0.3)',
-                              borderRadius: 2,
-                              px: 1.5,
-                              py: 1,
+                              bgcolor: 'background.paper', borderRadius: 2, p: 1.75, mb: 1,
+                              boxShadow: isDark
+                                ? '0 2px 12px rgba(0,0,0,0.25)'
+                                : '0 2px 12px rgba(108,99,255,0.08)',
+                              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                               cursor: 'pointer',
-                              '&:hover': { background: 'rgba(42,157,143,0.25)' },
+                              '&:hover': { bgcolor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(108,99,255,0.04)' },
                             }}
                           >
-                            <Typography variant="body2" sx={{ fontWeight: 600, whiteSpace: 'nowrap' }}>
-                              {v.reason}
-                            </Typography>
-                            <Typography variant="caption" color="primary">
-                              {days === 0
-                                ? 'Today'
-                                : days === 1
-                                ? 'Tomorrow'
-                                : `In ${days} days`}
-                            </Typography>
+                            <Box sx={{ flex: 1, minWidth: 0 }}>
+                              <Typography sx={{ fontWeight: 800, fontSize: '0.875rem', color: 'text.primary' }} noWrap>{v.reason}</Typography>
+                              <Typography sx={{ fontWeight: 600, fontSize: '0.75rem', color: 'text.secondary', mt: 0.25 }}>
+                                {fmtDate(v.visitDate)}{clinicLabel ? ` · ${clinicLabel}` : ''}
+                              </Typography>
+                            </Box>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, ml: 1 }}>
+                              <Chip
+                                label={isScheduled ? 'Scheduled' : 'Logged'}
+                                size="small"
+                                sx={{
+                                  fontWeight: 800, borderRadius: 5, fontSize: '0.6875rem',
+                                  bgcolor: isScheduled
+                                    ? (isDark ? '#3d3580' : '#ede9fe')
+                                    : '#34d39922',
+                                  color: isScheduled ? 'primary.main' : '#059669',
+                                  border: isScheduled ? '1px solid' : 'none',
+                                  borderColor: isDark ? '#5a5478' : '#d4d0f8',
+                                }}
+                              />
+                            </Box>
                           </Box>
                         );
                       })}
-                    </Box>
-                  </Box>
-                )}
-
-                {/* History list */}
-                {loggedVisits.length === 0 && scheduledVisits.length === 0 ? (
-                  <EmptyState />
-                ) : loggedVisits.length === 0 ? (
-                  <Box sx={{ p: 2, textAlign: 'center' }}>
-                    <Typography variant="body2" color="text.secondary">
-                      No visit history yet
-                    </Typography>
-                  </Box>
-                ) : (
-                  <>
-                    {loggedVisits.map((v) => {
-                      const vet = vets.find((vt) => vt.id === v.vetId);
-                      const clinicLabel = vet ? vet.name : (v.clinic ?? null);
-                      return (
-                        <Box
-                          key={v.id}
-                          onClick={() => setDetailVisit(v)}
-                          sx={{
-                            bgcolor: 'background.paper', borderRadius: 2, p: 1.75, mb: 1,
-                            boxShadow: isDark
-                              ? '0 2px 12px rgba(0,0,0,0.25)'
-                              : '0 2px 12px rgba(108,99,255,0.08)',
-                            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                            cursor: 'pointer',
-                            '&:hover': { bgcolor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(108,99,255,0.04)' },
-                          }}
-                        >
-                          <Box sx={{ flex: 1, minWidth: 0 }}>
-                            <Typography sx={{ fontWeight: 800, fontSize: '0.875rem', color: 'text.primary' }} noWrap>{v.reason}</Typography>
-                            <Typography sx={{ fontWeight: 600, fontSize: '0.75rem', color: 'text.secondary', mt: 0.25 }}>
-                              {fmtDate(v.visitDate)}{clinicLabel ? ` · ${clinicLabel}` : ''}
-                            </Typography>
-                          </Box>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, ml: 1 }}>
-                            <Chip
-                              label="Logged"
-                              size="small"
-                              sx={{
-                                fontWeight: 800, borderRadius: 5, fontSize: '0.6875rem',
-                                bgcolor: '#34d39922',
-                                color: '#059669',
-                                border: 'none',
-                              }}
-                            />
-                          </Box>
-                        </Box>
-                      );
-                    })}
                   </>
                 )}
                 <div ref={vetVisitsSentinel} />
