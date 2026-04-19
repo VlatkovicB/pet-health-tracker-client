@@ -65,9 +65,9 @@ export function MonthCalendar({ month, events, petColors, petNames, loading, err
 
       {/* Calendar grid */}
       {loading ? (
-        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '1px', flex: 1, minHeight: 0 }}>
-          {Array.from({ length: 35 }).map((_, i) => (
-            <Skeleton key={i} variant="rectangular" height={80} />
+        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gridTemplateRows: `repeat(${Math.round(days.length / 7)}, 1fr)`, gap: '1px', flex: 1, minHeight: 0 }}>
+          {Array.from({ length: days.length }).map((_, i) => (
+            <Skeleton key={i} variant="rectangular" sx={{ height: '100%' }} />
           ))}
         </Box>
       ) : (

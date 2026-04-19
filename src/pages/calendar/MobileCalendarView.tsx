@@ -159,7 +159,7 @@ export function MobileCalendarView({
             return (
               <Box
                 key={e.id}
-                onClick={() => onDayClick(selectedDay, dayEvents)}
+                onClick={() => onDayClick(selectedDay, getEventsForDay(selectedDay, events))}
                 sx={{
                   display: 'flex', gap: 1, alignItems: 'stretch',
                   bgcolor: 'background.paper',

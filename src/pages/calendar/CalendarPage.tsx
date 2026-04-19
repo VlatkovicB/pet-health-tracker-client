@@ -152,7 +152,7 @@ export function CalendarPage() {
     <Box sx={{
       display: 'flex',
       flexDirection: 'column',
-      height: { xs: 'calc(100vh - 64px)', md: '100vh' },
+      height: { xs: 'calc(100vh - 56px)', md: '100vh' },
       overflow: 'hidden',
       px: { xs: 1, sm: 2 },
       pt: 1,
