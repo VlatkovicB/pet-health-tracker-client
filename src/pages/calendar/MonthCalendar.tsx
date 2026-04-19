@@ -53,7 +53,7 @@ export function MonthCalendar({ month, events, petColors, petNames, loading, err
   }
 
   return (
-    <Box sx={{ px: { xs: 1, sm: 2 } }}>
+    <Box sx={{ px: { xs: 1, sm: 2 }, flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
       {/* Day-of-week headers */}
       <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', mb: 0.5 }}>
         {DAY_HEADERS.map((d) => (
@@ -75,6 +75,9 @@ export function MonthCalendar({ month, events, petColors, petNames, loading, err
           sx={{
             display: 'grid',
             gridTemplateColumns: 'repeat(7, 1fr)',
+            gridTemplateRows: `repeat(${days.length / 7}, 1fr)`,
+            flex: 1,
+            minHeight: 0,
             border: '1px solid',
             borderColor: 'divider',
             borderRadius: 1,
@@ -96,7 +99,6 @@ export function MonthCalendar({ month, events, petColors, petNames, loading, err
                 key={dateKey}
                 onClick={() => onDayClick(day, dayEvents)}
                 sx={{
-                  minHeight: { xs: 44, md: 72 },
                   p: '5px 6px',
                   display: 'flex',
                   flexDirection: 'column',
@@ -208,6 +210,27 @@ export function MonthCalendar({ month, events, petColors, petNames, loading, err
               </Box>
             );
           })}
+        </Box>
+      )}
+
+      {/* Legend */}
+      {!loading && (
+        <Box sx={{ display: 'flex', gap: 2, flexShrink: 0, flexWrap: 'wrap', alignItems: 'center', pt: 0.75, pb: 0.25, px: 0.5 }}>
+          {Object.entries(petColors).map(([petId, color]) => (
+            <Box key={petId} sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              <Box sx={{ width: 10, height: 10, borderRadius: '3px', bgcolor: color, flexShrink: 0 }} />
+              <Typography sx={{ fontSize: '0.68rem', color: 'text.secondary', fontWeight: 600 }}>
+                {petNames[petId] ?? petId}
+              </Typography>
+            </Box>
+          ))}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            <Box sx={{ width: 10, height: 10, borderRadius: '3px', border: '2px dashed', borderColor: 'primary.main', flexShrink: 0 }} />
+            <Typography sx={{ fontSize: '0.68rem', color: 'text.secondary', fontWeight: 600 }}>Scheduled</Typography>
+          </Box>
+          <Typography sx={{ fontSize: '0.68rem', color: 'text.disabled', ml: 'auto' }}>
+            Click any day for details
+          </Typography>
         </Box>
       )}
 
