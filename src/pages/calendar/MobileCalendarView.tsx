@@ -46,6 +46,7 @@ export function MobileCalendarView({
   );
 
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
+  const isCurrentWeek = weekStart.getTime() === startOfWeek(startOfToday(), { weekStartsOn: 1 }).getTime();
   const dayEvents = getEventsForDay(selectedDay, events);
   const sortedEvents = sortEvents(dayEvents);
 
@@ -57,16 +58,26 @@ export function MobileCalendarView({
           {format(weekStart, 'MMMM yyyy')}
         </Typography>
         <Box sx={{ display: 'flex', gap: 0.75 }}>
-          {[
-            ['‹', () => { const next = addDays(weekStart, -7); setWeekStart(next); setSelectedDay(next); }],
-            ['›', () => { const next = addDays(weekStart, 7); setWeekStart(next); setSelectedDay(next); }],
-          ].map(([label, handler]) => (
-            <Box
-              key={label as string}
-              onClick={handler as () => void}
-              sx={{ width: 30, height: 30, borderRadius: 1.5, bgcolor: 'background.paper', border: '1.5px solid', borderColor: 'divider', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'primary.main', fontWeight: 900, fontSize: '1rem', userSelect: 'none', '&:hover': { bgcolor: isDark ? '#3d3580' : '#ede9fe' } }}
-            >{label as string}</Box>
-          ))}
+          <Box
+            onClick={() => { const next = addDays(weekStart, -7); setWeekStart(next); setSelectedDay(next); }}
+            sx={{ width: 30, height: 30, borderRadius: 1.5, bgcolor: 'background.paper', border: '1.5px solid', borderColor: 'divider', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'primary.main', fontWeight: 900, fontSize: '1rem', userSelect: 'none', '&:hover': { bgcolor: isDark ? '#3d3580' : '#ede9fe' } }}
+          >‹</Box>
+          <Box
+            onClick={() => { if (!isCurrentWeek) { const today = startOfToday(); setWeekStart(startOfWeek(today, { weekStartsOn: 1 })); setSelectedDay(today); } }}
+            sx={{
+              px: 1.25, height: 30, borderRadius: 1.5, bgcolor: 'background.paper',
+              border: '1.5px solid', borderColor: 'divider',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              cursor: isCurrentWeek ? 'default' : 'pointer',
+              color: 'primary.main', fontWeight: 800, fontSize: '0.72rem',
+              userSelect: 'none', opacity: isCurrentWeek ? 0.4 : 1,
+              ...(!isCurrentWeek && { '&:hover': { bgcolor: isDark ? '#3d3580' : '#ede9fe' } }),
+            }}
+          >Today</Box>
+          <Box
+            onClick={() => { const next = addDays(weekStart, 7); setWeekStart(next); setSelectedDay(next); }}
+            sx={{ width: 30, height: 30, borderRadius: 1.5, bgcolor: 'background.paper', border: '1.5px solid', borderColor: 'divider', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'primary.main', fontWeight: 900, fontSize: '1rem', userSelect: 'none', '&:hover': { bgcolor: isDark ? '#3d3580' : '#ede9fe' } }}
+          >›</Box>
         </Box>
       </Box>
 
