@@ -152,7 +152,7 @@ export function CalendarPage() {
     <Box sx={{
       display: 'flex',
       flexDirection: 'column',
-      height: { xs: 'calc(100vh - 56px)', md: '100vh' },
+      height: { xs: 'calc(100vh - 64px)', md: '100vh' },
       overflow: 'hidden',
       px: { xs: 1, sm: 2 },
       pt: 1,
@@ -171,12 +171,14 @@ export function CalendarPage() {
         />
       ) : (
         <>
-          <PetFilterChips
-            pets={pets}
-            petColors={petColors}
-            selectedPetId={selectedPetId}
-            onChange={setSelectedPetId}
-          />
+          <Box sx={{ flexShrink: 0 }}>
+            <PetFilterChips
+              pets={pets}
+              petColors={petColors}
+              selectedPetId={selectedPetId}
+              onChange={setSelectedPetId}
+            />
+          </Box>
 
           {/* Page header */}
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', px: { xs: 2, md: 3 }, pt: 2.5, pb: 1, flexShrink: 0 }}>
