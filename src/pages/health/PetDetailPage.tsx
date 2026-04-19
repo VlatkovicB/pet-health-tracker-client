@@ -16,7 +16,7 @@ import { medicationsApi, type CreateMedicationInput } from '../../api/medication
 import { getApiError } from '../../api/client';
 import { useNotification } from '../../context/NotificationContext';
 import { useInfiniteScroll } from '../../hooks/useInfiniteScroll';
-import type { Medication, Pet, VetVisit, Vet, Reminder, ReminderScheduleProps, VetWorkHours, DayOfWeek } from '../../types';
+import type { Medication, Pet, VetVisit, Vet, VetWorkHours, DayOfWeek } from '../../types';
 import { PET_COLOR_PALETTE } from '../../utils/color';
 import { ScheduledVisitDetailDialog } from '../../components/ScheduledVisitDetailDialog';
 import { MedicationDetailDialog } from '../../components/MedicationDetailDialog';
