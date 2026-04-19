@@ -1,127 +1,170 @@
-import { useState } from 'react';
 import {
-  AppBar, Box, Breadcrumbs, IconButton, Link, Menu, MenuItem,
-  Toolbar, Tooltip, Typography, Avatar,
+  Box, BottomNavigation, BottomNavigationAction, Typography, useMediaQuery, useTheme,
 } from '@mui/material';
-import { Menu as MenuIcon, NavigateNext, Pets } from '@mui/icons-material';
-import { Link as RouterLink, useNavigate, useParams, useLocation } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import {
+  CalendarMonth, Pets, LocalHospital, Person,
+} from '@mui/icons-material';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { useAppTheme } from '../context/ThemeContext';
-import { petsApi } from '../api/pets';
-import { NavigationDrawer } from './NavigationDrawer';
 
-function AppBreadcrumbs() {
-  const { petId } = useParams<{ petId?: string }>();
+const NAV_ITEMS = [
+  { label: 'Calendar', icon: <CalendarMonth />, path: '/' },
+  { label: 'Pets',     icon: <Pets />,          path: '/pets' },
+  { label: 'Vets',     icon: <LocalHospital />, path: '/vets' },
+  { label: 'Profile',  icon: <Person />,        path: '/profile' },
+];
+
+function Sidebar() {
+  const navigate = useNavigate();
   const location = useLocation();
+  const { user } = useAuth() as any;
+  const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
+  const activeNav = isDark ? '#3d3580' : '#ede9fe';
+  const primaryMain = isDark ? '#a78bfa' : '#6c63ff';
 
-  const { data: pet } = useQuery({
-    queryKey: ['pet', petId],
-    queryFn: () => petsApi.get(petId!),
-    enabled: !!petId,
-  });
+  const activeIndex = NAV_ITEMS.findIndex((item) =>
+    item.path === '/'
+      ? location.pathname === '/'
+      : location.pathname.startsWith(item.path),
+  );
 
-  const isVets = location.pathname === '/vets';
-
-  if (!petId && !isVets) return null;
+  const initials = user?.name
+    ? user.name.split(' ').map((w: string) => w[0]).join('').toUpperCase().slice(0, 2)
+    : 'U';
 
   return (
-    <Box sx={{ px: { xs: 2, sm: 3 }, py: 0.75, borderBottom: '1px solid', borderColor: 'divider', bgcolor: 'background.paper' }}>
-      <Breadcrumbs separator={<NavigateNext sx={{ fontSize: 14, color: 'text.disabled' }} />}>
-        <Link
-          component={RouterLink}
-          to="/"
-          underline="hover"
-          color="text.secondary"
-          sx={{ fontSize: '0.8125rem', fontWeight: 500 }}
+    <Box
+      sx={{
+        width: 220,
+        flexShrink: 0,
+        height: '100vh',
+        position: 'sticky',
+        top: 0,
+        bgcolor: 'background.paper',
+        borderRight: '1px solid',
+        borderColor: 'divider',
+        display: 'flex',
+        flexDirection: 'column',
+        py: 2.5,
+        px: 1.5,
+      }}
+    >
+      {/* Logo */}
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, px: 1, pb: 2.5 }}>
+        <Box
+          sx={{
+            width: 32, height: 32, borderRadius: 1.5, flexShrink: 0,
+            background: 'linear-gradient(135deg, #6c63ff, #a78bfa)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 18,
+          }}
         >
-          Home
-        </Link>
-        {petId && (
-          <Typography sx={{ fontSize: '0.8125rem', fontWeight: 600, color: 'text.primary' }}>
-            {pet?.name ?? '…'}
+          🐾
+        </Box>
+        <Typography sx={{ fontWeight: 900, fontSize: '1rem', letterSpacing: '-0.5px', color: 'text.primary' }}>
+          PetPal
+        </Typography>
+      </Box>
+
+      {/* Nav items */}
+      {NAV_ITEMS.map((item, i) => (
+        <Box
+          key={item.path}
+          onClick={() => navigate(item.path)}
+          sx={{
+            display: 'flex', alignItems: 'center', gap: 1.25,
+            px: 1.5, py: 1.125,
+            borderRadius: 1.5,
+            mb: 0.25,
+            cursor: 'pointer',
+            bgcolor: activeIndex === i ? activeNav : 'transparent',
+            color: activeIndex === i ? primaryMain : 'text.secondary',
+            fontWeight: activeIndex === i ? 800 : 700,
+            fontSize: '0.875rem',
+            transition: 'background 0.15s',
+            '&:hover': { bgcolor: activeNav },
+          }}
+        >
+          <Box sx={{ color: 'inherit', display: 'flex', fontSize: 20 }}>{item.icon}</Box>
+          <Typography sx={{ fontWeight: 'inherit', fontSize: 'inherit', color: 'inherit' }}>
+            {item.label}
           </Typography>
-        )}
-        {isVets && (
-          <Typography sx={{ fontSize: '0.8125rem', fontWeight: 600, color: 'text.primary' }}>Vets</Typography>
-        )}
-      </Breadcrumbs>
+        </Box>
+      ))}
+
+      <Box sx={{ flex: 1 }} />
+
+      {/* User section */}
+      <Box
+        sx={{
+          display: 'flex', alignItems: 'center', gap: 1,
+          px: 1, pt: 2, borderTop: '1px solid', borderColor: 'divider',
+          cursor: 'pointer',
+        }}
+        onClick={() => navigate('/profile')}
+      >
+        <Box
+          sx={{
+            width: 32, height: 32, borderRadius: 1.5, flexShrink: 0,
+            background: 'linear-gradient(135deg, #6c63ff, #a78bfa)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            color: 'white', fontWeight: 900, fontSize: '0.75rem',
+          }}
+        >
+          {initials}
+        </Box>
+        <Box sx={{ minWidth: 0 }}>
+          <Typography
+            sx={{ fontWeight: 800, fontSize: '0.75rem', color: 'text.primary', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+          >
+            {user?.name ?? 'Account'}
+          </Typography>
+          <Typography
+            sx={{ fontWeight: 600, fontSize: '0.65rem', color: 'text.secondary', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+          >
+            {user?.email ?? ''}
+          </Typography>
+        </Box>
+      </Box>
     </Box>
   );
 }
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
-  const { logout } = useAuth();
-  const { mode, toggleTheme } = useAppTheme();
-  const [drawerOpen, setDrawerOpen] = useState(false);
-  const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
+  const location = useLocation();
+  const theme = useTheme();
+  const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
+
+  const activeIndex = NAV_ITEMS.findIndex((item) =>
+    item.path === '/'
+      ? location.pathname === '/'
+      : location.pathname.startsWith(item.path),
+  );
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
-      <AppBar position="sticky" sx={{ zIndex: 10 }}>
-        <Toolbar sx={{ px: { xs: 2, sm: 3 } }}>
-          <IconButton
-            edge="start"
-            color="inherit"
-            onClick={() => setDrawerOpen(true)}
-            sx={{ mr: 1 }}
-            aria-label="Open navigation"
-          >
-            <MenuIcon />
-          </IconButton>
-          <Box
-            sx={{
-              width: 34, height: 34, borderRadius: 2, mr: 1.5, flexShrink: 0,
-              bgcolor: 'primary.main',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              cursor: 'pointer',
-              boxShadow: '0 2px 8px rgba(42,157,143,0.3)',
-            }}
-            onClick={() => navigate('/')}
-          >
-            <Pets sx={{ color: '#fff', fontSize: 19 }} />
-          </Box>
-          <Typography
-            variant="h6"
-            sx={{ flexGrow: 1, cursor: 'pointer', color: 'text.primary', letterSpacing: '-0.3px', fontSize: '1rem', fontWeight: 700 }}
-            onClick={() => navigate('/')}
-          >
-            Pet Health
-          </Typography>
-          <Tooltip title="Account">
-            <IconButton onClick={(e) => setMenuAnchor(e.currentTarget)} size="small" sx={{ ml: 1 }}>
-              <Avatar sx={{ width: 32, height: 32, bgcolor: 'primary.light', fontSize: 14, fontWeight: 700, color: '#fff' }}>
-                U
-              </Avatar>
-            </IconButton>
-          </Tooltip>
-          <Menu
-            anchorEl={menuAnchor}
-            open={!!menuAnchor}
-            onClose={() => setMenuAnchor(null)}
-            anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-            transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-            slotProps={{ paper: { sx: { mt: 0.5, minWidth: 160, borderRadius: 2, boxShadow: '0 8px 24px rgba(0,0,0,0.12)' } } }}
-          >
-            <MenuItem onClick={toggleTheme} sx={{ fontSize: '0.9rem' }}>
-              {mode === 'dark' ? 'Light mode' : 'Dark mode'}
-            </MenuItem>
-          </Menu>
-        </Toolbar>
-      </AppBar>
+    <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: 'background.default' }}>
+      {/* Desktop sidebar */}
+      {isDesktop && <Sidebar />}
 
-      <NavigationDrawer
-        open={drawerOpen}
-        onClose={() => setDrawerOpen(false)}
-        onLogout={() => { logout(); navigate('/login'); }}
-      />
-
-      <AppBreadcrumbs />
-
-      <Box sx={{ pb: 8 }}>
+      {/* Page content */}
+      <Box sx={{ flex: 1, minWidth: 0, pb: { xs: 8, md: 0 } }}>
         {children}
       </Box>
+
+      {/* Mobile bottom nav */}
+      {!isDesktop && (
+        <BottomNavigation
+          value={activeIndex === -1 ? false : activeIndex}
+          onChange={(_, v) => navigate(NAV_ITEMS[v].path)}
+          sx={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 100 }}
+        >
+          {NAV_ITEMS.map((item) => (
+            <BottomNavigationAction key={item.path} label={item.label} icon={item.icon} />
+          ))}
+        </BottomNavigation>
+      )}
     </Box>
   );
 }
