@@ -1,13 +1,21 @@
 // pet-health-tracker-client/src/pages/vets/VetsPage.tsx
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Alert, Box, Button, Card, CardContent,
   Dialog, DialogActions, DialogContent, DialogTitle,
   Grid, Skeleton, TextField, Typography,
 } from '@mui/material';
 import {
-  Add, Map, MedicalServices,
+  Add, DragIndicator, Map, MedicalServices,
 } from '@mui/icons-material';
+import {
+  DndContext, closestCenter, PointerSensor, useSensor, useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  SortableContext, verticalListSortingStrategy, useSortable, arrayMove,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { useMutation, useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import { vetsApi } from '../../api/vets';
 import { placesApi, type PlaceSearchResult, type PlaceDetails } from '../../api/places';
@@ -15,10 +23,14 @@ import { getApiError } from '../../api/client';
 import { useNotification } from '../../context/NotificationContext';
 import { useInfiniteScroll } from '../../hooks/useInfiniteScroll';
 import { WorkHoursEditor } from '../../components/WorkHoursEditor';
+import { WorkHoursDisplay } from '../../components/WorkHoursDisplay';
 import { PlacesSyncDialog } from '../../components/PlacesSyncDialog';
 import type { Vet, VetWorkHours } from '../../types';
 
+type SortMode = 'alpha' | 'rating' | 'custom';
 type SearchState = 'idle' | 'searching' | 'done';
+
+const SORT_LABELS: Record<SortMode, string> = { alpha: 'A–Z', rating: 'Rating', custom: 'Custom' };
 
 const emptyForm = {
   name: '',
@@ -30,6 +42,116 @@ const emptyForm = {
   rating: '',
   placeId: '',
 };
+
+// ─── Sortable card ─────────────────────────────────────────────────────────────
+
+interface SortableVetCardProps {
+  vet: Vet;
+  isExpanded: boolean;
+  isDragEnabled: boolean;
+  onToggleExpand: () => void;
+  onEdit: () => void;
+  onSync: () => void;
+}
+
+function SortableVetCard({ vet, isExpanded, isDragEnabled, onToggleExpand, onEdit, onSync }: SortableVetCardProps) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: vet.id });
+
+  return (
+    <Box
+      ref={setNodeRef}
+      style={{ transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.4 : 1 }}
+      sx={{
+        bgcolor: 'background.paper', borderRadius: 2,
+        boxShadow: (t) => t.palette.mode === 'dark'
+          ? '0 2px 12px rgba(0,0,0,0.25)'
+          : '0 2px 12px rgba(108,99,255,0.08)',
+        mb: 1.5, overflow: 'hidden',
+        zIndex: isDragging ? 1 : 'auto',
+        position: 'relative',
+      }}
+    >
+      {/* Card header */}
+      <Box
+        sx={{ p: 2, cursor: 'pointer', display: 'flex', alignItems: 'flex-start', gap: 1 }}
+        onClick={onToggleExpand}
+      >
+        {isDragEnabled && (
+          <Box
+            {...attributes}
+            {...listeners}
+            onClick={(e) => e.stopPropagation()}
+            sx={{
+              color: 'text.disabled', cursor: 'grab', mt: 0.375, flexShrink: 0,
+              touchAction: 'none',
+              '&:active': { cursor: 'grabbing' },
+            }}
+          >
+            <DragIndicator sx={{ fontSize: 20 }} />
+          </Box>
+        )}
+        <Box sx={{ flex: 1, minWidth: 0 }}>
+          <Typography sx={{ fontWeight: 800, fontSize: '1rem', color: 'text.primary' }}>{vet.name}</Typography>
+          {vet.phone && (
+            <Typography sx={{ fontWeight: 600, fontSize: '0.8125rem', color: 'text.secondary', mt: 0.375 }}>
+              {vet.phone}
+            </Typography>
+          )}
+          {vet.rating != null && (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.625 }}>
+              <Typography sx={{ color: '#fbbf24', fontSize: '0.875rem' }}>
+                {'★'.repeat(Math.round(vet.rating))}
+              </Typography>
+              <Typography sx={{ fontWeight: 600, fontSize: '0.75rem', color: 'text.secondary' }}>
+                {vet.rating.toFixed(1)}
+              </Typography>
+            </Box>
+          )}
+        </Box>
+      </Box>
+
+      {/* Expanded: work hours */}
+      {isExpanded && vet.workHours && vet.workHours.length > 0 && (
+        <Box sx={{ px: 2, pb: 1.5, borderTop: '1px solid', borderColor: 'divider', pt: 1.5 }}>
+          <Typography sx={{ fontWeight: 800, fontSize: '0.625rem', color: 'text.disabled', letterSpacing: '2px', textTransform: 'uppercase', mb: 0.875 }}>
+            Working Hours
+          </Typography>
+          <WorkHoursDisplay hours={vet.workHours} />
+        </Box>
+      )}
+
+      {/* Expanded actions */}
+      {isExpanded && (
+        <Box sx={{ px: 2, pb: 2, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+          <Box
+            onClick={onEdit}
+            sx={{ bgcolor: (t) => t.palette.mode === 'dark' ? '#3d3580' : '#ede9fe', color: 'primary.main', fontSize: '0.8125rem', fontWeight: 800, px: 1.5, py: 0.625, borderRadius: 1.5, cursor: 'pointer' }}
+          >
+            Edit
+          </Box>
+          {vet.googleMapsUrl && (
+            <Box
+              component="a" href={vet.googleMapsUrl} target="_blank" rel="noreferrer"
+              sx={{ bgcolor: (t) => t.palette.mode === 'dark' ? '#3d3580' : '#ede9fe', color: 'primary.main', fontSize: '0.8125rem', fontWeight: 800, px: 1.5, py: 0.625, borderRadius: 1.5, textDecoration: 'none' }}
+            >
+              🗺 Maps
+            </Box>
+          )}
+          {vet.placeId && (
+            <Box
+              onClick={onSync}
+              sx={{ bgcolor: (t) => t.palette.mode === 'dark' ? '#3d3580' : '#ede9fe', color: 'primary.main', fontSize: '0.8125rem', fontWeight: 800, px: 1.5, py: 0.625, borderRadius: 1.5, cursor: 'pointer' }}
+            >
+              Sync
+            </Box>
+          )}
+        </Box>
+      )}
+    </Box>
+  );
+}
+
+// ─── Page ──────────────────────────────────────────────────────────────────────
 
 export function VetsPage() {
   const queryClient = useQueryClient();
@@ -55,6 +177,15 @@ export function VetsPage() {
 
   // Search filter state
   const [search, setSearch] = useState('');
+
+  // Sort state — persisted to localStorage
+  const [sortMode, setSortMode] = useState<SortMode>(() =>
+    (localStorage.getItem('vet-sort-mode') as SortMode | null) ?? 'alpha',
+  );
+  const [customOrder, setCustomOrder] = useState<string[]>(() => {
+    try { return JSON.parse(localStorage.getItem('vet-custom-order') ?? '[]') as string[]; }
+    catch { return []; }
+  });
 
   useEffect(() => {
     if (editVet) {
@@ -138,8 +269,64 @@ export function VetsPage() {
 
   const vets = data?.pages.flatMap((p) => p.items) ?? [];
 
-  const filteredVets = vets.filter((v) => v.name.toLowerCase().includes(search.toLowerCase()));
+  // ── Sort + filter ──────────────────────────────────────────────────────────
+  const sortedVets = useMemo(() => {
+    const filtered = vets.filter((v) => v.name.toLowerCase().includes(search.toLowerCase()));
+    if (sortMode === 'alpha') {
+      return [...filtered].sort((a, b) => a.name.localeCompare(b.name));
+    }
+    if (sortMode === 'rating') {
+      return [...filtered].sort((a, b) => {
+        if (a.rating == null && b.rating == null) return 0;
+        if (a.rating == null) return 1;
+        if (b.rating == null) return -1;
+        return b.rating - a.rating;
+      });
+    }
+    // custom
+    return [...filtered].sort((a, b) => {
+      const ai = customOrder.indexOf(a.id);
+      const bi = customOrder.indexOf(b.id);
+      if (ai === -1 && bi === -1) return 0;
+      if (ai === -1) return 1;
+      if (bi === -1) return -1;
+      return ai - bi;
+    });
+  }, [vets, search, sortMode, customOrder]);
 
+  const changeSortMode = (mode: SortMode) => {
+    if (mode === 'custom' && customOrder.length === 0) {
+      // Seed order from current alpha list
+      const order = [...vets].sort((a, b) => a.name.localeCompare(b.name)).map((v) => v.id);
+      setCustomOrder(order);
+      localStorage.setItem('vet-custom-order', JSON.stringify(order));
+    }
+    setSortMode(mode);
+    localStorage.setItem('vet-sort-mode', mode);
+  };
+
+  // ── DnD ──────────────────────────────────────────────────────────────────
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+  );
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    if (sortMode !== 'custom') return;
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    setCustomOrder((prev) => {
+      const activeId = String(active.id);
+      const overId = String(over.id);
+      const oldIndex = prev.indexOf(activeId);
+      const newIndex = prev.indexOf(overId);
+      if (oldIndex === -1 || newIndex === -1) return prev;
+      const next = arrayMove(prev, oldIndex, newIndex);
+      localStorage.setItem('vet-custom-order', JSON.stringify(next));
+      return next;
+    });
+  };
+
+  // ── Mutations ─────────────────────────────────────────────────────────────
   const sentinelRef = useInfiniteScroll(
     () => { if (hasNextPage && !isFetchingNextPage) fetchNextPage(); },
     hasNextPage,
@@ -188,6 +375,8 @@ export function VetsPage() {
   const toggleExpand = (id: string) =>
     setExpandedVetId((prev) => (prev === id ? null : id));
 
+  const isDragEnabled = sortMode === 'custom';
+
   return (
     <Box>
       {/* Page header */}
@@ -199,8 +388,8 @@ export function VetsPage() {
         <Button variant="contained" startIcon={<Add />} onClick={() => setOpen(true)} size="small">Add Vet</Button>
       </Box>
 
-      {/* Search bar */}
-      <Box sx={{ px: { xs: 2, md: 3 }, mb: 2 }}>
+      {/* Search + sort controls */}
+      <Box sx={{ px: { xs: 2, md: 3 }, mb: 2, display: 'flex', flexDirection: 'column', gap: 1 }}>
         <TextField
           placeholder="Search vets…"
           value={search}
@@ -209,6 +398,27 @@ export function VetsPage() {
           fullWidth
           sx={{ maxWidth: { md: 320 } }}
         />
+        <Box sx={{ display: 'flex', gap: 0.75, alignItems: 'center' }}>
+          <Typography sx={{ fontWeight: 800, fontSize: '0.6875rem', color: 'text.disabled', letterSpacing: '1.5px', textTransform: 'uppercase', mr: 0.25 }}>
+            Sort
+          </Typography>
+          {(['alpha', 'rating', 'custom'] as SortMode[]).map((mode) => (
+            <Box
+              key={mode}
+              onClick={() => changeSortMode(mode)}
+              sx={{
+                px: 1.5, py: 0.375, borderRadius: '20px', cursor: 'pointer',
+                fontSize: '0.75rem', fontWeight: 800, transition: 'all 0.15s',
+                bgcolor: sortMode === mode
+                  ? 'primary.main'
+                  : (t) => t.palette.mode === 'dark' ? '#3d3580' : '#ede9fe',
+                color: sortMode === mode ? 'primary.contrastText' : 'primary.main',
+              }}
+            >
+              {SORT_LABELS[mode]}
+            </Box>
+          ))}
+        </Box>
       </Box>
 
       {listError && (
@@ -241,60 +451,21 @@ export function VetsPage() {
         </Box>
       ) : (
         <Box sx={{ px: { xs: 2, md: 3 }, pb: 4 }}>
-          {filteredVets.map((vet) => {
-            const isExpanded = expandedVetId === vet.id;
-
-            return (
-              <Box
-                key={vet.id}
-                sx={{
-                  bgcolor: 'background.paper', borderRadius: 2,
-                  boxShadow: (t) => t.palette.mode === 'dark'
-                    ? '0 2px 12px rgba(0,0,0,0.25)'
-                    : '0 2px 12px rgba(108,99,255,0.08)',
-                  mb: 1.5, overflow: 'hidden',
-                }}
-              >
-                {/* Card header (always visible) */}
-                <Box sx={{ p: 2, cursor: 'pointer' }} onClick={() => toggleExpand(vet.id)}>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    <Box sx={{ flex: 1, minWidth: 0 }}>
-                      <Typography sx={{ fontWeight: 800, fontSize: '1rem', color: 'text.primary' }}>{vet.name}</Typography>
-                      {vet.phone && <Typography sx={{ fontWeight: 600, fontSize: '0.8125rem', color: 'text.secondary', mt: 0.375 }}>{vet.phone}</Typography>}
-                      {vet.rating != null && (
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.625 }}>
-                          <Typography sx={{ color: '#fbbf24', fontSize: '0.875rem' }}>{'★'.repeat(Math.round(vet.rating))}</Typography>
-                          <Typography sx={{ fontWeight: 600, fontSize: '0.75rem', color: 'text.secondary' }}>{vet.rating.toFixed(1)}</Typography>
-                        </Box>
-                      )}
-                    </Box>
-                  </Box>
-                </Box>
-
-                {/* Expanded actions */}
-                {isExpanded && (
-                  <Box sx={{ px: 2, pb: 2, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                    <Box
-                      onClick={() => setEditVet(vet)}
-                      sx={{ bgcolor: (t) => t.palette.mode === 'dark' ? '#3d3580' : '#ede9fe', color: 'primary.main', fontSize: '0.8125rem', fontWeight: 800, px: 1.5, py: 0.625, borderRadius: 1.5, cursor: 'pointer' }}
-                    >Edit</Box>
-                    {vet.googleMapsUrl && (
-                      <Box
-                        component="a" href={vet.googleMapsUrl} target="_blank" rel="noreferrer"
-                        sx={{ bgcolor: (t) => t.palette.mode === 'dark' ? '#3d3580' : '#ede9fe', color: 'primary.main', fontSize: '0.8125rem', fontWeight: 800, px: 1.5, py: 0.625, borderRadius: 1.5, textDecoration: 'none' }}
-                      >🗺 Maps</Box>
-                    )}
-                    {vet.placeId && (
-                      <Box
-                        onClick={() => setSyncVet(vet)}
-                        sx={{ bgcolor: (t) => t.palette.mode === 'dark' ? '#3d3580' : '#ede9fe', color: 'primary.main', fontSize: '0.8125rem', fontWeight: 800, px: 1.5, py: 0.625, borderRadius: 1.5, cursor: 'pointer' }}
-                      >Sync</Box>
-                    )}
-                  </Box>
-                )}
-              </Box>
-            );
-          })}
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+            <SortableContext items={sortedVets.map((v) => v.id)} strategy={verticalListSortingStrategy}>
+              {sortedVets.map((vet) => (
+                <SortableVetCard
+                  key={vet.id}
+                  vet={vet}
+                  isExpanded={expandedVetId === vet.id}
+                  isDragEnabled={isDragEnabled}
+                  onToggleExpand={() => toggleExpand(vet.id)}
+                  onEdit={() => setEditVet(vet)}
+                  onSync={() => setSyncVet(vet)}
+                />
+              ))}
+            </SortableContext>
+          </DndContext>
         </Box>
       )}
 
