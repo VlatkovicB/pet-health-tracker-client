@@ -57,7 +57,10 @@ export function MobileCalendarView({
           {format(weekStart, 'MMMM yyyy')}
         </Typography>
         <Box sx={{ display: 'flex', gap: 0.75 }}>
-          {[['‹', () => setWeekStart((d) => addDays(d, -7))], ['›', () => setWeekStart((d) => addDays(d, 7))]] .map(([label, handler]) => (
+          {[
+            ['‹', () => { const next = addDays(weekStart, -7); setWeekStart(next); setSelectedDay(next); }],
+            ['›', () => { const next = addDays(weekStart, 7); setWeekStart(next); setSelectedDay(next); }],
+          ].map(([label, handler]) => (
             <Box
               key={label as string}
               onClick={handler as () => void}
@@ -83,7 +86,7 @@ export function MobileCalendarView({
           const dots = getEventsForDay(day, events);
           return (
             <Box
-              key={i}
+              key={format(day, 'yyyy-MM-dd')}
               onClick={() => setSelectedDay(day)}
               sx={{
                 display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px',
