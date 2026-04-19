@@ -1,13 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import {
-  Box, Button, Container, Tab, Tabs, Typography, Dialog, DialogTitle,
-  DialogContent, DialogActions, TextField, MenuItem, List, ListItemButton,
-  Divider, Skeleton, Checkbox, FormControlLabel, Switch, IconButton, Avatar, Chip, Tooltip,
-  CircularProgress, Alert,
+  Box, Button, Tab, Tabs, Typography, Dialog, DialogTitle,
+  DialogContent, DialogActions, TextField, MenuItem,
+  Skeleton, Checkbox, FormControlLabel, Switch, IconButton, Chip, Tooltip,
+  CircularProgress, Alert, useTheme,
 } from '@mui/material';
 import { Add, AddAPhoto, Edit, Pets, Close } from '@mui/icons-material';
-import { Medication as MedicationIcon } from '@mui/icons-material';
 import { useMutation, useQuery, useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import { healthApi } from '../../api/health';
 import { vetsApi } from '../../api/vets';
@@ -85,6 +84,8 @@ export function PetDetailPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const queryClient = useQueryClient();
   const { showError } = useNotification();
+  const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
   const rawTab = searchParams.get('tab');
   const tab: TabValue = rawTab === 'medications' ? 'medications' : 'vet-visits';
   const setTab = (value: TabValue) => setSearchParams({ tab: value }, { replace: true });
@@ -148,6 +149,10 @@ export function PetDetailPage() {
     enabled: !!petId && tab === 'medications',
   });
   const medications = (medicationsQuery.data ?? []).slice().sort((a, b) => a.name.localeCompare(b.name));
+  const activeMeds = medications.filter((m) => m.active);
+  const nextVisit = vetVisits
+    .filter((v) => v.type === 'scheduled')
+    .sort((a, b) => a.visitDate.localeCompare(b.visitDate))[0] ?? null;
 
   const addMedMutation = useMutation({
     mutationFn: (data: CreateMedicationInput) => medicationsApi.create(petId!, data),
@@ -241,77 +246,82 @@ export function PetDetailPage() {
   };
 
   return (
-    <Container maxWidth="md" sx={{ mt: 4 }}>
-      {/* Pet hero */}
-      <Box sx={{
-        display: 'flex', alignItems: 'center', gap: 3, mb: 4, p: 3,
-        background: 'rgba(255,255,255,0.04)',
-        borderRadius: 3,
-        borderTop: '1px solid rgba(255,255,255,0.08)',
-        borderBottom: '1px solid rgba(255,255,255,0.08)',
-        position: 'relative',
-      }}>
-        {/* Avatar — click to change photo */}
+    <Box sx={{ maxWidth: { md: 960 }, mx: 'auto' }}>
+      {/* Gradient hero */}
+      <Box
+        sx={{
+          background: 'linear-gradient(135deg, #6c63ff, #a78bfa)',
+          px: { xs: 2, md: 3 },
+          pt: 2.5, pb: 3,
+          display: 'flex', alignItems: 'center', gap: 2,
+        }}
+      >
         <Tooltip title="Change photo" placement="bottom">
           <Box
             onClick={() => photoInputRef.current?.click()}
-            sx={{ position: 'relative', cursor: 'pointer', flexShrink: 0,
-              '&:hover .photo-overlay': { opacity: 1 } }}
+            sx={{
+              width: { xs: 48, md: 56 }, height: { xs: 48, md: 56 },
+              borderRadius: 2, flexShrink: 0,
+              bgcolor: 'rgba(255,255,255,0.25)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              overflow: 'hidden', cursor: 'pointer',
+              position: 'relative',
+              '&:hover .photo-overlay': { opacity: 1 },
+            }}
           >
-            <Avatar
-              src={pet?.photoUrl ? `${serverUrl}${pet.photoUrl}` : undefined}
-              sx={{ width: 80, height: 80, bgcolor: 'primary.main', fontSize: 36 }}
-            >
-              {!pet?.photoUrl && <Pets fontSize="large" />}
-            </Avatar>
+            {pet?.photoUrl ? (
+              <img src={`${serverUrl}${pet.photoUrl}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt={pet.name} />
+            ) : (
+              <Pets sx={{ color: 'white', fontSize: { xs: 26, md: 30 } }} />
+            )}
             <Box className="photo-overlay" sx={{
-              position: 'absolute', inset: 0, borderRadius: '50%',
-              bgcolor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center',
+              position: 'absolute', inset: 0, borderRadius: 2,
+              bgcolor: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center',
               justifyContent: 'center', opacity: 0, transition: 'opacity 0.2s',
             }}>
-              <AddAPhoto fontSize="small" />
+              <AddAPhoto fontSize="small" sx={{ color: 'white' }} />
             </Box>
           </Box>
         </Tooltip>
-
-        {/* Pet info */}
         <Box sx={{ flex: 1 }}>
           {pet ? (
             <>
-              <Typography variant="h4" sx={{ fontWeight: 700, lineHeight: 1.1 }}>{pet.name}</Typography>
-              <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mt: 1 }}>
-                <Chip label={pet.species} size="small" color="primary" variant="outlined" />
-                {pet.breed && <Chip label={pet.breed} size="small" variant="outlined" />}
-                {pet.birthDate && <Chip label={calcAge(pet.birthDate)} size="small" variant="outlined" />}
-              </Box>
-              {pet.birthDate && (
-                <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
-                  Born {fmtDate(pet.birthDate)}
-                </Typography>
-              )}
+              <Typography sx={{ fontWeight: 900, fontSize: { xs: '1.25rem', md: '1.5rem' }, color: 'white', letterSpacing: '-0.8px' }}>
+                {pet.name}
+              </Typography>
+              <Typography sx={{ fontWeight: 600, fontSize: '0.8125rem', color: 'rgba(255,255,255,0.75)', mt: 0.25 }}>
+                {pet.species}{pet.breed ? ` · ${pet.breed}` : ''}{pet.birthDate ? ` · ${calcAge(pet.birthDate)}` : ''}
+              </Typography>
             </>
           ) : (
             <>
-              <Skeleton variant="text" width={200} height={48} />
-              <Skeleton variant="text" width={120} height={28} />
+              <Skeleton variant="text" width={160} height={36} sx={{ bgcolor: 'rgba(255,255,255,0.2)' }} />
+              <Skeleton variant="text" width={110} height={22} sx={{ bgcolor: 'rgba(255,255,255,0.15)' }} />
             </>
           )}
         </Box>
-
-        {/* Edit button */}
-        <IconButton
-          onClick={() => pet && setEditOpen(true)}
-          disabled={!pet}
+        <Button
+          onClick={() => setEditOpen(true)}
           size="small"
-          sx={{ position: 'absolute', top: 12, right: 12, color: 'text.secondary' }}
+          disabled={!pet}
+          sx={{
+            color: 'white', fontWeight: 800, fontSize: '0.8125rem',
+            bgcolor: 'rgba(255,255,255,0.2)', borderRadius: 1.5, px: 1.5, py: 0.625,
+            '&:hover': { bgcolor: 'rgba(255,255,255,0.3)' },
+          }}
         >
-          <Edit fontSize="small" />
-        </IconButton>
+          Edit
+        </Button>
       </Box>
 
       {/* Hidden file inputs */}
       <input ref={photoInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handlePhotoPick} />
       <input ref={imageInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleImagePick} />
+
+      {/* Content + side panel */}
+      <Box sx={{ display: 'flex' }}>
+        {/* Main content */}
+        <Box sx={{ flex: 1, minWidth: 0, px: { xs: 2, md: 3 }, pt: 2 }}>
 
       {/* Tabs */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
@@ -327,13 +337,7 @@ export function PetDetailPage() {
         )}
       </Box>
 
-      <Box sx={{
-        background: 'rgba(255,255,255,0.03)',
-        borderRadius: 2,
-        overflow: 'hidden',
-        borderTop: '1px solid rgba(255,255,255,0.06)',
-        borderBottom: '1px solid rgba(255,255,255,0.06)',
-      }}>
+      <Box>
         {tab === 'vet-visits' && (
           <>
             {vetVisitsQuery.isLoading ? (
@@ -348,16 +352,16 @@ export function PetDetailPage() {
                 {scheduledVisits.length > 0 && (
                   <Box
                     sx={{
-                      p: 1.5,
-                      borderBottom: '1px solid rgba(255,255,255,0.07)',
-                      background: 'rgba(42,157,143,0.06)',
+                      p: 1.5, mb: 1.5,
+                      borderRadius: 2,
+                      background: isDark ? 'rgba(42,157,143,0.1)' : 'rgba(42,157,143,0.06)',
+                      border: '1px solid rgba(42,157,143,0.2)',
                     }}
                   >
                     <Typography
-                      variant="caption"
-                      sx={{ fontWeight: 600, color: 'primary.main', px: 0.5, display: 'block', mb: 1 }}
+                      sx={{ fontWeight: 800, fontSize: '0.6875rem', color: 'text.disabled', letterSpacing: '2px', textTransform: 'uppercase', mb: 1 }}
                     >
-                      UPCOMING
+                      Upcoming
                     </Typography>
                     <Box sx={{ display: 'flex', gap: 1, overflowX: 'auto', pb: 0.5 }}>
                       {scheduledVisits.map((v) => {
@@ -404,36 +408,46 @@ export function PetDetailPage() {
                     </Typography>
                   </Box>
                 ) : (
-                  <List disablePadding>
-                    {loggedVisits.map((v, i) => {
+                  <>
+                    {loggedVisits.map((v) => {
                       const vet = vets.find((vt) => vt.id === v.vetId);
-                      const vetName = vet ? vet.name : (v.clinic ?? null);
+                      const clinicLabel = vet ? vet.name : (v.clinic ?? null);
                       return (
-                        <Box key={v.id}>
-                          {i > 0 && <Divider />}
-                          <ListItemButton onClick={() => setDetailVisit(v)} sx={{ py: 1, px: 2 }}>
-                            <Box sx={{ flex: 1, minWidth: 0 }}>
-                              <Typography variant="body2" sx={{ fontWeight: 500 }} noWrap>
-                                {v.reason}
-                              </Typography>
-                              {vetName && (
-                                <Typography variant="caption" color="text.secondary" noWrap>
-                                  {vetName}
-                                </Typography>
-                              )}
-                            </Box>
-                            <Typography
-                              variant="caption"
-                              color="text.secondary"
-                              sx={{ whiteSpace: 'nowrap', ml: 2, flexShrink: 0 }}
-                            >
-                              {fmtDate(v.visitDate)}
+                        <Box
+                          key={v.id}
+                          onClick={() => setDetailVisit(v)}
+                          sx={{
+                            bgcolor: 'background.paper', borderRadius: 2, p: 1.75, mb: 1,
+                            boxShadow: isDark
+                              ? '0 2px 12px rgba(0,0,0,0.25)'
+                              : '0 2px 12px rgba(108,99,255,0.08)',
+                            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                            cursor: 'pointer',
+                            '&:hover': { bgcolor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(108,99,255,0.04)' },
+                          }}
+                        >
+                          <Box sx={{ flex: 1, minWidth: 0 }}>
+                            <Typography sx={{ fontWeight: 800, fontSize: '0.875rem', color: 'text.primary' }} noWrap>{v.reason}</Typography>
+                            <Typography sx={{ fontWeight: 600, fontSize: '0.75rem', color: 'text.secondary', mt: 0.25 }}>
+                              {fmtDate(v.visitDate)}{clinicLabel ? ` · ${clinicLabel}` : ''}
                             </Typography>
-                          </ListItemButton>
+                          </Box>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, ml: 1 }}>
+                            <Chip
+                              label="Logged"
+                              size="small"
+                              sx={{
+                                fontWeight: 800, borderRadius: 5, fontSize: '0.6875rem',
+                                bgcolor: '#34d39922',
+                                color: '#059669',
+                                border: 'none',
+                              }}
+                            />
+                          </Box>
                         </Box>
                       );
                     })}
-                  </List>
+                  </>
                 )}
                 <div ref={vetVisitsSentinel} />
                 {vetVisitsQuery.isFetchingNextPage && <ListSkeleton />}
@@ -446,21 +460,97 @@ export function PetDetailPage() {
           medicationsQuery.isLoading ? <LoadingState /> : medicationsQuery.isError ? (
             <Box sx={{ p: 2 }}><Alert severity="error">{getApiError(medicationsQuery.error)}</Alert></Box>
           ) : !medications.length ? <EmptyState /> : (
-            <List disablePadding>
-              {medications.map((m, i) => (
-                <Box key={m.id}>
-                  {i > 0 && <Divider />}
-                  <MedicationRow
-                    med={m}
-                    onEdit={() => setDetailMed(m)}
-                    onToggleActive={() => {/* handled by MedicationDetailDialog */}}
-                  />
+            <>
+              {medications.map((m) => (
+                <Box
+                  key={m.id}
+                  onClick={() => setDetailMed(m)}
+                  sx={{
+                    bgcolor: 'background.paper', borderRadius: 2, p: 1.75, mb: 1,
+                    boxShadow: isDark
+                      ? '0 2px 12px rgba(0,0,0,0.25)'
+                      : '0 2px 12px rgba(108,99,255,0.08)',
+                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                    cursor: 'pointer',
+                    '&:hover': { bgcolor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(108,99,255,0.04)' },
+                  }}
+                >
+                  <Box sx={{ flex: 1, minWidth: 0 }}>
+                    <Typography sx={{ fontWeight: 800, fontSize: '0.875rem', color: 'text.primary' }}>{m.name}</Typography>
+                    <Typography sx={{ fontWeight: 600, fontSize: '0.75rem', color: 'text.secondary', mt: 0.25 }}>
+                      {m.dosage.amount} {m.dosage.unit} · {m.frequency.label}
+                    </Typography>
+                  </Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, ml: 1 }}>
+                    <Chip
+                      label={m.active ? 'Active' : 'Inactive'}
+                      size="small"
+                      sx={{
+                        fontWeight: 800, borderRadius: 5, fontSize: '0.6875rem',
+                        bgcolor: m.active ? '#34d39922' : (isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'),
+                        color: m.active ? '#059669' : 'text.disabled',
+                        border: 'none',
+                      }}
+                    />
+                    <Switch
+                      size="small"
+                      checked={m.active}
+                      onChange={(e) => { e.stopPropagation(); }}
+                      sx={{ flexShrink: 0 }}
+                    />
+                  </Box>
                 </Box>
               ))}
-            </List>
+            </>
           )
         )}
       </Box>
+
+        </Box>{/* end main content */}
+
+        {/* Desktop side panel */}
+        <Box
+          sx={{
+            display: { xs: 'none', md: 'flex' },
+            flexDirection: 'column', gap: 2,
+            width: 260, flexShrink: 0,
+            bgcolor: 'background.paper',
+            borderLeft: '1px solid', borderColor: 'divider',
+            p: 2,
+          }}
+        >
+          {/* Active medications */}
+          <Typography sx={{ fontWeight: 800, fontSize: '0.6875rem', color: 'text.disabled', letterSpacing: '2px', textTransform: 'uppercase' }}>
+            Active Medications
+          </Typography>
+          {activeMeds.length === 0 ? (
+            <Typography sx={{ fontWeight: 600, fontSize: '0.8125rem', color: 'text.secondary' }}>None</Typography>
+          ) : activeMeds.slice(0, 3).map((med) => (
+            <Box key={med.id} sx={{ bgcolor: 'background.default', borderRadius: 1.5, p: 1.5 }}>
+              <Typography sx={{ fontWeight: 800, fontSize: '0.8125rem', color: 'text.primary' }}>{med.name}</Typography>
+              <Typography sx={{ fontWeight: 600, fontSize: '0.75rem', color: 'text.secondary', mt: 0.25 }}>
+                {med.dosage.amount}{med.dosage.unit} · {med.frequency.label}
+              </Typography>
+            </Box>
+          ))}
+
+          {/* Upcoming visit */}
+          {nextVisit && (
+            <>
+              <Typography sx={{ fontWeight: 800, fontSize: '0.6875rem', color: 'text.disabled', letterSpacing: '2px', textTransform: 'uppercase', mt: 1 }}>
+                Next Visit
+              </Typography>
+              <Box sx={{ bgcolor: isDark ? '#3d3580' : '#ede9fe', borderRadius: 1.5, p: 1.5 }}>
+                <Typography sx={{ fontWeight: 800, fontSize: '0.875rem', color: 'primary.main' }}>{nextVisit.reason}</Typography>
+                <Typography sx={{ fontWeight: 600, fontSize: '0.75rem', color: 'text.secondary', mt: 0.5 }}>
+                  {fmtDate(nextVisit.visitDate)} · {nextVisit.clinic ?? nextVisit.vetName ?? 'No clinic'}
+                </Typography>
+              </Box>
+            </>
+          )}
+        </Box>
+
+      </Box>{/* end flex container */}
 
       {/* Edit pet dialog */}
       {pet && (
@@ -623,7 +713,7 @@ export function PetDetailPage() {
           onClose={() => setDetailMed(null)}
         />
       )}
-    </Container>
+    </Box>
   );
 }
 
@@ -1005,38 +1095,6 @@ function AddMedicationDialog({ open, saving, onClose, onSave }: {
         </Button>
       </DialogActions>
     </Dialog>
-  );
-}
-
-function MedicationRow({ med, onEdit, onToggleActive }: {
-  med: Medication;
-  onEdit: () => void;
-  onToggleActive: (active: boolean) => void;
-}) {
-  const dosageLabel = `${med.dosage.amount} ${med.dosage.unit}`;
-  const dateRange = med.endDate
-    ? `${fmtDate(med.startDate)} – ${fmtDate(med.endDate)}`
-    : `Since ${fmtDate(med.startDate)}`;
-
-  return (
-    <ListItemButton onClick={onEdit} sx={{ px: 2, py: 1.5, gap: 1.5 }}>
-      <MedicationIcon sx={{ color: med.active ? 'primary.main' : 'text.disabled', flexShrink: 0 }} fontSize="small" />
-      <Box sx={{ flex: 1, minWidth: 0 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
-          <Typography variant="body2" sx={{ fontWeight: 500 }}>{med.name}</Typography>
-          <Typography variant="caption" color="text.secondary">
-            {dosageLabel} · {med.frequency.label}
-          </Typography>
-        </Box>
-        <Typography variant="caption" color="text.secondary">{dateRange}</Typography>
-      </Box>
-      <Switch
-        size="small"
-        checked={med.active}
-        onChange={(e) => { e.stopPropagation(); onToggleActive(!med.active); }}
-        sx={{ flexShrink: 0 }}
-      />
-    </ListItemButton>
   );
 }
 
