@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Box, Typography, useTheme, useMediaQuery } from '@mui/material';
 import { useQuery, useQueries, useQueryClient } from '@tanstack/react-query';
-import { format, startOfMonth, endOfMonth, addMonths, subMonths } from 'date-fns';
+import { format, startOfMonth, endOfMonth, addMonths, subMonths, isSameMonth } from 'date-fns';
 import { petsApi } from '../../api/pets';
 import { healthApi } from '../../api/health';
 import { medicationsApi } from '../../api/medications';
@@ -75,6 +75,7 @@ export function CalendarPage() {
   const monthKey = format(currentMonth, 'yyyy-MM');
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(currentMonth);
+  const isCurrentMonth = isSameMonth(currentMonth, new Date());
 
   // Pets (page 1 — sufficient for filter chips; distinct key from PetsPage infinite query)
   const { data: petsPage } = useQuery({
@@ -190,6 +191,18 @@ export function CalendarPage() {
                 onClick={() => { setCurrentMonth((m) => subMonths(m, 1)); setSelectedDay(null); }}
                 sx={{ width: 32, height: 32, borderRadius: 1.5, bgcolor: 'background.paper', border: '1.5px solid', borderColor: 'divider', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'primary.main', fontWeight: 900, fontSize: '1rem', userSelect: 'none', '&:hover': { bgcolor: (t) => t.palette.mode === 'dark' ? '#3d3580' : '#ede9fe' } }}
               >‹</Box>
+              <Box
+                onClick={() => { if (!isCurrentMonth) { setCurrentMonth(startOfMonth(new Date())); setSelectedDay(null); } }}
+                sx={{
+                  px: 1.25, height: 32, borderRadius: 1.5, bgcolor: 'background.paper',
+                  border: '1.5px solid', borderColor: 'divider',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  cursor: isCurrentMonth ? 'default' : 'pointer',
+                  color: 'primary.main', fontWeight: 800, fontSize: '0.72rem',
+                  userSelect: 'none', opacity: isCurrentMonth ? 0.4 : 1,
+                  ...(!isCurrentMonth && { '&:hover': { bgcolor: (t: any) => t.palette.mode === 'dark' ? '#3d3580' : '#ede9fe' } }),
+                }}
+              >Today</Box>
               <Box
                 onClick={() => { setCurrentMonth((m) => addMonths(m, 1)); setSelectedDay(null); }}
                 sx={{ width: 32, height: 32, borderRadius: 1.5, bgcolor: 'background.paper', border: '1.5px solid', borderColor: 'divider', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'primary.main', fontWeight: 900, fontSize: '1rem', userSelect: 'none', '&:hover': { bgcolor: (t) => t.palette.mode === 'dark' ? '#3d3580' : '#ede9fe' } }}
