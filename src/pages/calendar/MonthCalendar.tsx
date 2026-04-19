@@ -1,11 +1,10 @@
 import { useMemo } from 'react';
-import { Box, Typography, Skeleton, Alert } from '@mui/material';
+import { Box, Typography, Skeleton, Alert, useTheme } from '@mui/material';
 import {
   startOfMonth, endOfMonth, startOfWeek, endOfWeek,
   eachDayOfInterval, isSameMonth, isToday, format, startOfToday,
 } from 'date-fns';
 import type { CalendarEvent } from '../../types';
-import { getContrastText } from '../../utils/color';
 
 const DAY_HEADERS = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
 const MAX_RIBBONS = 3;
@@ -45,6 +44,8 @@ function getEventsForDay(day: Date, events: CalendarEvent[]): CalendarEvent[] {
 }
 
 export function MonthCalendar({ month, events, petColors, petNames, loading, error, onDayClick }: MonthCalendarProps) {
+  const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
   const days = useMemo(() => buildGrid(month), [month]);
 
   if (error) {
@@ -95,44 +96,34 @@ export function MonthCalendar({ month, events, petColors, petNames, loading, err
                 key={dateKey}
                 onClick={() => onDayClick(day, dayEvents)}
                 sx={{
-                  minHeight: 80,
-                  p: 0.5,
+                  minHeight: { xs: 36, md: 64 },
+                  p: '4px 5px',
                   display: 'flex',
                   flexDirection: 'column',
                   gap: '2px',
                   cursor: 'pointer',
-                  bgcolor: today ? 'primary.light' : 'background.paper',
-                  opacity: inMonth ? 1 : 0.4,
+                  bgcolor: today ? (isDark ? '#3d3580' : '#ede9fe') : 'background.paper',
+                  borderRadius: 1,
+                  opacity: inMonth ? 1 : 0.3,
                   borderRight: col < 6 ? '1px solid' : 'none',
                   borderBottom: row < Math.floor((days.length - 1) / 7) ? '1px solid' : 'none',
                   borderColor: 'divider',
-                  '&:hover': { bgcolor: today ? 'primary.light' : 'action.hover' },
-                  transition: 'background-color 0.1s',
+                  '&:hover': { bgcolor: isDark ? '#2d2a50' : '#f5f3ff' },
+                  transition: 'background 0.12s',
                 }}
               >
                 {/* Day number */}
-                <Box sx={{ alignSelf: 'flex-start' }}>
-                  <Box
-                    sx={{
-                      width: 22, height: 22,
-                      borderRadius: '50%',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      bgcolor: today ? 'primary.main' : 'transparent',
-                    }}
-                  >
-                    <Typography
-                      variant="caption"
-                      sx={{
-                        fontWeight: today ? 700 : 500,
-                        color: today ? '#fff' : 'text.primary',
-                        fontSize: '0.72rem',
-                        lineHeight: 1,
-                      }}
-                    >
-                      {format(day, 'd')}
-                    </Typography>
-                  </Box>
-                </Box>
+                <Typography
+                  sx={{
+                    fontSize: '0.625rem',
+                    fontWeight: today ? 900 : 800,
+                    color: today ? 'primary.main' : 'text.primary',
+                    lineHeight: 1,
+                    mb: '2px',
+                  }}
+                >
+                  {format(day, 'd')}
+                </Typography>
 
                 {/* Event ribbons */}
                 {visible.map((e) => {
@@ -148,10 +139,11 @@ export function MonthCalendar({ month, events, petColors, petNames, loading, err
                     <Box
                       key={e.id}
                       sx={{
-                        borderRadius: 0.5,
-                        px: 0.5,
+                        borderRadius: '4px',
+                        px: '3px',
                         py: '1px',
                         overflow: 'hidden',
+                        mb: '1px',
                         ...(isScheduled
                           ? {
                               bgcolor: `${petColor}33`,
@@ -188,9 +180,16 @@ export function MonthCalendar({ month, events, petColors, petNames, loading, err
                         variant="caption"
                         noWrap
                         sx={{
-                          color: isScheduled ? petColor : getContrastText(petColor),
-                          fontSize: '0.62rem',
-                          fontWeight: 600,
+                          borderRadius: '4px',
+                          px: '3px',
+                          py: '1px',
+                          fontSize: '0.5rem',
+                          fontWeight: 800,
+                          color: isScheduled ? petColor : 'white',
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          mb: '1px',
                           display: 'block',
                           lineHeight: 1.4,
                         }}

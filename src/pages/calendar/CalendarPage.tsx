@@ -1,6 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Box, Container, IconButton, Typography } from '@mui/material';
-import { ChevronLeft, ChevronRight } from '@mui/icons-material';
+import { Box, Container, Typography } from '@mui/material';
 import { useQuery, useQueries, useQueryClient } from '@tanstack/react-query';
 import { format, startOfMonth, endOfMonth, addMonths, subMonths } from 'date-fns';
 import { petsApi } from '../../api/pets';
@@ -155,16 +154,21 @@ export function CalendarPage() {
         onChange={setSelectedPetId}
       />
 
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1, py: 1 }}>
-        <IconButton size="small" onClick={() => { setCurrentMonth((m) => subMonths(m, 1)); setSelectedDay(null); }} aria-label="Previous month">
-          <ChevronLeft />
-        </IconButton>
-        <Typography variant="h6" sx={{ minWidth: 140, textAlign: 'center', fontWeight: 700, fontSize: '1rem' }}>
+      {/* Page header */}
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', px: { xs: 2, md: 3 }, pt: 2.5, pb: 1 }}>
+        <Typography sx={{ fontWeight: 900, fontSize: { xs: '1.25rem', md: '1.5rem' }, color: 'text.primary', letterSpacing: '-0.8px' }}>
           {format(currentMonth, 'MMMM yyyy')}
         </Typography>
-        <IconButton size="small" onClick={() => { setCurrentMonth((m) => addMonths(m, 1)); setSelectedDay(null); }} aria-label="Next month">
-          <ChevronRight />
-        </IconButton>
+        <Box sx={{ display: 'flex', gap: 0.75 }}>
+          <Box
+            onClick={() => { setCurrentMonth((m) => subMonths(m, 1)); setSelectedDay(null); }}
+            sx={{ width: 32, height: 32, borderRadius: 1.5, bgcolor: 'background.paper', border: '1.5px solid', borderColor: 'divider', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'primary.main', fontWeight: 900, fontSize: '1rem', userSelect: 'none', '&:hover': { bgcolor: (t) => t.palette.mode === 'dark' ? '#3d3580' : '#ede9fe' } }}
+          >‹</Box>
+          <Box
+            onClick={() => { setCurrentMonth((m) => addMonths(m, 1)); setSelectedDay(null); }}
+            sx={{ width: 32, height: 32, borderRadius: 1.5, bgcolor: 'background.paper', border: '1.5px solid', borderColor: 'divider', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'primary.main', fontWeight: 900, fontSize: '1rem', userSelect: 'none', '&:hover': { bgcolor: (t) => t.palette.mode === 'dark' ? '#3d3580' : '#ede9fe' } }}
+          >›</Box>
+        </Box>
       </Box>
 
       <MonthCalendar

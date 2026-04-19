@@ -17,25 +17,28 @@ export function PetFilterChips({ pets, petColors, selectedPetId, onChange }: Pet
         onClick={() => onChange(null)}
         color={selectedPetId === null ? 'primary' : 'default'}
         variant={selectedPetId === null ? 'filled' : 'outlined'}
-        sx={{ fontWeight: 600, fontSize: '0.75rem' }}
+        sx={selectedPetId === null
+          ? { fontWeight: 800, bgcolor: 'primary.main', color: 'white', '&:hover': { bgcolor: 'primary.dark' } }
+          : { fontWeight: 800 }
+        }
       />
-      {pets.map((pet) => (
-        <Chip
-          key={pet.id}
-          label={pet.name}
-          size="small"
-          onClick={() => onChange(pet.id)}
-          variant={selectedPetId === pet.id ? 'filled' : 'outlined'}
-          sx={{
-            fontWeight: selectedPetId === pet.id ? 700 : 400,
-            fontSize: '0.75rem',
-            borderColor: petColors[pet.id],
-            color: selectedPetId === pet.id ? '#fff' : petColors[pet.id],
-            bgcolor: selectedPetId === pet.id ? petColors[pet.id] : 'transparent',
-            '&:hover': { bgcolor: selectedPetId === pet.id ? petColors[pet.id] : `${petColors[pet.id]}22` },
-          }}
-        />
-      ))}
+      {pets.map((pet) => {
+        const petColor = petColors[pet.id];
+        const isSelected = selectedPetId === pet.id;
+        return (
+          <Chip
+            key={pet.id}
+            label={pet.name}
+            size="small"
+            onClick={() => onChange(pet.id)}
+            variant={isSelected ? 'filled' : 'outlined'}
+            sx={isSelected
+              ? { fontWeight: 800, bgcolor: petColor, color: 'white', '&:hover': { opacity: 0.9 } }
+              : { fontWeight: 800, borderColor: petColor, color: petColor }
+            }
+          />
+        );
+      })}
     </Box>
   );
 }
