@@ -65,7 +65,7 @@ export function MonthCalendar({ month, events, petColors, petNames, loading, err
 
       {/* Calendar grid */}
       {loading ? (
-        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '1px' }}>
+        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '1px', flex: 1, minHeight: 0 }}>
           {Array.from({ length: 35 }).map((_, i) => (
             <Skeleton key={i} variant="rectangular" height={80} />
           ))}
@@ -75,7 +75,7 @@ export function MonthCalendar({ month, events, petColors, petNames, loading, err
           sx={{
             display: 'grid',
             gridTemplateColumns: 'repeat(7, 1fr)',
-            gridTemplateRows: `repeat(${days.length / 7}, 1fr)`,
+            gridTemplateRows: `repeat(${Math.round(days.length / 7)}, 1fr)`,
             flex: 1,
             minHeight: 0,
             border: '1px solid',
@@ -214,7 +214,7 @@ export function MonthCalendar({ month, events, petColors, petNames, loading, err
       )}
 
       {/* Legend */}
-      {!loading && (
+      {!loading && events.length > 0 && (
         <Box sx={{ display: 'flex', gap: 2, flexShrink: 0, flexWrap: 'wrap', alignItems: 'center', pt: 0.75, pb: 0.25, px: 0.5 }}>
           {Object.entries(petColors).map(([petId, color]) => (
             <Box key={petId} sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
