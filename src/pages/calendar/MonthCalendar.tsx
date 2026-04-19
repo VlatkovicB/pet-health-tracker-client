@@ -7,7 +7,7 @@ import {
 import type { CalendarEvent } from '../../types';
 
 const DAY_HEADERS = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
-const MAX_RIBBONS = 3;
+const MAX_RIBBONS = 5;
 
 interface MonthCalendarProps {
   month: Date;
@@ -28,12 +28,12 @@ function buildGrid(month: Date): Date[] {
   });
 }
 
-function toLocalDate(s: string): Date {
+export function toLocalDate(s: string): Date {
   const [y, m, d] = s.split('-').map(Number);
   return new Date(y, m - 1, d);
 }
 
-function getEventsForDay(day: Date, events: CalendarEvent[]): CalendarEvent[] {
+export function getEventsForDay(day: Date, events: CalendarEvent[]): CalendarEvent[] {
   const dateKey = format(day, 'yyyy-MM-dd');
   return events.filter((e) => {
     if (e.kind === 'vet-visit') return e.date.slice(0, 10) === dateKey;
