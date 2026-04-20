@@ -453,7 +453,7 @@ export function PetDetailPage() {
                         e.stopPropagation();
                         toggleActiveMutation.mutate({ medId: m.id, active: !m.active });
                       }}
-                      disabled={toggleActiveMutation.isPending}
+                      disabled={toggleActiveMutation.isPending && toggleActiveMutation.variables?.medId === m.id}
                       sx={{ flexShrink: 0 }}
                     />
                   </Box>
