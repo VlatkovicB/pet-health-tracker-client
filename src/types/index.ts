@@ -55,16 +55,23 @@ export interface Reminder {
   createdAt: string;
 }
 
+export interface AdvanceNotice {
+  amount: number;
+  unit: 'minutes' | 'hours' | 'days';
+}
+
 export interface Medication {
   id: string;
   petId: string;
   name: string;
   dosage: { amount: number; unit: string };
-  frequency: { type: string; interval: number; label: string };
+  schedule: ReminderScheduleProps;
   startDate: string;
   endDate?: string;
   notes?: string;
   active: boolean;
+  reminderEnabled: boolean;
+  advanceNotice?: AdvanceNotice;
   createdAt: string;
 }
 

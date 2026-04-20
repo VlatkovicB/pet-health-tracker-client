@@ -1,25 +1,27 @@
 import { apiClient } from './client';
-import type { Medication } from '../types';
+import type { Medication, ReminderScheduleProps, AdvanceNotice } from '../types';
 
 export interface CreateMedicationInput {
   name: string;
   dosageAmount: number;
   dosageUnit: string;
-  frequency: { type: string; interval: number };
+  schedule: ReminderScheduleProps;
   startDate: string;
   endDate?: string;
   notes?: string;
+  reminder?: { enabled: boolean; advanceNotice?: AdvanceNotice };
 }
 
 export interface UpdateMedicationInput {
   name?: string;
   dosageAmount?: number;
   dosageUnit?: string;
-  frequency?: { type: string; interval: number };
+  schedule?: ReminderScheduleProps;
   startDate?: string;
   endDate?: string | null;
   notes?: string | null;
   active?: boolean;
+  reminder?: { enabled: boolean; advanceNotice?: AdvanceNotice };
 }
 
 export const medicationsApi = {

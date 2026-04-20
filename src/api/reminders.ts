@@ -1,5 +1,5 @@
 import { apiClient } from './client';
-import type { Reminder, ReminderScheduleProps } from '../types';
+import type { Reminder, ReminderScheduleProps, AdvanceNotice } from '../types';
 
 export const remindersApi = {
   getMedicationReminder: (medicationId: string): Promise<Reminder | null> =>
@@ -13,7 +13,7 @@ export const remindersApi = {
 
   configureMedicationReminder: (
     medicationId: string,
-    data: { schedule: ReminderScheduleProps; enabled: boolean },
+    data: { enabled: boolean; advanceNotice?: AdvanceNotice },
   ) => apiClient.put(`/medications/${medicationId}/reminder`, data),
 
   getVetVisitReminder: (petId: string, visitId: string): Promise<Reminder | null> =>
