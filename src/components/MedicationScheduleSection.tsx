@@ -180,7 +180,7 @@ export function MedicationScheduleSection({
           </Typography>
           <Typography variant="caption" sx={{ color: 'text.secondary' }}>Get notified before each dose</Typography>
         </Box>
-        <Switch checked={reminderEnabled} onChange={(e) => onReminderToggle(e.target.checked)} />
+        <Switch checked={reminderEnabled} onChange={() => onReminderToggle(!reminderEnabled)} />
       </Box>
 
       {/* Advance notice — only shown when reminder enabled */}
