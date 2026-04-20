@@ -19,6 +19,8 @@ import type { Medication, Pet, VetVisit, Vet, VetWorkHours, DayOfWeek } from '..
 import { PET_COLOR_PALETTE } from '../../utils/color';
 import { ScheduledVisitDetailDialog } from '../../components/ScheduledVisitDetailDialog';
 import { MedicationDetailDialog } from '../../components/MedicationDetailDialog';
+import { MedicationScheduleSection } from '../../components/MedicationScheduleSection';
+import type { ReminderScheduleProps, AdvanceNotice } from '../../types';
 
 type TabValue = 'vet-visits' | 'medications';
 
@@ -421,7 +423,7 @@ export function PetDetailPage() {
                   <Box sx={{ flex: 1, minWidth: 0 }}>
                     <Typography sx={{ fontWeight: 800, fontSize: '0.9375rem', color: 'text.primary' }}>{m.name}</Typography>
                     <Typography sx={{ fontWeight: 600, fontSize: '0.8125rem', color: 'text.secondary', mt: 0.375 }}>
-                      {m.dosage.amount} {m.dosage.unit} · {m.frequency.label}
+                      {m.dosage.amount} {m.dosage.unit} · {m.schedule.type}
                     </Typography>
                   </Box>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, ml: 1 }}>
@@ -472,7 +474,7 @@ export function PetDetailPage() {
             <Box key={med.id} sx={{ bgcolor: 'background.default', borderRadius: 1.5, p: 1.5 }}>
               <Typography sx={{ fontWeight: 800, fontSize: '0.8125rem', color: 'text.primary' }}>{med.name}</Typography>
               <Typography sx={{ fontWeight: 600, fontSize: '0.75rem', color: 'text.secondary', mt: 0.25 }}>
-                {med.dosage.amount}{med.dosage.unit} · {med.frequency.label}
+                {med.dosage.amount}{med.dosage.unit} · {med.schedule.type}
               </Typography>
             </Box>
           ))}
@@ -906,66 +908,6 @@ const today = () => new Date().toISOString().slice(0, 10);
 
 const DOSAGE_UNITS = ['mg', 'ml', 'g', 'mcg', 'tab', 'pip', 'injection', 'collar', 'drop'];
 
-type FreqType = 'hourly' | 'daily' | 'weekly' | 'monthly';
-
-function freqLabel(type: FreqType, n: number): string {
-  if (!n || n < 1) return '';
-  switch (type) {
-    case 'hourly':  return n === 1 ? 'Every hour' : `Every ${n} hours`;
-    case 'daily':   return n === 1 ? 'Once daily' : n === 2 ? 'Twice daily' : `${n} times daily`;
-    case 'weekly':  return n === 1 ? 'Once a week' : `Every ${n} weeks`;
-    case 'monthly': return n === 1 ? 'Once a month' : `Every ${n} months`;
-  }
-}
-
-function FrequencyPicker({ onChange, initialType = 'daily', initialInterval = 1 }: {
-  onChange: (value: { type: FreqType; interval: number }) => void;
-  initialType?: FreqType;
-  initialInterval?: number;
-}) {
-  const [type, setType] = useState<FreqType>(initialType);
-  const [interval, setInterval] = useState(initialInterval);
-
-  const handleType = (t: FreqType) => {
-    setType(t);
-    onChange({ type: t, interval });
-  };
-
-  const handleInterval = (raw: string) => {
-    const n = Math.max(1, parseInt(raw) || 1);
-    setInterval(n);
-    onChange({ type, interval: n });
-  };
-
-  const preview = freqLabel(type, interval);
-
-  return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-      <Box sx={{ display: 'flex', gap: 1 }}>
-        <TextField
-          select label="Frequency" value={type}
-          onChange={(e) => handleType(e.target.value as FreqType)}
-          sx={{ flex: 1 }}
-        >
-          <MenuItem value="hourly">Hourly</MenuItem>
-          <MenuItem value="daily">Daily</MenuItem>
-          <MenuItem value="weekly">Weekly</MenuItem>
-          <MenuItem value="monthly">Monthly</MenuItem>
-        </TextField>
-        <TextField
-          label="Every" type="number" value={interval}
-          onChange={(e) => handleInterval(e.target.value)}
-          sx={{ width: 100 }}
-          slotProps={{ htmlInput: { min: 1 } }}
-        />
-      </Box>
-      {preview && (
-        <Typography variant="caption" color="primary" sx={{ pl: 0.5 }}>{preview}</Typography>
-      )}
-    </Box>
-  );
-}
-
 function AddMedicationDialog({ open, saving, onClose, onSave }: {
   open: boolean;
   saving: boolean;
@@ -980,7 +922,9 @@ function AddMedicationDialog({ open, saving, onClose, onSave }: {
     endDate: '',
     notes: '',
   });
-  const [frequency, setFrequency] = useState<{ type: FreqType; interval: number }>({ type: 'daily', interval: 1 });
+  const [schedule, setSchedule] = useState<ReminderScheduleProps>({ type: 'daily', times: ['08:00'] });
+  const [reminderEnabled, setReminderEnabled] = useState(false);
+  const [advanceNotice, setAdvanceNotice] = useState<AdvanceNotice | undefined>(undefined);
   const [hasEndDate, setHasEndDate] = useState(false);
 
   const set = (field: string, value: string) => setForm((f) => ({ ...f, [field]: value }));
@@ -991,10 +935,11 @@ function AddMedicationDialog({ open, saving, onClose, onSave }: {
       name: form.name,
       dosageAmount: parseFloat(form.dosageAmount),
       dosageUnit: form.dosageUnit,
-      frequency,
+      schedule,
       startDate: new Date(form.startDate).toISOString(),
       endDate: hasEndDate && form.endDate ? new Date(form.endDate).toISOString() : undefined,
       notes: form.notes || undefined,
+      reminder: { enabled: reminderEnabled, advanceNotice },
     });
   };
 
@@ -1019,7 +964,6 @@ function AddMedicationDialog({ open, saving, onClose, onSave }: {
               {DOSAGE_UNITS.map((u) => <MenuItem key={u} value={u}>{u}</MenuItem>)}
             </TextField>
           </Box>
-          <FrequencyPicker onChange={setFrequency} />
           <TextField label="Start date" type="date" value={form.startDate} onChange={(e) => set('startDate', e.target.value)} fullWidth required slotProps={{ inputLabel: { shrink: true } }} />
           <FormControlLabel
             control={<Checkbox checked={hasEndDate} onChange={(e) => setHasEndDate(e.target.checked)} />}
@@ -1029,6 +973,17 @@ function AddMedicationDialog({ open, saving, onClose, onSave }: {
             <TextField label="End date" type="date" value={form.endDate} onChange={(e) => set('endDate', e.target.value)} fullWidth slotProps={{ inputLabel: { shrink: true } }} />
           )}
           <TextField label="Notes" value={form.notes} onChange={(e) => set('notes', e.target.value)} fullWidth multiline rows={2} />
+          <Typography sx={{ fontWeight: 800, fontSize: '0.6875rem', color: 'text.disabled', letterSpacing: '2px', textTransform: 'uppercase', mb: -1 }}>
+            Schedule
+          </Typography>
+          <MedicationScheduleSection
+            schedule={schedule}
+            onScheduleChange={setSchedule}
+            reminderEnabled={reminderEnabled}
+            onReminderToggle={setReminderEnabled}
+            advanceNotice={advanceNotice}
+            onAdvanceNoticeChange={setAdvanceNotice}
+          />
         </Box>
       </DialogContent>
       <DialogActions>
