@@ -111,9 +111,9 @@ export function ScheduledVisitDetailDialog({ visit, petId, vets, onClose }: Prop
             saving={reminderMutation.isPending}
           />
         )}
+      </DialogContent>
 
-        <Divider />
-
+      <DialogActions>
         <Button
           variant="outlined"
           color="success"
@@ -122,9 +122,6 @@ export function ScheduledVisitDetailDialog({ visit, petId, vets, onClose }: Prop
         >
           {completeMutation.isPending ? 'Saving…' : 'Mark as done'}
         </Button>
-      </DialogContent>
-
-      <DialogActions>
         <Button onClick={onClose}>Close</Button>
       </DialogActions>
     </Dialog>
