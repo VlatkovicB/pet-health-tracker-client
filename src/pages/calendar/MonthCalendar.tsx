@@ -94,7 +94,12 @@ export function MonthCalendar({
             return (
               <Box
                 key={dateKey}
-                onClick={() => onDayClick(day, dayEvents)}
+                onClick={() => {
+                  const filteredEvents = showInactiveMeds
+                    ? dayEvents
+                    : dayEvents.filter((e) => e.kind === 'vet-visit' || (e.kind === 'medication' && e.active));
+                  onDayClick(day, filteredEvents);
+                }}
                 sx={{
                   p: '5px 6px',
                   display: 'flex',

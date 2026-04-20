@@ -55,7 +55,10 @@ export function MobileCalendarView({
   );
   const isCurrentWeek = weekStart.getTime() === currentWeekStart.getTime();
   const dayEvents = getEventsForDay(selectedDay, events);
-  const sortedEvents = sortEvents(dayEvents);
+  const visibleDayEvents = dayEvents.filter((e) =>
+    e.kind === 'vet-visit' || (e.kind === 'medication' && (showInactiveMeds || e.active))
+  );
+  const sortedEvents = sortEvents(visibleDayEvents);
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, px: 0.5, pt: 0.5 }}>
