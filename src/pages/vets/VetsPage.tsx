@@ -250,6 +250,7 @@ export function VetsPage() {
         phone: details.phone || f.phone,
         googleMapsUrl: details.googleMapsUrl || f.googleMapsUrl,
         rating: details.rating !== undefined ? String(details.rating) : f.rating,
+        workHours: details.workHours ?? f.workHours,
         placeId,
       }));
       setSearchState('done');
