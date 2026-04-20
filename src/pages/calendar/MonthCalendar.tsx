@@ -8,7 +8,7 @@ import type { CalendarEvent } from '../../types';
 import { toLocalDate, getEventsForDay } from './calendarUtils';
 
 const DAY_HEADERS = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
-const MAX_RIBBONS = 5;
+const MAX_RIBBONS = 4;
 
 interface MonthCalendarProps {
   month: Date;
@@ -17,6 +17,7 @@ interface MonthCalendarProps {
   petNames: Record<string, string>;
   loading?: boolean;
   error?: boolean;
+  showInactiveMeds?: boolean;
   onDayClick: (date: Date, events: CalendarEvent[]) => void;
 }
 
@@ -29,7 +30,9 @@ function buildGrid(month: Date): Date[] {
   });
 }
 
-export function MonthCalendar({ month, events, petColors, petNames, loading, error, onDayClick }: MonthCalendarProps) {
+export function MonthCalendar({
+  month, events, petColors, petNames, loading, error, showInactiveMeds, onDayClick,
+}: MonthCalendarProps) {
   const theme = useTheme();
   const isDark = theme.palette.mode === 'dark';
   const days = useMemo(() => buildGrid(month), [month]);
@@ -75,8 +78,16 @@ export function MonthCalendar({ month, events, petColors, petNames, loading, err
             const inMonth = isSameMonth(day, month);
             const today = isToday(day);
             const dayEvents = getEventsForDay(day, events);
-            const visible = dayEvents.slice(0, MAX_RIBBONS);
-            const overflow = dayEvents.length - visible.length;
+
+            const vetEvents = dayEvents.filter((e) => e.kind === 'vet-visit');
+            const medEvents = dayEvents.filter((e) => e.kind === 'medication');
+            const visibleMedDots = showInactiveMeds
+              ? medEvents
+              : medEvents.filter((e) => e.kind === 'medication' && e.active);
+
+            const visibleRibbons = vetEvents.slice(0, MAX_RIBBONS);
+            const overflow = vetEvents.length - visibleRibbons.length;
+
             const col = idx % 7;
             const row = Math.floor(idx / 7);
 
@@ -113,15 +124,12 @@ export function MonthCalendar({ month, events, petColors, petNames, loading, err
                   {format(day, 'd')}
                 </Typography>
 
-                {/* Event ribbons */}
-                {visible.map((e) => {
-                  const isVet = e.kind === 'vet-visit';
+                {/* Vet visit ribbons */}
+                {visibleRibbons.map((e) => {
+                  if (e.kind !== 'vet-visit') return null;
                   const petColor = petColors[e.petId] ?? '#888';
-
-                  const isOverdue = isVet && e.type === 'scheduled' && toLocalDate(e.date) < startOfToday();
-                  const isScheduled = isVet && e.type === 'scheduled';
-
-                  const label = isVet ? (petNames[e.petId] ?? 'Vet') : e.name;
+                  const isOverdue = e.type === 'scheduled' && toLocalDate(e.date) < startOfToday();
+                  const isScheduled = e.type === 'scheduled';
 
                   return (
                     <Box
@@ -133,13 +141,8 @@ export function MonthCalendar({ month, events, petColors, petNames, loading, err
                         overflow: 'hidden',
                         mb: '1px',
                         ...(isScheduled
-                          ? {
-                              bgcolor: `${petColor}33`,
-                              border: `2px dashed ${petColor}`,
-                            }
-                          : {
-                              bgcolor: petColor,
-                            }),
+                          ? { bgcolor: `${petColor}33`, border: `2px dashed ${petColor}` }
+                          : { bgcolor: petColor }),
                         display: 'flex',
                         alignItems: 'center',
                         gap: '3px',
@@ -148,41 +151,25 @@ export function MonthCalendar({ month, events, petColors, petNames, loading, err
                       {isOverdue && (
                         <Box
                           sx={{
-                            width: 12,
-                            height: 12,
-                            borderRadius: '50%',
-                            bgcolor: '#e63946',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            flexShrink: 0,
+                            width: 12, height: 12, borderRadius: '50%', bgcolor: '#e63946',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
                           }}
                         >
                           <Typography sx={{ color: '#fff', fontSize: '0.5625rem', fontWeight: 900, lineHeight: 1 }}>!</Typography>
                         </Box>
                       )}
-                      {e.kind === 'medication' && e.hasReminder && (
-                        <Typography variant="caption" sx={{ fontSize: '0.62rem', lineHeight: 1.4 }}>🔔</Typography>
-                      )}
                       <Typography
                         variant="caption"
                         noWrap
                         sx={{
-                          borderRadius: '4px',
-                          px: '3px',
-                          py: '1px',
-                          fontSize: '0.625rem',
-                          fontWeight: 800,
+                          borderRadius: '4px', px: '3px', py: '1px',
+                          fontSize: '0.625rem', fontWeight: 800,
                           color: isScheduled ? petColor : 'white',
-                          whiteSpace: 'nowrap',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          mb: '1px',
-                          display: 'block',
-                          lineHeight: 1.4,
+                          whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                          mb: '1px', display: 'block', lineHeight: 1.4,
                         }}
                       >
-                        {label}
+                        {petNames[e.petId] ?? 'Vet'}
                       </Typography>
                     </Box>
                   );
@@ -192,6 +179,27 @@ export function MonthCalendar({ month, events, petColors, petNames, loading, err
                   <Typography variant="caption" sx={{ fontSize: '0.625rem', color: 'text.secondary', pl: 0.25, lineHeight: 1.4 }}>
                     +{overflow} more
                   </Typography>
+                )}
+
+                {/* Medication dots */}
+                {visibleMedDots.length > 0 && (
+                  <Box sx={{ display: 'flex', gap: '3px', flexWrap: 'wrap', mt: 'auto', pt: '2px' }}>
+                    {visibleMedDots.map((e) => {
+                      const petColor = petColors[e.petId] ?? '#888';
+                      const isInactive = e.kind === 'medication' && !e.active;
+                      return (
+                        <Box
+                          key={e.id}
+                          sx={{
+                            width: 7, height: 7, borderRadius: '50%',
+                            bgcolor: petColor,
+                            opacity: isInactive ? 0.35 : 1,
+                            flexShrink: 0,
+                          }}
+                        />
+                      );
+                    })}
+                  </Box>
                 )}
               </Box>
             );
@@ -212,7 +220,11 @@ export function MonthCalendar({ month, events, petColors, petNames, loading, err
           ))}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
             <Box sx={{ width: 10, height: 10, borderRadius: '3px', border: '2px dashed', borderColor: 'primary.main', flexShrink: 0 }} />
-            <Typography sx={{ fontSize: '0.68rem', color: 'text.secondary', fontWeight: 600 }}>Scheduled</Typography>
+            <Typography sx={{ fontSize: '0.68rem', color: 'text.secondary', fontWeight: 600 }}>Scheduled visit</Typography>
+          </Box>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            <Box sx={{ width: 7, height: 7, borderRadius: '50%', bgcolor: 'text.disabled', flexShrink: 0 }} />
+            <Typography sx={{ fontSize: '0.68rem', color: 'text.secondary', fontWeight: 600 }}>Medication</Typography>
           </Box>
           <Typography sx={{ fontSize: '0.68rem', color: 'text.disabled', ml: 'auto' }}>
             Click any day for details

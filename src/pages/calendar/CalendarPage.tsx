@@ -56,6 +56,7 @@ function toCalendarEvents(
       dosageLabel: `${m.dosage.amount} ${m.dosage.unit}`,
       frequencyLabel: m.schedule.type.charAt(0).toUpperCase() + m.schedule.type.slice(1),
       hasReminder: m.reminderEnabled,
+      active: m.active,
     }));
 
   return [...visitEvents, ...medEvents];
@@ -65,6 +66,7 @@ export function CalendarPage() {
   const [currentMonth, setCurrentMonth] = useState(() => startOfMonth(new Date()));
   const [selectedPetId, setSelectedPetId] = useState<string | null>(null);
   const [selectedDay, setSelectedDay] = useState<{ date: Date; events: CalendarEvent[] } | null>(null);
+  const [showInactiveMeds, setShowInactiveMeds] = useState(false);
 
   const queryClient = useQueryClient();
   const theme = useTheme();
@@ -148,6 +150,8 @@ export function CalendarPage() {
           onPetChange={setSelectedPetId}
           loading={loading}
           error={error}
+          showInactiveMeds={showInactiveMeds}
+          onToggleInactiveMeds={() => setShowInactiveMeds((v) => !v)}
           onDayClick={(date, evts) => setSelectedDay({ date, events: evts })}
         />
       ) : (
@@ -158,6 +162,8 @@ export function CalendarPage() {
               petColors={petColors}
               selectedPetId={selectedPetId}
               onChange={setSelectedPetId}
+              showInactiveMeds={showInactiveMeds}
+              onToggleInactiveMeds={() => setShowInactiveMeds((v) => !v)}
             />
           </Box>
 
@@ -197,6 +203,7 @@ export function CalendarPage() {
             petNames={petNames}
             loading={loading}
             error={error}
+            showInactiveMeds={showInactiveMeds}
             onDayClick={(date, evts) => setSelectedDay({ date, events: evts })}
           />
         </>

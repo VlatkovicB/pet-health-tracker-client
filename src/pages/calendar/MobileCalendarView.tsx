@@ -18,6 +18,8 @@ interface MobileCalendarViewProps {
   onPetChange: (petId: string | null) => void;
   loading?: boolean;
   error?: boolean;
+  showInactiveMeds?: boolean;
+  onToggleInactiveMeds?: () => void;
   onDayClick: (date: Date, events: CalendarEvent[]) => void;
 }
 
@@ -35,7 +37,8 @@ function sortEvents(events: CalendarEvent[]): CalendarEvent[] {
 }
 
 export function MobileCalendarView({
-  events, petColors, petNames, pets, selectedPetId, onPetChange, loading, error, onDayClick,
+  events, petColors, petNames, pets, selectedPetId, onPetChange,
+  loading, error, showInactiveMeds, onToggleInactiveMeds, onDayClick,
 }: MobileCalendarViewProps) {
   const theme = useTheme();
   const isDark = theme.palette.mode === 'dark';
@@ -91,6 +94,8 @@ export function MobileCalendarView({
         petColors={petColors}
         selectedPetId={selectedPetId}
         onChange={onPetChange}
+        showInactiveMeds={showInactiveMeds}
+        onToggleInactiveMeds={onToggleInactiveMeds}
       />
 
       {/* 7-day week strip */}
@@ -98,7 +103,10 @@ export function MobileCalendarView({
         {weekDays.map((day, i) => {
           const active = isSameDay(day, selectedDay);
           const today = isToday(day);
-          const dots = getEventsForDay(day, events);
+          const allDayEvents = getEventsForDay(day, events);
+          const dots = allDayEvents.filter((e) =>
+            e.kind === 'vet-visit' || (e.kind === 'medication' && (showInactiveMeds || e.active))
+          );
           return (
             <Box
               key={format(day, 'yyyy-MM-dd')}

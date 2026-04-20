@@ -6,9 +6,14 @@ interface PetFilterChipsProps {
   petColors: Record<string, string>;
   selectedPetId: string | null;
   onChange: (petId: string | null) => void;
+  showInactiveMeds?: boolean;
+  onToggleInactiveMeds?: () => void;
 }
 
-export function PetFilterChips({ pets, petColors, selectedPetId, onChange }: PetFilterChipsProps) {
+export function PetFilterChips({
+  pets, petColors, selectedPetId, onChange,
+  showInactiveMeds, onToggleInactiveMeds,
+}: PetFilterChipsProps) {
   return (
     <Box sx={{ display: 'flex', gap: 0.75, flexWrap: 'wrap', px: { xs: 2, sm: 3 }, pt: 1.5, pb: 0.5 }}>
       <Chip
@@ -39,6 +44,18 @@ export function PetFilterChips({ pets, petColors, selectedPetId, onChange }: Pet
           />
         );
       })}
+      {onToggleInactiveMeds && (
+        <Chip
+          label="Show inactive meds"
+          size="small"
+          onClick={onToggleInactiveMeds}
+          variant={showInactiveMeds ? 'filled' : 'outlined'}
+          sx={showInactiveMeds
+            ? { fontWeight: 800, bgcolor: 'primary.main', color: 'white', '&:hover': { bgcolor: 'primary.dark' } }
+            : { fontWeight: 800 }
+          }
+        />
+      )}
     </Box>
   );
 }

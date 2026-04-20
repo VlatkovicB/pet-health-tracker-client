@@ -110,6 +110,7 @@ export type CalendarEvent =
       dosageLabel: string;
       frequencyLabel: string;
       hasReminder: boolean;
+      active: boolean;
     };
 
 export interface AuthTokens {
