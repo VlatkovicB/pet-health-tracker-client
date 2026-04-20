@@ -155,6 +155,15 @@ export function PetDetailPage() {
     onError: (err) => showError(getApiError(err)),
   });
 
+  const toggleActiveMutation = useMutation({
+    mutationFn: ({ medId, active }: { medId: string; active: boolean }) =>
+      medicationsApi.update(petId!, medId, { active }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['medications', petId] });
+    },
+    onError: (err) => showError(getApiError(err)),
+  });
+
   // Edit pet mutation
   const editMutation = useMutation({
     mutationFn: (data: Partial<Omit<Pet, 'id' | 'userId' | 'createdAt' | 'photoUrl'>>) =>
@@ -440,7 +449,11 @@ export function PetDetailPage() {
                     <Switch
                       size="small"
                       checked={m.active}
-                      onChange={(e) => { e.stopPropagation(); }}
+                      onChange={(e) => {
+                        e.stopPropagation();
+                        toggleActiveMutation.mutate({ medId: m.id, active: !m.active });
+                      }}
+                      disabled={toggleActiveMutation.isPending}
                       sx={{ flexShrink: 0 }}
                     />
                   </Box>
