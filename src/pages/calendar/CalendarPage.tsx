@@ -5,7 +5,6 @@ import { format, startOfMonth, endOfMonth, addMonths, subMonths, isSameMonth } f
 import { petsApi } from '../../api/pets';
 import { healthApi } from '../../api/health';
 import { medicationsApi } from '../../api/medications';
-import { remindersApi } from '../../api/reminders';
 import { vetsApi } from '../../api/vets';
 import { MonthCalendar } from './MonthCalendar';
 import { MobileCalendarView } from './MobileCalendarView';
@@ -27,7 +26,6 @@ function buildPetNames(pets: Pet[]): Record<string, string> {
 function toCalendarEvents(
   vetVisits: VetVisit[],
   medications: Medication[],
-  remindersMap: Record<string, boolean>,
   monthStart: Date,
   monthEnd: Date,
 ): CalendarEvent[] {
@@ -56,8 +54,8 @@ function toCalendarEvents(
       endDate: m.endDate,
       name: m.name,
       dosageLabel: `${m.dosage.amount} ${m.dosage.unit}`,
-      frequencyLabel: m.frequency.label,
-      hasReminder: remindersMap[m.id] ?? false,
+      frequencyLabel: m.schedule.type.charAt(0).toUpperCase() + m.schedule.type.slice(1),
+      hasReminder: m.reminderEnabled,
     }));
 
   return [...visitEvents, ...medEvents];
@@ -117,31 +115,13 @@ export function CalendarPage() {
     [medQueries.map((q) => q.dataUpdatedAt).join(',')],
   );
 
-  // Reminders per medication (parallel)
-  const reminderQueries = useQueries({
-    queries: allMedications.map((med) => ({
-      queryKey: ['reminder', 'medication', med.id],
-      queryFn: () => remindersApi.getMedicationReminder(med.id),
-      staleTime: 5 * 60 * 1000,
-    })),
-  });
-  const remindersMap = useMemo<Record<string, boolean>>(() => {
-    const map: Record<string, boolean> = {};
-    allMedications.forEach((med, i) => {
-      const r = reminderQueries[i]?.data;
-      map[med.id] = !!(r?.enabled);
-    });
-    return map;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [allMedications, reminderQueries.map((q) => q.dataUpdatedAt).join(',')]);
-
   const loading = visitsLoading || medQueries.some((q) => q.isLoading);
   const error = visitsError || medQueries.some((q) => q.isError);
 
   const allEvents = useMemo(
-    () => toCalendarEvents(vetVisits, allMedications, remindersMap, monthStart, monthEnd),
+    () => toCalendarEvents(vetVisits, allMedications, monthStart, monthEnd),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [vetVisits, allMedications, remindersMap, monthKey],
+    [vetVisits, allMedications, monthKey],
   );
 
   const visibleEvents = useMemo(
