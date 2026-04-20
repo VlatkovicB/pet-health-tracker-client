@@ -105,19 +105,41 @@ export function MedicationScheduleSection({
       )}
 
       {schedule.type === 'monthly' && (
-        <TextField
-          label="Day(s) of month (comma-separated)"
-          fullWidth
-          value={(schedule as { daysOfMonth: number[] }).daysOfMonth.join(', ')}
-          onChange={(e) => {
-            const daysOfMonth = e.target.value
-              .split(',')
-              .map((s) => parseInt(s.trim()))
-              .filter((n) => n >= 1 && n <= 31);
-            if (daysOfMonth.length > 0)
-              onScheduleChange({ ...schedule, daysOfMonth } as ReminderScheduleProps);
-          }}
-        />
+        <Box>
+          <Typography variant="caption" sx={{ color: 'text.secondary', mb: 0.75, display: 'block' }}>
+            Day(s) of month
+          </Typography>
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+            {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => {
+              const selected = (schedule as { daysOfMonth: number[] }).daysOfMonth.includes(day);
+              return (
+                <Box
+                  key={day}
+                  onClick={() => {
+                    const current = (schedule as { daysOfMonth: number[] }).daysOfMonth;
+                    const next = selected
+                      ? current.filter((d) => d !== day)
+                      : [...current, day].sort((a, b) => a - b);
+                    if (next.length > 0)
+                      onScheduleChange({ ...schedule, daysOfMonth: next } as ReminderScheduleProps);
+                  }}
+                  sx={{
+                    width: 32, height: 32, borderRadius: 1.5,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: '0.75rem', fontWeight: 700,
+                    cursor: 'pointer', userSelect: 'none',
+                    bgcolor: selected ? 'primary.main' : 'background.paper',
+                    color: selected ? 'primary.contrastText' : 'text.secondary',
+                    border: '1.5px solid',
+                    borderColor: selected ? 'primary.main' : 'divider',
+                  }}
+                >
+                  {day}
+                </Box>
+              );
+            })}
+          </Box>
+        </Box>
       )}
 
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
