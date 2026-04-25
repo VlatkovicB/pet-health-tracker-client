@@ -89,6 +89,31 @@ export interface Vet {
   createdAt: string;
 }
 
+export interface Note {
+  id: string;
+  userId: string;
+  title: string;
+  description?: string;
+  noteDate: string;        // 'YYYY-MM-DD'
+  petIds: string[];
+  imageUrls: string[];
+  createdAt: string;
+}
+
+export interface CreateNoteDto {
+  title: string;
+  description?: string;
+  noteDate: string;
+  petIds?: string[];
+}
+
+export interface UpdateNoteDto {
+  title?: string;
+  description?: string;
+  noteDate?: string;
+  petIds?: string[];
+}
+
 export type CalendarEvent =
   | {
       kind: 'vet-visit';
@@ -111,7 +136,8 @@ export type CalendarEvent =
       frequencyLabel: string;
       hasReminder: boolean;
       active: boolean;
-    };
+    }
+  | { kind: 'note'; date: string; note: Note };
 
 export interface AuthTokens {
   token: string;
@@ -121,4 +147,40 @@ export interface PaginatedResult<T> {
   items: T[];
   total: number;
   nextPage: number | null;
+}
+
+export interface SharePermissions {
+  canViewVetVisits: boolean;
+  canEditVetVisits: boolean;
+  canViewMedications: boolean;
+  canEditMedications: boolean;
+  canViewNotes: boolean;
+  canEditNotes: boolean;
+}
+
+export interface PetShare {
+  id: string;
+  petId: string;
+  petName: string;
+  sharedByEmail: string;
+  sharedWithEmail: string;
+  status: 'pending' | 'accepted';
+  permissions: SharePermissions;
+  createdAt: string;
+}
+
+export interface SharedPet extends Pet {
+  shareId: string;
+  permissions: SharePermissions;
+}
+
+export interface PetOwnershipTransfer {
+  id: string;
+  petId: string;
+  petName: string;
+  fromUserEmail: string;
+  toEmail: string;
+  status: 'pending' | 'accepted' | 'declined' | 'expired' | 'cancelled';
+  expiresAt: string;
+  createdAt: string;
 }
