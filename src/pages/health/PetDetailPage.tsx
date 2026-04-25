@@ -299,7 +299,7 @@ export function PetDetailPage() {
       >
         <Tooltip title="Change photo" placement="bottom">
           <Box
-            onClick={() => photoInputRef.current?.click()}
+            onClick={() => isOwner && photoInputRef.current?.click()}
             sx={{
               width: { xs: 48, md: 56 }, height: { xs: 48, md: 56 },
               borderRadius: 2, flexShrink: 0,
@@ -341,18 +341,20 @@ export function PetDetailPage() {
             </>
           )}
         </Box>
-        <Button
-          onClick={() => setEditOpen(true)}
-          size="small"
-          disabled={!pet}
-          sx={{
-            color: 'white', fontWeight: 800, fontSize: '0.8125rem',
-            bgcolor: 'rgba(255,255,255,0.2)', borderRadius: 1.5, px: 1.5, py: 0.625,
-            '&:hover': { bgcolor: 'rgba(255,255,255,0.3)' },
-          }}
-        >
-          Edit
-        </Button>
+        {isOwner && (
+          <Button
+            onClick={() => setEditOpen(true)}
+            size="small"
+            disabled={!pet}
+            sx={{
+              color: 'white', fontWeight: 800, fontSize: '0.8125rem',
+              bgcolor: 'rgba(255,255,255,0.2)', borderRadius: 1.5, px: 1.5, py: 0.625,
+              '&:hover': { bgcolor: 'rgba(255,255,255,0.3)' },
+            }}
+          >
+            Edit
+          </Button>
+        )}
       </Box>
 
       {/* Hidden file inputs */}

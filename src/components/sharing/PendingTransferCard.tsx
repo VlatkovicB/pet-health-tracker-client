@@ -83,7 +83,7 @@ export function PendingTransferCard({ transfer, onAccept, onDecline, accepting, 
               <Switch
                 size="small"
                 checked={retainAccess}
-                onChange={(e) => setRetainAccess(e.target.checked)}
+                onChange={() => setRetainAccess(!retainAccess)}
               />
             }
             label={

@@ -64,30 +64,28 @@ export function EditPermissionsDialog({ open, onClose, share, petId }: Props) {
         </Typography>
         <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 0.5 }}>
           {PERMISSION_PAIRS.map(({ viewKey, editKey, label }) => (
-            <>
+            <Box key={viewKey} sx={{ display: 'contents' }}>
               <FormControlLabel
-                key={viewKey}
                 control={
                   <Checkbox
                     size="small"
                     checked={perms[viewKey]}
-                    onChange={(e) => toggle(viewKey, e.target.checked)}
+                    onChange={() => toggle(viewKey, !perms[viewKey])}
                   />
                 }
                 label={<Typography sx={{ fontSize: '0.875rem' }}>View {label}</Typography>}
               />
               <FormControlLabel
-                key={editKey}
                 control={
                   <Checkbox
                     size="small"
                     checked={perms[editKey]}
-                    onChange={(e) => toggle(editKey, e.target.checked)}
+                    onChange={() => toggle(editKey, !perms[editKey])}
                   />
                 }
                 label={<Typography sx={{ fontSize: '0.875rem' }}>Edit {label}</Typography>}
               />
-            </>
+            </Box>
           ))}
         </Box>
       </DialogContent>

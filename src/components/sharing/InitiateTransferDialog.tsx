@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import axios from 'axios';
 import {
   Dialog, DialogTitle, DialogContent, DialogActions,
   Button, TextField, Typography, Alert, CircularProgress, Box,
@@ -6,6 +7,7 @@ import {
 import { Warning } from '@mui/icons-material';
 import { useInitiateTransfer, useCancelTransfer } from '../../api/transfers';
 import { getApiError } from '../../api/client';
+import { useNotification } from '../../context/NotificationContext';
 
 interface Props {
   open: boolean;
@@ -15,6 +17,7 @@ interface Props {
 }
 
 export function InitiateTransferDialog({ open, onClose, petId, petName }: Props) {
+  const { showError } = useNotification();
   const [email, setEmail] = useState('');
   const [conflictError, setConflictError] = useState(false);
   const initiateMutation = useInitiateTransfer();
@@ -33,9 +36,10 @@ export function InitiateTransferDialog({ open, onClose, petId, petName }: Props)
       {
         onSuccess: handleClose,
         onError: (err) => {
-          const msg = getApiError(err);
-          if (msg.toLowerCase().includes('pending') || msg.toLowerCase().includes('already')) {
+          if (axios.isAxiosError(err) && err.response?.status === 409) {
             setConflictError(true);
+          } else {
+            showError(getApiError(err));
           }
         },
       },

@@ -165,7 +165,7 @@ export function SharingTab({ petId, petName }: Props) {
       </Box>
 
       {/* Section 3: Danger zone */}
-      <Box sx={{ borderTop: '1px solid', borderColor: 'error.main', borderOpacity: 0.3, pt: 2, opacity: 0.8 }}>
+      <Box sx={{ borderTop: '1px solid rgba(239,68,68,0.3)', pt: 2, opacity: 0.8 }}>
         <Typography sx={{ fontWeight: 800, fontSize: '0.6875rem', color: 'error.main', letterSpacing: '2px', textTransform: 'uppercase', mb: 1 }}>
           Danger zone
         </Typography>
