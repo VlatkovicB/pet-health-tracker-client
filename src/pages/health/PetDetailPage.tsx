@@ -6,23 +6,29 @@ import {
   Skeleton, Checkbox, FormControlLabel, Switch, IconButton, Chip, Tooltip,
   CircularProgress, Alert, useTheme,
 } from '@mui/material';
-import { Add, AddAPhoto, Edit, Pets, Close } from '@mui/icons-material';
+import { Add, AddAPhoto, Edit, Pets, Close, StickyNote2 } from '@mui/icons-material';
 import { useMutation, useQuery, useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import { healthApi } from '../../api/health';
 import { vetsApi } from '../../api/vets';
 import { petsApi } from '../../api/pets';
+import { usersApi } from '../../api/users';
 import { medicationsApi, type CreateMedicationInput } from '../../api/medications';
+import { useNotes } from '../../api/notes';
+import { useListSharedPets } from '../../api/shares';
 import { getApiError } from '../../api/client';
 import { useNotification } from '../../context/NotificationContext';
 import { useInfiniteScroll } from '../../hooks/useInfiniteScroll';
-import type { Medication, Pet, VetVisit, Vet, VetWorkHours, DayOfWeek } from '../../types';
+import type { Medication, Note, Pet, VetVisit, Vet, VetWorkHours, DayOfWeek } from '../../types';
 import { PET_COLOR_PALETTE } from '../../utils/color';
 import { ScheduledVisitDetailDialog } from '../../components/ScheduledVisitDetailDialog';
 import { MedicationDetailDialog } from '../../components/MedicationDetailDialog';
 import { MedicationScheduleSection } from '../../components/MedicationScheduleSection';
+import { NoteFormDialog } from '../../components/NoteFormDialog';
+import { NoteDetailDialog } from '../../components/NoteDetailDialog';
+import { SharingTab } from '../../components/sharing/SharingTab';
 import type { ReminderScheduleProps, AdvanceNotice } from '../../types';
 
-type TabValue = 'vet-visits' | 'medications';
+type TabValue = 'vet-visits' | 'medications' | 'notes' | 'sharing';
 
 const toIso = (v: string) => (v ? new Date(v + ':00').toISOString() : '');
 const fmtDate = (iso: string) => new Date(iso).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
@@ -83,7 +89,6 @@ export function PetDetailPage() {
   const theme = useTheme();
   const isDark = theme.palette.mode === 'dark';
   const rawTab = searchParams.get('tab');
-  const tab: TabValue = rawTab === 'medications' ? 'medications' : 'vet-visits';
   const setTab = (value: TabValue) => setSearchParams({ tab: value }, { replace: true });
   const [addOpen, setAddOpen] = useState(false);
   const [addMedOpen, setAddMedOpen] = useState(false);
@@ -91,6 +96,9 @@ export function PetDetailPage() {
   const [detailVisit, setDetailVisit] = useState<VetVisit | null>(null);
   const [scheduledVisit, setScheduledVisit] = useState<VetVisit | null>(null);
   const [detailMed, setDetailMed] = useState<Medication | null>(null);
+  const [noteFormOpen, setNoteFormOpen] = useState(false);
+  const [noteDetailOpen, setNoteDetailOpen] = useState(false);
+  const [selectedNote, setSelectedNote] = useState<Note | null>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
 
@@ -100,6 +108,33 @@ export function PetDetailPage() {
     queryFn: () => petsApi.get(petId!),
     enabled: !!petId,
   });
+
+  // Current user (for ownership check)
+  const { data: me } = useQuery({ queryKey: ['me'], queryFn: usersApi.getMe });
+
+  // Shared pets (for sharer's permissions)
+  const { data: sharedPets = [] } = useListSharedPets();
+
+  const isOwner = !!pet && !!me && pet.userId === me.id;
+  const sharePerms = !isOwner ? sharedPets.find((sp) => sp.id === petId)?.permissions ?? null : null;
+
+  const showVetVisits = isOwner || (sharePerms?.canViewVetVisits ?? false);
+  const showMedications = isOwner || (sharePerms?.canViewMedications ?? false);
+  const showNotes = isOwner || (sharePerms?.canViewNotes ?? false);
+  const canEditVetVisits = isOwner || (sharePerms?.canEditVetVisits ?? false);
+  const canEditMedications = isOwner || (sharePerms?.canEditMedications ?? false);
+  const canEditNotes = isOwner || (sharePerms?.canEditNotes ?? false);
+
+  const tab: TabValue = (() => {
+    if (rawTab === 'sharing' && isOwner) return 'sharing';
+    if (rawTab === 'medications' && showMedications) return 'medications';
+    if (rawTab === 'notes' && showNotes) return 'notes';
+    if (rawTab === 'vet-visits' && showVetVisits) return 'vet-visits';
+    if (showVetVisits) return 'vet-visits';
+    if (showMedications) return 'medications';
+    if (showNotes) return 'notes';
+    return 'vet-visits';
+  })();
 
   // Vets for dropdown
   const { data: vets = [] } = useQuery({
@@ -140,6 +175,10 @@ export function PetDetailPage() {
     queryFn: () => medicationsApi.list(petId!),
     enabled: !!petId && tab === 'medications',
   });
+  // Notes
+  const notesQuery = useNotes({ petId: petId ?? undefined });
+  const notes = (notesQuery.data ?? []).slice().sort((a, b) => b.noteDate.localeCompare(a.noteDate));
+
   const medications = (medicationsQuery.data ?? []).slice().sort((a, b) => a.name.localeCompare(b.name));
   const activeMeds = medications.filter((m) => m.active);
   const nextVisit = vetVisits
@@ -253,8 +292,9 @@ export function PetDetailPage() {
         sx={{
           background: 'linear-gradient(135deg, #6c63ff, #a78bfa)',
           px: { xs: 2, md: 3 },
-          pt: 2.5, pb: 3,
+          pt: 2.5, pb: 5,
           display: 'flex', alignItems: 'center', gap: 2,
+          borderRadius: '0 0 32px 32px',
         }}
       >
         <Tooltip title="Change photo" placement="bottom">
@@ -320,21 +360,26 @@ export function PetDetailPage() {
       <input ref={imageInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleImagePick} />
 
       {/* Content + side panel */}
-      <Box sx={{ display: 'flex' }}>
+      <Box sx={{ display: 'flex', mt: -3 }}>
         {/* Main content */}
-        <Box sx={{ flex: 1, minWidth: 0, px: { xs: 2, md: 3 }, pt: 2 }}>
+        <Box sx={{ flex: 1, minWidth: 0, px: { xs: 2, md: 3 }, pt: 2, position: 'relative', zIndex: 1 }}>
 
       {/* Tabs */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
         <Tabs value={tab} onChange={(_, v) => setTab(v)}>
-          <Tab value="vet-visits" label="Vet Visits" />
-          <Tab label="Medications" value="medications" />
+          {showVetVisits && <Tab value="vet-visits" label="Vet Visits" />}
+          {showMedications && <Tab label="Medications" value="medications" />}
+          {showNotes && <Tab value="notes" label="Notes" icon={<StickyNote2 sx={{ fontSize: '1rem' }} />} iconPosition="start" />}
+          {isOwner && <Tab value="sharing" label="Sharing" />}
         </Tabs>
-        {tab === 'vet-visits' && (
+        {tab === 'vet-visits' && canEditVetVisits && (
           <Button variant="contained" startIcon={<Add />} onClick={() => setAddOpen(true)} size="small">Add</Button>
         )}
-        {tab === 'medications' && (
+        {tab === 'medications' && canEditMedications && (
           <Button variant="contained" startIcon={<Add />} onClick={() => setAddMedOpen(true)} size="small">Add</Button>
+        )}
+        {tab === 'notes' && canEditNotes && (
+          <Button variant="contained" startIcon={<Add />} onClick={() => setNoteFormOpen(true)} size="small">Add</Button>
         )}
       </Box>
 
@@ -449,11 +494,12 @@ export function PetDetailPage() {
                     <Switch
                       size="small"
                       checked={m.active}
+                      onClick={(e) => e.stopPropagation()}
                       onChange={(e) => {
                         e.stopPropagation();
-                        toggleActiveMutation.mutate({ medId: m.id, active: !m.active });
+                        if (canEditMedications) toggleActiveMutation.mutate({ medId: m.id, active: !m.active });
                       }}
-                      disabled={toggleActiveMutation.isPending && toggleActiveMutation.variables?.medId === m.id}
+                      disabled={!canEditMedications || (toggleActiveMutation.isPending && toggleActiveMutation.variables?.medId === m.id)}
                       sx={{ flexShrink: 0 }}
                     />
                   </Box>
@@ -461,6 +507,108 @@ export function PetDetailPage() {
               ))}
             </>
           )
+        )}
+
+        {tab === 'notes' && (
+          notesQuery.isLoading ? <LoadingState /> : notesQuery.isError ? (
+            <Box sx={{ p: 2 }}><Alert severity="error">{getApiError(notesQuery.error)}</Alert></Box>
+          ) : notes.length === 0 ? (
+            <EmptyState label="No notes yet" />
+          ) : (
+            <>
+              {notes.map((note) => {
+                const [y, m2, d] = note.noteDate.split('-').map(Number);
+                const formattedDate = new Date(y, m2 - 1, d).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+                const thumbnail = note.imageUrls[0]
+                  ? (note.imageUrls[0].startsWith('http') ? note.imageUrls[0] : `${serverUrl}${note.imageUrls[0]}`)
+                  : null;
+                const extraPets = note.petIds.length > 1 ? note.petIds.length - 1 : 0;
+                return (
+                  <Box
+                    key={note.id}
+                    onClick={() => { setSelectedNote(note); setNoteDetailOpen(true); }}
+                    sx={{
+                      bgcolor: 'background.paper',
+                      borderRadius: '16px',
+                      p: '14px',
+                      mb: 1.25,
+                      boxShadow: isDark
+                        ? '0 2px 12px rgba(0,0,0,0.25)'
+                        : '0 2px 12px rgba(108,99,255,0.08)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 1.5,
+                      cursor: 'pointer',
+                      '&:hover': { bgcolor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(108,99,255,0.04)' },
+                    }}
+                  >
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                      <Typography
+                        sx={{ fontWeight: 800, fontSize: '0.9375rem', color: 'text.primary', mb: 0.375 }}
+                        noWrap
+                      >
+                        {note.title}
+                      </Typography>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: note.description ? 0.375 : 0 }}>
+                        <Typography sx={{ fontWeight: 600, fontSize: '0.75rem', color: 'text.secondary' }}>
+                          {formattedDate}
+                        </Typography>
+                        {extraPets > 0 && (
+                          <Typography
+                            sx={{
+                              fontWeight: 800,
+                              fontSize: '0.6875rem',
+                              color: 'primary.main',
+                              bgcolor: isDark ? 'rgba(108,99,255,0.18)' : 'rgba(108,99,255,0.10)',
+                              borderRadius: '999px',
+                              px: 0.75,
+                              py: 0.125,
+                              lineHeight: 1.6,
+                            }}
+                          >
+                            +{extraPets} pet{extraPets > 1 ? 's' : ''}
+                          </Typography>
+                        )}
+                      </Box>
+                      {note.description && (
+                        <Typography
+                          sx={{
+                            fontWeight: 600,
+                            fontSize: '0.8125rem',
+                            color: 'text.secondary',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
+                          {note.description}
+                        </Typography>
+                      )}
+                    </Box>
+                    {thumbnail && (
+                      <Box
+                        component="img"
+                        src={thumbnail}
+                        alt="Note thumbnail"
+                        sx={{
+                          width: 52,
+                          height: 52,
+                          borderRadius: '12px',
+                          objectFit: 'cover',
+                          flexShrink: 0,
+                          border: '1.5px solid',
+                          borderColor: 'divider',
+                        }}
+                      />
+                    )}
+                  </Box>
+                );
+              })}
+            </>
+          )
+        )}
+        {tab === 'sharing' && isOwner && pet && (
+          <SharingTab petId={petId!} petName={pet.name} />
         )}
       </Box>
 
@@ -474,7 +622,8 @@ export function PetDetailPage() {
             width: 260, flexShrink: 0,
             bgcolor: 'background.paper',
             borderLeft: '1px solid', borderColor: 'divider',
-            p: 2,
+            p: 2, pt: 5,
+            position: 'relative', zIndex: 1,
           }}
         >
           {/* Active medications */}
@@ -645,6 +794,7 @@ export function PetDetailPage() {
           imageInputRef={imageInputRef}
           uploading={imageMutation.isPending}
           saving={updateVisitMutation.isPending}
+          canEdit={canEditVetVisits}
           onClose={() => setDetailVisit(null)}
           onAddPhoto={() => imageInputRef.current?.click()}
           onSave={(data) => updateVisitMutation.mutate({ visitId: detailVisit.id, data })}
@@ -669,6 +819,28 @@ export function PetDetailPage() {
           med={detailMed}
           petId={petId!}
           onClose={() => setDetailMed(null)}
+        />
+      )}
+
+      {/* Note form dialog */}
+      <NoteFormDialog
+        open={noteFormOpen}
+        onClose={() => setNoteFormOpen(false)}
+        defaultPetId={petId}
+      />
+
+      {/* Note detail dialog */}
+      {selectedNote && (
+        <NoteDetailDialog
+          key={selectedNote.id}
+          open={noteDetailOpen}
+          onClose={() => { setNoteDetailOpen(false); setSelectedNote(null); }}
+          note={selectedNote}
+          onEdit={(note) => {
+            setNoteDetailOpen(false);
+            setSelectedNote(note);
+            setNoteFormOpen(true);
+          }}
         />
       )}
     </Box>
@@ -767,7 +939,7 @@ function formChanged(original: VetVisitEditForm, current: VetVisitEditForm): boo
 }
 
 function VetVisitDetailDialog({
-  visit, vets, imageInputRef: _imageInputRef, uploading, saving, onClose, onAddPhoto, onSave,
+  visit, vets, imageInputRef: _imageInputRef, uploading, saving, onClose, onAddPhoto, onSave, canEdit = true,
 }: {
   visit: VetVisit;
   vets: import('../../types').Vet[];
@@ -777,6 +949,7 @@ function VetVisitDetailDialog({
   onClose: () => void;
   onAddPhoto: () => void;
   onSave: (data: Partial<Omit<VetVisit, 'id' | 'petId' | 'createdAt' | 'imageUrls' | 'type'>>) => void;
+  canEdit?: boolean;
 }) {
   const serverUrl = import.meta.env.VITE_SERVER_URL ?? 'http://localhost:3000';
   const [editing, setEditing] = useState(false);
@@ -817,7 +990,7 @@ function VetVisitDetailDialog({
           ) : (
             <Box sx={{ flex: 1 }}>{visit.reason}</Box>
           )}
-          {!editing && (
+          {!editing && canEdit && (
             <IconButton size="small" onClick={() => setEditing(true)} sx={{ color: 'text.secondary' }}>
               <Edit fontSize="small" />
             </IconButton>
