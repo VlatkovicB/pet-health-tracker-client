@@ -16,13 +16,13 @@ export const sharesApi = {
     apiClient.delete(`/pets/${petId}/shares/${shareId}`).then(() => undefined),
 
   listPending: (): Promise<PetShare[]> =>
-    apiClient.get('/shares/pending').then((r) => r.data),
+    apiClient.get('/pet-shares/pending').then((r) => r.data),
 
   accept: (shareId: string): Promise<void> =>
-    apiClient.patch(`/shares/${shareId}/accept`).then(() => undefined),
+    apiClient.patch(`/pet-shares/${shareId}/accept`).then(() => undefined),
 
   decline: (shareId: string): Promise<void> =>
-    apiClient.patch(`/shares/${shareId}/decline`).then(() => undefined),
+    apiClient.patch(`/pet-shares/${shareId}/decline`).then(() => undefined),
 
   listSharedWithMe: (): Promise<SharedPet[]> =>
     apiClient.get('/pets/shared-with-me').then((r) => r.data),

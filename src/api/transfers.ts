@@ -4,19 +4,19 @@ import type { PetOwnershipTransfer } from '../types';
 
 export const transfersApi = {
   listPending: (): Promise<PetOwnershipTransfer[]> =>
-    apiClient.get('/transfers/pending').then((r) => r.data),
+    apiClient.get('/pet-ownership-transfers/pending').then((r) => r.data),
 
   initiate: (petId: string, email: string): Promise<PetOwnershipTransfer> =>
-    apiClient.post(`/pets/${petId}/transfers`, { email }).then((r) => r.data),
+    apiClient.post(`/pets/${petId}/transfer`, { email }).then((r) => r.data),
 
   cancel: (petId: string): Promise<void> =>
-    apiClient.delete(`/pets/${petId}/transfers`).then(() => undefined),
+    apiClient.delete(`/pets/${petId}/transfer`).then(() => undefined),
 
   accept: (transferId: string, retainAccessForOriginalOwner: boolean): Promise<void> =>
-    apiClient.patch(`/transfers/${transferId}/accept`, { retainAccessForOriginalOwner }).then(() => undefined),
+    apiClient.patch(`/pet-ownership-transfers/${transferId}/accept`, { retainAccessForOriginalOwner }).then(() => undefined),
 
   decline: (transferId: string): Promise<void> =>
-    apiClient.patch(`/transfers/${transferId}/decline`).then(() => undefined),
+    apiClient.patch(`/pet-ownership-transfers/${transferId}/decline`).then(() => undefined),
 };
 
 export function useListPendingTransfers() {
