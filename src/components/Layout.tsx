@@ -1,25 +1,37 @@
 import { type ReactNode } from 'react';
 import {
-  Box, BottomNavigation, BottomNavigationAction, Typography, useMediaQuery, useTheme,
+  Box, Badge, BottomNavigation, BottomNavigationAction, Typography, useMediaQuery, useTheme,
 } from '@mui/material';
 import {
   CalendarMonth, Pets, LocalHospital, Person,
 } from '@mui/icons-material';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { usersApi } from '../api/users';
+import { useListPendingShares } from '../api/shares';
+import { useListPendingTransfers } from '../api/transfers';
 
-const NAV_ITEMS = [
+const NAV_ITEMS_BASE = [
   { label: 'Calendar', icon: <CalendarMonth />, path: '/' },
   { label: 'Pets',     icon: <Pets />,          path: '/pets' },
   { label: 'Vets',     icon: <LocalHospital />, path: '/vets' },
-  { label: 'Profile',  icon: <Person />,        path: '/profile' },
 ];
 
+const PROFILE_NAV = { label: 'Profile', icon: <Person />, path: '/profile' };
+
 function getActiveIndex(pathname: string): number {
-  return NAV_ITEMS.findIndex((item) =>
+  const allItems = [...NAV_ITEMS_BASE, PROFILE_NAV];
+  return allItems.findIndex((item) =>
     item.path === '/'
       ? pathname === '/'
       : pathname.startsWith(item.path),
   );
+}
+
+function usePendingCount(): number {
+  const { data: shares = [] } = useListPendingShares();
+  const { data: transfers = [] } = useListPendingTransfers();
+  return shares.length + transfers.length;
 }
 
 function Sidebar() {
@@ -31,8 +43,12 @@ function Sidebar() {
   const primaryMain = isDark ? '#a78bfa' : '#6c63ff';
 
   const activeIndex = getActiveIndex(location.pathname);
+  const isProfileActive = location.pathname.startsWith('/profile');
+  const pendingCount = usePendingCount();
 
-  const initials = 'U';
+  const { data: user } = useQuery({ queryKey: ['me'], queryFn: usersApi.getMe });
+  const displayName = user?.name ?? 'Account';
+  const initials = user?.name ? user.name.split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase() : 'U';
 
   return (
     <Box
@@ -69,59 +85,73 @@ function Sidebar() {
       </Box>
 
       {/* Nav items */}
-      {NAV_ITEMS.map((item, i) => (
-        <Box
-          key={item.path}
-          onClick={() => navigate(item.path)}
-          sx={{
-            display: 'flex', alignItems: 'center', gap: 1.5,
-            px: 1.5, py: 1.25,
-            borderRadius: 1.5,
-            mb: 0.5,
-            cursor: 'pointer',
-            bgcolor: activeIndex === i ? activeNav : 'transparent',
-            color: activeIndex === i ? primaryMain : 'text.secondary',
-            fontWeight: activeIndex === i ? 800 : 700,
-            fontSize: '0.875rem',
-            transition: 'background 0.15s',
-            '&:hover': { bgcolor: activeNav },
-          }}
-        >
-          <Box sx={{ color: 'inherit', display: 'flex', fontSize: 20 }}>{item.icon}</Box>
-          <Typography sx={{ fontWeight: 'inherit', fontSize: 'inherit', color: 'inherit' }}>
-            {item.label}
-          </Typography>
-        </Box>
-      ))}
+      {NAV_ITEMS_BASE.map((item, i) => {
+        const isPets = item.label === 'Pets';
+        const iconEl = isPets && pendingCount > 0
+          ? <Badge badgeContent={pendingCount} color="error" max={99}>{item.icon}</Badge>
+          : item.icon;
+        return (
+          <Box
+            key={item.path}
+            onClick={() => navigate(item.path)}
+            sx={{
+              display: 'flex', alignItems: 'center', gap: 1.5,
+              px: 1.5, py: 1.25,
+              borderRadius: 1.5,
+              mb: 0.5,
+              cursor: 'pointer',
+              bgcolor: activeIndex === i ? activeNav : 'transparent',
+              color: activeIndex === i ? primaryMain : 'text.secondary',
+              fontWeight: activeIndex === i ? 800 : 700,
+              fontSize: '0.875rem',
+              transition: 'background 0.18s ease, color 0.18s ease',
+              '&:hover': { bgcolor: activeNav },
+            }}
+          >
+            <Box sx={{ color: 'inherit', display: 'flex', fontSize: 20 }}>{iconEl}</Box>
+            <Typography sx={{ fontWeight: 'inherit', fontSize: 'inherit', color: 'inherit' }}>
+              {item.label}
+            </Typography>
+          </Box>
+        );
+      })}
 
       <Box sx={{ flex: 1 }} />
 
-      {/* User section */}
+      {/* User / Profile button */}
       <Box
+        onClick={() => navigate('/profile')}
         sx={{
           display: 'flex', alignItems: 'center', gap: 1,
-          px: 1, pt: 2, borderTop: '1px solid', borderColor: 'divider',
+          px: 1.5, py: 1.25,
+          borderRadius: 1.5,
           cursor: 'pointer',
+          bgcolor: isProfileActive ? activeNav : 'transparent',
+          transition: 'background 0.18s ease',
+          '&:hover': { bgcolor: activeNav },
         }}
-        onClick={() => navigate('/profile')}
       >
         <Box
           sx={{
-            width: 32, height: 32, borderRadius: 1.5, flexShrink: 0,
+            width: 28, height: 28, borderRadius: 1, flexShrink: 0,
             background: 'linear-gradient(135deg, #6c63ff, #a78bfa)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: 'white', fontWeight: 900, fontSize: '0.75rem',
+            color: 'white', fontWeight: 900, fontSize: '0.7rem',
           }}
         >
           {initials}
         </Box>
-        <Box sx={{ minWidth: 0 }}>
-          <Typography
-            sx={{ fontWeight: 800, fontSize: '0.75rem', color: 'text.primary', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
-          >
-            Account
-          </Typography>
-        </Box>
+        <Typography
+          sx={{
+            fontWeight: isProfileActive ? 800 : 700,
+            fontSize: '0.875rem',
+            color: isProfileActive ? primaryMain : 'text.secondary',
+            whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+            transition: 'color 0.18s ease',
+          }}
+        >
+          {displayName}
+        </Typography>
       </Box>
     </Box>
   );
@@ -132,7 +162,15 @@ export function Layout({ children }: { children: ReactNode }) {
   const location = useLocation();
   const theme = useTheme();
   const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
+  const pendingCount = usePendingCount();
 
+  const { data: user } = useQuery({ queryKey: ['me'], queryFn: usersApi.getMe });
+  const firstName = user?.name?.split(' ')[0] ?? 'Profile';
+
+  const mobileNavItems = [
+    ...NAV_ITEMS_BASE,
+    { ...PROFILE_NAV, label: firstName },
+  ];
   const activeIndex = getActiveIndex(location.pathname);
 
   return (
@@ -140,8 +178,18 @@ export function Layout({ children }: { children: ReactNode }) {
       {/* Desktop sidebar */}
       {isDesktop && <Sidebar />}
 
-      {/* Page content */}
-      <Box sx={{ flex: 1, minWidth: 0, pb: { xs: 8, md: 0 } }}>
+      {/* Page content with fade transition */}
+      <Box
+        key={location.pathname}
+        sx={{
+          flex: 1, minWidth: 0, pb: { xs: 8, md: 0 },
+          '@keyframes pageFadeIn': {
+            from: { opacity: 0, transform: 'translateY(6px)' },
+            to:   { opacity: 1, transform: 'translateY(0)' },
+          },
+          animation: 'pageFadeIn 0.2s ease',
+        }}
+      >
         {children}
       </Box>
 
@@ -149,12 +197,16 @@ export function Layout({ children }: { children: ReactNode }) {
       {!isDesktop && (
         <BottomNavigation
           value={activeIndex === -1 ? false : activeIndex}
-          onChange={(_, v) => navigate(NAV_ITEMS[v].path)}
+          onChange={(_, v) => navigate(mobileNavItems[v].path)}
           sx={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 100 }}
         >
-          {NAV_ITEMS.map((item) => (
-            <BottomNavigationAction key={item.path} label={item.label} icon={item.icon} />
-          ))}
+          {mobileNavItems.map((item) => {
+            const isPets = item.label === 'Pets';
+            const iconEl = isPets && pendingCount > 0
+              ? <Badge badgeContent={pendingCount} color="error" max={99}>{item.icon}</Badge>
+              : item.icon;
+            return <BottomNavigationAction key={item.path} label={item.label} icon={iconEl} />;
+          })}
         </BottomNavigation>
       )}
     </Box>
