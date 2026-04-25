@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
-  Box, Button, TextField, Typography, Dialog,
-  DialogTitle, DialogContent, DialogActions, Skeleton, Grid,
+  Box, Button, TextField, Typography, Dialog, Chip,
+  DialogTitle, DialogContent, DialogActions, Skeleton, Grid, Tabs, Tab,
 } from '@mui/material';
 import { Add, Pets } from '@mui/icons-material';
 import { useMutation, useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -11,6 +11,14 @@ import { healthApi } from '../../api/health';
 import { getApiError } from '../../api/client';
 import { useNotification } from '../../context/NotificationContext';
 import { useInfiniteScroll } from '../../hooks/useInfiniteScroll';
+import {
+  useListPendingShares, useAcceptShare, useDeclineShare, useListSharedPets,
+} from '../../api/shares';
+import {
+  useListPendingTransfers, useAcceptTransfer, useDeclineTransfer,
+} from '../../api/transfers';
+import { PendingShareCard } from '../../components/sharing/PendingShareCard';
+import { PendingTransferCard } from '../../components/sharing/PendingTransferCard';
 import type { Pet, VetVisit } from '../../types';
 
 const serverUrl = import.meta.env.VITE_SERVER_URL ?? 'http://localhost:3000';
@@ -70,7 +78,7 @@ function StatusBadge({ pet, upcomingVisits }: { pet: Pet; upcomingVisits: VetVis
   );
 }
 
-function PetCard({ pet, upcomingVisits }: { pet: Pet; upcomingVisits: VetVisit[] }) {
+function PetCard({ pet, upcomingVisits, sharedChip }: { pet: Pet; upcomingVisits: VetVisit[]; sharedChip?: boolean }) {
   const navigate = useNavigate();
   const speciesKey = pet.species.toLowerCase();
   const avatarBg = SPECIES_AVATAR_BG[speciesKey] ?? '#e0f2fe';
@@ -99,7 +107,6 @@ function PetCard({ pet, upcomingVisits }: { pet: Pet; upcomingVisits: VetVisit[]
       }}
     >
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-        {/* Avatar */}
         <Box
           sx={{
             width: 56, height: 56, borderRadius: 2, flexShrink: 0,
@@ -115,18 +122,30 @@ function PetCard({ pet, upcomingVisits }: { pet: Pet; upcomingVisits: VetVisit[]
           )}
         </Box>
 
-        {/* Info */}
         <Box sx={{ flex: 1, minWidth: 0 }}>
-          <Typography sx={{ fontWeight: 800, fontSize: '1rem', color: 'text.primary', letterSpacing: '-0.3px' }} noWrap>
-            {pet.name}
-          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Typography sx={{ fontWeight: 800, fontSize: '1rem', color: 'text.primary', letterSpacing: '-0.3px' }} noWrap>
+              {pet.name}
+            </Typography>
+            {sharedChip && (
+              <Chip
+                label="Shared"
+                size="small"
+                sx={{
+                  fontWeight: 800, borderRadius: 5, fontSize: '0.6875rem',
+                  bgcolor: (t) => t.palette.mode === 'dark' ? 'rgba(99,102,241,0.2)' : 'rgba(99,102,241,0.1)',
+                  color: 'primary.main',
+                  flexShrink: 0,
+                }}
+              />
+            )}
+          </Box>
           <Typography sx={{ fontWeight: 600, fontSize: '0.8125rem', color: 'text.secondary', mt: 0.125 }} noWrap>
             {pet.species}{age ? ` · ${age}` : ''}
           </Typography>
           <StatusBadge pet={pet} upcomingVisits={upcomingVisits} />
         </Box>
 
-        {/* Species tag */}
         <Box
           sx={{
             background: tagGradient,
@@ -148,11 +167,94 @@ function PetCard({ pet, upcomingVisits }: { pet: Pet; upcomingVisits: VetVisit[]
   );
 }
 
+function SharedWithMeTab() {
+  const { data: pendingShares = [], isLoading: sharesLoading } = useListPendingShares();
+  const { data: pendingTransfers = [], isLoading: transfersLoading } = useListPendingTransfers();
+  const { data: sharedPets = [], isLoading: petsLoading } = useListSharedPets();
+
+  const acceptShareMutation = useAcceptShare();
+  const declineShareMutation = useDeclineShare();
+  const acceptTransferMutation = useAcceptTransfer();
+  const declineTransferMutation = useDeclineTransfer();
+
+  const hasPending = pendingShares.length > 0 || pendingTransfers.length > 0;
+  const isLoading = sharesLoading || transfersLoading || petsLoading;
+
+  if (isLoading) {
+    return (
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, pt: 1 }}>
+        {[1, 2].map((i) => <Skeleton key={i} variant="rectangular" height={72} sx={{ borderRadius: 2 }} />)}
+      </Box>
+    );
+  }
+
+  return (
+    <Box>
+      {hasPending && (
+        <Box sx={{ mb: 2.5 }}>
+          <Typography sx={{ fontWeight: 800, fontSize: '0.6875rem', color: 'text.disabled', letterSpacing: '2px', textTransform: 'uppercase', mb: 1 }}>
+            Pending ({pendingShares.length + pendingTransfers.length})
+          </Typography>
+          {pendingShares.map((share) => (
+            <PendingShareCard
+              key={share.id}
+              share={share}
+              accepting={acceptShareMutation.isPending && acceptShareMutation.variables === share.id}
+              declining={declineShareMutation.isPending && declineShareMutation.variables === share.id}
+              onAccept={() => acceptShareMutation.mutate(share.id)}
+              onDecline={() => declineShareMutation.mutate(share.id)}
+            />
+          ))}
+          {pendingTransfers.map((transfer) => (
+            <PendingTransferCard
+              key={transfer.id}
+              transfer={transfer}
+              accepting={acceptTransferMutation.isPending && (acceptTransferMutation.variables as { transferId: string } | undefined)?.transferId === transfer.id}
+              declining={declineTransferMutation.isPending && declineTransferMutation.variables === transfer.id}
+              onAccept={(retainAccess) => acceptTransferMutation.mutate({ transferId: transfer.id, retainAccess })}
+              onDecline={() => declineTransferMutation.mutate(transfer.id)}
+            />
+          ))}
+        </Box>
+      )}
+
+      {sharedPets.length > 0 && (
+        <Box>
+          {hasPending && (
+            <Typography sx={{ fontWeight: 800, fontSize: '0.6875rem', color: 'text.disabled', letterSpacing: '2px', textTransform: 'uppercase', mb: 1 }}>
+              Active ({sharedPets.length})
+            </Typography>
+          )}
+          <Grid container spacing={1.5}>
+            {sharedPets.map((pet) => (
+              <Grid size={{ xs: 12, sm: 6, md: 4 }} key={pet.id}>
+                <PetCard pet={pet} upcomingVisits={[]} sharedChip />
+              </Grid>
+            ))}
+          </Grid>
+        </Box>
+      )}
+
+      {!hasPending && sharedPets.length === 0 && (
+        <Box sx={{ py: 5, textAlign: 'center' }}>
+          <Typography sx={{ fontSize: '2rem', mb: 1 }}>🤝</Typography>
+          <Typography sx={{ fontWeight: 700, color: 'text.secondary', fontSize: '0.875rem' }}>
+            No pets shared with you yet
+          </Typography>
+        </Box>
+      )}
+    </Box>
+  );
+}
+
 export function PetsPage() {
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ name: '', species: '', breed: '', birthDate: '' });
   const { showError } = useNotification();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const view = searchParams.get('view') === 'shared' ? 'shared' : 'mine';
+  const setView = (v: 'mine' | 'shared') => setSearchParams({ view: v }, { replace: true });
 
   const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteQuery({
     queryKey: ['pets'],
@@ -188,61 +290,65 @@ export function PetsPage() {
   return (
     <Box sx={{ maxWidth: 960, mx: 'auto', px: { xs: 2, md: 3 }, pt: 2.5, pb: 4 }}>
       {/* Header */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2.5 }}>
-        <Box>
-          <Typography sx={{ fontWeight: 900, fontSize: '1.5rem', color: 'text.primary', letterSpacing: '-0.8px' }}>
-            My Pets
-          </Typography>
-          {pets.length > 0 && (
-            <Typography sx={{ fontWeight: 600, fontSize: '0.8125rem', color: 'text.secondary', mt: 0.25 }}>
-              {pets.length} pet{pets.length !== 1 ? 's' : ''}
-              {upcomingVisits.length > 0 ? ` · ${upcomingVisits.length} upcoming visit${upcomingVisits.length !== 1 ? 's' : ''}` : ''}
-            </Typography>
-          )}
-        </Box>
-        <Button variant="contained" startIcon={<Add />} onClick={() => setOpen(true)} size="small">
-          Add Pet
-        </Button>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+        <Typography sx={{ fontWeight: 900, fontSize: '1.5rem', color: 'text.primary', letterSpacing: '-0.8px' }}>
+          Pets
+        </Typography>
+        {view === 'mine' && (
+          <Button variant="contained" startIcon={<Add />} onClick={() => setOpen(true)} size="small">
+            Add Pet
+          </Button>
+        )}
       </Box>
 
-      {/* Pet grid */}
-      {isLoading ? (
-        <Grid container spacing={1.5}>
-          {[1, 2, 3].map((i) => (
-            <Grid size={{ xs: 12, sm: 6, md: 4 }} key={i}>
-              <Skeleton variant="rectangular" height={80} sx={{ borderRadius: 2 }} />
+      {/* Tabs */}
+      <Tabs value={view} onChange={(_, v) => setView(v)} sx={{ mb: 2.5 }}>
+        <Tab value="mine" label="My Pets" />
+        <Tab value="shared" label="Shared With Me" />
+      </Tabs>
+
+      {view === 'mine' && (
+        <>
+          {isLoading ? (
+            <Grid container spacing={1.5}>
+              {[1, 2, 3].map((i) => (
+                <Grid size={{ xs: 12, sm: 6, md: 4 }} key={i}>
+                  <Skeleton variant="rectangular" height={80} sx={{ borderRadius: 2 }} />
+                </Grid>
+              ))}
             </Grid>
-          ))}
-        </Grid>
-      ) : pets.length === 0 ? (
-        <Box
-          onClick={() => setOpen(true)}
-          sx={{
-            bgcolor: 'background.paper', borderRadius: 2, py: 5,
-            textAlign: 'center', cursor: 'pointer',
-            border: '2px dashed', borderColor: 'divider',
-            '&:hover': { borderColor: 'primary.light' },
-          }}
-        >
-          <Typography sx={{ fontSize: '2rem', mb: 1 }}>🐾</Typography>
-          <Typography sx={{ fontWeight: 700, color: 'text.secondary', fontSize: '0.875rem' }}>
-            No pets yet — tap to add one
-          </Typography>
-        </Box>
-      ) : (
-        <Grid container spacing={1.5}>
-          {pets.map((pet) => (
-            <Grid size={{ xs: 12, sm: 6, md: 4 }} key={pet.id}>
-              <PetCard pet={pet} upcomingVisits={upcomingVisits} />
+          ) : pets.length === 0 ? (
+            <Box
+              onClick={() => setOpen(true)}
+              sx={{
+                bgcolor: 'background.paper', borderRadius: 2, py: 5,
+                textAlign: 'center', cursor: 'pointer',
+                border: '2px dashed', borderColor: 'divider',
+                '&:hover': { borderColor: 'primary.light' },
+              }}
+            >
+              <Typography sx={{ fontSize: '2rem', mb: 1 }}>🐾</Typography>
+              <Typography sx={{ fontWeight: 700, color: 'text.secondary', fontSize: '0.875rem' }}>
+                No pets yet — tap to add one
+              </Typography>
+            </Box>
+          ) : (
+            <Grid container spacing={1.5}>
+              {pets.map((pet) => (
+                <Grid size={{ xs: 12, sm: 6, md: 4 }} key={pet.id}>
+                  <PetCard pet={pet} upcomingVisits={upcomingVisits} />
+                </Grid>
+              ))}
             </Grid>
-          ))}
-        </Grid>
+          )}
+          <div ref={sentinelRef} />
+          {isFetchingNextPage && (
+            <Skeleton variant="rectangular" height={80} sx={{ borderRadius: 2, mt: 1.5 }} />
+          )}
+        </>
       )}
 
-      <div ref={sentinelRef} />
-      {isFetchingNextPage && (
-        <Skeleton variant="rectangular" height={80} sx={{ borderRadius: 2, mt: 1.5 }} />
-      )}
+      {view === 'shared' && <SharedWithMeTab />}
 
       {/* Add pet dialog */}
       <Dialog open={open} onClose={() => setOpen(false)} fullWidth maxWidth="xs">
