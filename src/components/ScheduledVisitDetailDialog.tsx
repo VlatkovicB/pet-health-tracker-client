@@ -83,7 +83,7 @@ export function ScheduledVisitDetailDialog({ visit, petId, vets, onClose }: Prop
 
   return (
     <Dialog open onClose={onClose} fullWidth maxWidth="sm">
-      <DialogTitle sx={{ pb: 0.5 }}>
+      <DialogTitle component="div" sx={{ pb: 0.5 }}>
         <Typography variant="h6">{visit.reason}</Typography>
         <Typography variant="body2" color="text.secondary">
           {vetName} · {fmtDate(visit.visitDate)}
