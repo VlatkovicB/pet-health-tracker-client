@@ -162,6 +162,7 @@ export interface PetShare {
   id: string;
   petId: string;
   petName: string;
+  petSpecies: string;
   sharedByEmail: string;
   sharedWithEmail: string;
   status: 'pending' | 'accepted';
