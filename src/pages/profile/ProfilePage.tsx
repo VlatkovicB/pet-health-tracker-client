@@ -1,8 +1,10 @@
 import { Box, Typography, Switch, useTheme } from '@mui/material';
 import { ChevronRight, Logout } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../../context/AuthContext';
 import { useAppTheme } from '../../context/ThemeContext';
+import { usersApi } from '../../api/users';
 
 export function ProfilePage() {
   const navigate = useNavigate();
@@ -10,6 +12,9 @@ export function ProfilePage() {
   const { toggleTheme } = useAppTheme();
   const theme = useTheme();
   const isDark = theme.palette.mode === 'dark';
+  const { data: user } = useQuery({ queryKey: ['me'], queryFn: usersApi.getMe });
+  const displayName = user?.name ?? 'My Account';
+  const initials = user?.name ? user.name.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase() : '🐾';
 
   const handleSignOut = () => {
     logout();
@@ -22,8 +27,9 @@ export function ProfilePage() {
       <Box
         sx={{
           background: 'linear-gradient(135deg, #6c63ff, #a78bfa)',
-          px: 3, pt: 4, pb: 5,
+          px: 3, pt: 4, pb: 7,
           display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1,
+          borderRadius: '0 0 32px 32px',
         }}
       >
         <Box
@@ -31,19 +37,19 @@ export function ProfilePage() {
             width: 64, height: 64, borderRadius: 2.5,
             background: 'rgba(255,255,255,0.25)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: 'white', fontWeight: 900, fontSize: '1.5rem',
+            color: 'white', fontWeight: 900, fontSize: initials === '🐾' ? '1.5rem' : '1.25rem',
             mb: 0.5,
           }}
         >
-          🐾
+          {initials}
         </Box>
         <Typography sx={{ fontWeight: 900, fontSize: '1.25rem', color: 'white', letterSpacing: '-0.5px' }}>
-          My Account
+          {displayName}
         </Typography>
       </Box>
 
       {/* Settings */}
-      <Box sx={{ px: 2, mt: 2, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+      <Box sx={{ px: 2, mt: -3, position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
         {/* Dark mode */}
         <Box sx={{ bgcolor: 'background.paper', borderRadius: 2, overflow: 'hidden' }}>
           <Box

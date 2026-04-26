@@ -3,10 +3,11 @@ import {
   Box, Button, Checkbox, Chip, Dialog, DialogActions, DialogContent,
   DialogTitle, FormControlLabel, MenuItem, Switch, TextField, Typography,
 } from '@mui/material';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { Medication, ReminderScheduleProps, AdvanceNotice } from '../types';
 import type { UpdateMedicationInput } from '../api/medications';
 import { medicationsApi } from '../api/medications';
+import { petsApi } from '../api/pets';
 import { MedicationScheduleSection } from './MedicationScheduleSection';
 import { getApiError } from '../api/client';
 import { useNotification } from '../context/NotificationContext';
@@ -39,6 +40,12 @@ export function MedicationDetailDialog({ med, petId, onClose }: Props) {
 
   const set = (field: string, value: string) => setForm((f) => ({ ...f, [field]: value }));
   const canSave = !!(form.name && form.dosageAmount && form.dosageUnit && form.startDate);
+
+  const petsQuery = useQuery({
+    queryKey: ['pets-calendar'],
+    queryFn: () => petsApi.list({ pageParam: 1 }),
+  });
+  const pet = (petsQuery.data?.items ?? []).find((p) => p.id === petId);
 
   const updateMutation = useMutation({
     mutationFn: (data: UpdateMedicationInput) => medicationsApi.update(petId, med.id, data),
@@ -76,6 +83,26 @@ export function MedicationDetailDialog({ med, petId, onClose }: Props) {
 
       <DialogContent sx={{ pt: 2 }}>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          {pet && (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+              <Typography sx={{ fontWeight: 800, fontSize: '0.6875rem', color: 'text.disabled', letterSpacing: '2px', textTransform: 'uppercase' }}>
+                Pet
+              </Typography>
+              <Chip
+                label={pet.name}
+                size="small"
+                sx={{
+                  fontFamily: 'Nunito, sans-serif',
+                  fontWeight: 800,
+                  fontSize: '0.6875rem',
+                  borderRadius: '999px',
+                  background: 'linear-gradient(135deg, #6c63ff, #a78bfa)',
+                  color: '#fff',
+                  border: 'none',
+                }}
+              />
+            </Box>
+          )}
           <Typography sx={{ fontWeight: 800, fontSize: '0.6875rem', color: 'text.disabled', letterSpacing: '2px', textTransform: 'uppercase', mb: -0.5 }}>
             Medication Details
           </Typography>

@@ -56,7 +56,7 @@ export function MobileCalendarView({
   const isCurrentWeek = weekStart.getTime() === currentWeekStart.getTime();
   const dayEvents = getEventsForDay(selectedDay, events);
   const visibleDayEvents = dayEvents.filter((e) =>
-    e.kind === 'vet-visit' || (e.kind === 'medication' && (showInactiveMeds || e.active))
+    e.kind === 'note' || e.kind === 'vet-visit' || (e.kind === 'medication' && (showInactiveMeds || e.active))
   );
   const sortedEvents = sortEvents(visibleDayEvents);
 
@@ -108,7 +108,7 @@ export function MobileCalendarView({
           const today = isToday(day);
           const allDayEvents = getEventsForDay(day, events);
           const dots = allDayEvents.filter((e) =>
-            e.kind === 'vet-visit' || (e.kind === 'medication' && (showInactiveMeds || e.active))
+            e.kind === 'note' || e.kind === 'vet-visit' || (e.kind === 'medication' && (showInactiveMeds || e.active))
           );
           return (
             <Box
@@ -131,11 +131,12 @@ export function MobileCalendarView({
               {/* Event dots — solid circle per event, dashed for scheduled visit */}
               <Box sx={{ display: 'flex', gap: '2px', flexWrap: 'wrap', justifyContent: 'center', minHeight: 7 }}>
                 {dots.slice(0, 3).map((e) => {
-                  const color = petColors[e.petId] ?? '#888';
+                  const color = e.kind === 'note' ? '#888' : (petColors[e.petId] ?? '#888');
                   const isScheduled = e.kind === 'vet-visit' && e.type === 'scheduled';
+                  const key = e.kind === 'note' ? `note-${e.note.id}` : e.id;
                   return (
                     <Box
-                      key={e.id}
+                      key={key}
                       sx={{
                         width: 6, height: 6, borderRadius: '50%', flexShrink: 0,
                         ...(isScheduled
@@ -172,19 +173,24 @@ export function MobileCalendarView({
           </Typography>
         ) : (
           sortedEvents.map((e) => {
-            const color = petColors[e.petId] ?? '#888';
+            const color = e.kind === 'note' ? '#888' : (petColors[e.petId] ?? '#888');
             const isScheduled = e.kind === 'vet-visit' && e.type === 'scheduled';
             const isOverdue = e.kind === 'vet-visit' && e.type === 'scheduled' && toLocalDate(e.date) < startOfToday();
-            const title = e.kind === 'vet-visit'
+            const title = e.kind === 'note'
+              ? e.note.title
+              : e.kind === 'vet-visit'
               ? `${petNames[e.petId] ?? 'Pet'} · Vet visit`
               : `${petNames[e.petId] ?? 'Pet'} · ${e.name}`;
-            const subtitle = e.kind === 'vet-visit'
+            const subtitle = e.kind === 'note'
+              ? (e.note.description ?? '')
+              : e.kind === 'vet-visit'
               ? [e.reason, e.vetName].filter(Boolean).join(' · ')
               : `${e.dosageLabel} · ${e.frequencyLabel}${e.hasReminder ? ' 🔔' : ''}`;
+            const key = e.kind === 'note' ? `note-${e.note.id}` : e.id;
 
             return (
               <Box
-                key={e.id}
+                key={key}
                 onClick={() => onDayClick(selectedDay, getEventsForDay(selectedDay, events))}
                 sx={{
                   display: 'flex', gap: 1, alignItems: 'stretch',

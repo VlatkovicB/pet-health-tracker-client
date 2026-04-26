@@ -18,7 +18,7 @@ export function CalendarEventPopup({ event, anchor, petNames, onClose }: Calenda
     if (!event) return;
     if (event.kind === 'vet-visit') {
       navigate(`/pets/${event.petId}?tab=vet-visits&visitId=${event.id}`);
-    } else {
+    } else if (event.kind === 'medication') {
       navigate(`/pets/${event.petId}?tab=medications`);
     }
     onClose();
@@ -29,6 +29,31 @@ export function CalendarEventPopup({ event, anchor, petNames, onClose }: Calenda
   }
 
   if (!event) return null;
+
+  if (event.kind === 'note') {
+    return (
+      <Popover
+        open={open}
+        anchorEl={anchor}
+        onClose={onClose}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        transformOrigin={{ vertical: 'top', horizontal: 'center' }}
+        slotProps={{ paper: { sx: { mt: 0.5, p: 1.5, borderRadius: 2, minWidth: 200, maxWidth: 260, boxShadow: '0 8px 24px rgba(0,0,0,0.14)' } } }}
+      >
+        <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+          {event.note.title}
+        </Typography>
+        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
+          {formatDate(event.date)}
+        </Typography>
+        <Box sx={{ mt: 1, display: 'flex', justifyContent: 'flex-end' }}>
+          <Button size="small" variant="contained" onClick={onClose} sx={{ fontSize: '0.75rem' }}>
+            Close
+          </Button>
+        </Box>
+      </Popover>
+    );
+  }
 
   const petName = petNames[event.petId] ?? '';
 

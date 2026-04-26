@@ -1,17 +1,22 @@
 import { useMemo, useState } from 'react';
-import { Box, Typography, useTheme, useMediaQuery } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
+import { Box, Fab, Typography, useTheme, useMediaQuery } from '@mui/material';
+import { Add } from '@mui/icons-material';
 import { useQuery, useQueries, useQueryClient } from '@tanstack/react-query';
 import { format, startOfMonth, endOfMonth, addMonths, subMonths, isSameMonth } from 'date-fns';
 import { petsApi } from '../../api/pets';
 import { healthApi } from '../../api/health';
 import { medicationsApi } from '../../api/medications';
 import { vetsApi } from '../../api/vets';
+import { useNotes } from '../../api/notes';
 import { MonthCalendar } from './MonthCalendar';
 import { MobileCalendarView } from './MobileCalendarView';
 import { PetFilterChips } from './PetFilterChips';
 import { DayDetailModal } from '../../components/DayDetailModal';
+import { NoteFormDialog } from '../../components/NoteFormDialog';
+import { NoteDetailDialog } from '../../components/NoteDetailDialog';
 import { PET_COLOR_PALETTE } from '../../utils/color';
-import type { CalendarEvent, Pet, Vet, VetVisit, Medication } from '../../types';
+import type { CalendarEvent, Note, Pet, Vet, VetVisit, Medication } from '../../types';
 
 function buildPetColors(pets: Pet[]): Record<string, string> {
   return Object.fromEntries(
@@ -26,6 +31,7 @@ function buildPetNames(pets: Pet[]): Record<string, string> {
 function toCalendarEvents(
   vetVisits: VetVisit[],
   medications: Medication[],
+  notes: Note[],
   monthStart: Date,
   monthEnd: Date,
 ): CalendarEvent[] {
@@ -59,14 +65,24 @@ function toCalendarEvents(
       active: m.active,
     }));
 
-  return [...visitEvents, ...medEvents];
+  const noteEvents: CalendarEvent[] = notes.map((n) => ({
+    kind: 'note' as const,
+    date: n.noteDate,
+    note: n,
+  }));
+
+  return [...visitEvents, ...medEvents, ...noteEvents];
 }
 
 export function CalendarPage() {
+  const navigate = useNavigate();
   const [currentMonth, setCurrentMonth] = useState(() => startOfMonth(new Date()));
   const [selectedPetId, setSelectedPetId] = useState<string | null>(null);
   const [selectedDay, setSelectedDay] = useState<{ date: Date; events: CalendarEvent[] } | null>(null);
   const [showInactiveMeds, setShowInactiveMeds] = useState(false);
+  const [noteFormOpen, setNoteFormOpen] = useState(false);
+  const [selectedNote, setSelectedNote] = useState<Note | null>(null);
+  const [noteFormNote, setNoteFormNote] = useState<Note | undefined>(undefined);
 
   const queryClient = useQueryClient();
   const theme = useTheme();
@@ -103,6 +119,12 @@ export function CalendarPage() {
     staleTime: 5 * 60 * 1000,
   });
 
+  // Notes for the month
+  const { data: notes = [], isLoading: notesLoading, isError: notesError } = useNotes({
+    from: format(monthStart, 'yyyy-MM-dd'),
+    to: format(monthEnd, 'yyyy-MM-dd'),
+  });
+
   // Medications per pet (parallel)
   const medQueries = useQueries({
     queries: pets.map((pet) => ({
@@ -117,17 +139,23 @@ export function CalendarPage() {
     [medQueries.map((q) => q.dataUpdatedAt).join(',')],
   );
 
-  const loading = visitsLoading || medQueries.some((q) => q.isLoading);
-  const error = visitsError || medQueries.some((q) => q.isError);
+  const loading = visitsLoading || notesLoading || medQueries.some((q) => q.isLoading);
+  const error = visitsError || notesError || medQueries.some((q) => q.isError);
 
   const allEvents = useMemo(
-    () => toCalendarEvents(vetVisits, allMedications, monthStart, monthEnd),
+    () => toCalendarEvents(vetVisits, allMedications, notes, monthStart, monthEnd),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [vetVisits, allMedications, monthKey],
+    [vetVisits, allMedications, notes, monthKey],
   );
 
   const visibleEvents = useMemo(
-    () => selectedPetId ? allEvents.filter((e) => e.petId === selectedPetId) : allEvents,
+    () => selectedPetId
+      ? allEvents.filter((e) =>
+          e.kind === 'note'
+            ? e.note.petIds.includes(selectedPetId)
+            : e.petId === selectedPetId,
+        )
+      : allEvents,
     [allEvents, selectedPetId],
   );
 
@@ -221,7 +249,68 @@ export function CalendarPage() {
           queryClient.invalidateQueries({ queryKey: ['calendar-vet-visits', monthKey] });
           setSelectedDay(null);
         }}
+        onNoteClick={(note) => {
+          setSelectedNote(note);
+          setSelectedDay(null);
+        }}
+        onAddNote={() => {
+          setNoteFormNote(undefined);
+          setNoteFormOpen(true);
+          setSelectedDay(null);
+        }}
+        onAddMedication={(petId) => {
+          setSelectedDay(null);
+          navigate(`/pets/${petId}?tab=medications`);
+        }}
       />
+
+      {/* FAB — add note for selected day (or today) */}
+      <Fab
+        color="primary"
+        aria-label="Add note"
+        onClick={() => {
+          setNoteFormNote(undefined);
+          setNoteFormOpen(true);
+        }}
+        sx={{
+          position: 'fixed',
+          bottom: { xs: 80, md: 32 },
+          right: { xs: 20, md: 32 },
+          background: 'linear-gradient(135deg, #6c63ff, #a78bfa)',
+          boxShadow: '0 4px 20px rgba(108,99,255,0.4)',
+          '&:hover': {
+            background: 'linear-gradient(135deg, #5b52ee, #9678f0)',
+            boxShadow: '0 6px 24px rgba(108,99,255,0.5)',
+          },
+        }}
+      >
+        <Add />
+      </Fab>
+
+      {/* Note form dialog */}
+      <NoteFormDialog
+        open={noteFormOpen}
+        note={noteFormNote}
+        defaultDate={selectedDay?.date ? format(selectedDay.date, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd')}
+        onClose={() => {
+          setNoteFormOpen(false);
+          setNoteFormNote(undefined);
+        }}
+      />
+
+      {/* Note detail dialog */}
+      {selectedNote && (
+        <NoteDetailDialog
+          open={!!selectedNote}
+          note={selectedNote}
+          onClose={() => setSelectedNote(null)}
+          onEdit={(note) => {
+            setSelectedNote(null);
+            setNoteFormNote(note);
+            setNoteFormOpen(true);
+          }}
+        />
+      )}
     </Box>
   );
 }
