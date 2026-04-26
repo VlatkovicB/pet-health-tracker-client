@@ -178,9 +178,9 @@ export interface SharedPet extends Pet {
 export interface PetOwnershipTransfer {
   id: string;
   petId: string;
-  petName: string;
-  fromUserEmail: string;
-  toEmail: string;
+  fromUserId: string;
+  toUserId: string | null;
+  invitedEmail: string;
   status: 'pending' | 'accepted' | 'declined' | 'expired' | 'cancelled';
   expiresAt: string;
   createdAt: string;

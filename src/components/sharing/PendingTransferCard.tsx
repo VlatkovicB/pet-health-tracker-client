@@ -47,10 +47,10 @@ export function PendingTransferCard({ transfer, onAccept, onDecline, accepting, 
 
         <Box sx={{ flex: 1, minWidth: 0 }}>
           <Typography sx={{ fontWeight: 800, fontSize: '0.9375rem', color: 'text.primary' }} noWrap>
-            {transfer.petName}
+            Ownership Transfer
           </Typography>
           <Typography sx={{ fontWeight: 600, fontSize: '0.8125rem', color: 'text.secondary', mt: 0.25 }} noWrap>
-            Ownership transfer from {transfer.fromUserEmail} · expires {expiryDate}
+            expires {expiryDate}
           </Typography>
         </Box>
 
