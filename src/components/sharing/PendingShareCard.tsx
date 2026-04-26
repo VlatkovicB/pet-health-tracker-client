@@ -6,7 +6,7 @@ import { SPECIES_AVATAR_BG, SPECIES_ICON_COLOR } from '../../utils/speciesStyles
 
 function daysAgo(iso: string): string {
   const diff = Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000);
-  if (diff === 0) return 'today';
+  if (diff <= 0) return 'today';
   if (diff === 1) return 'yesterday';
   return `${diff} days ago`;
 }
