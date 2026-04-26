@@ -5,7 +5,7 @@ Web app for tracking pet health records across a shared group of users.
 ## Stack
 
 - **Framework:** React + TypeScript (Vite)
-- **UI:** MUI v6 (dark navy theme)
+- **UI:** MUI v6 (dark navy theme, light/dark toggle)
 - **Data fetching:** TanStack React Query (infinite scroll on all lists)
 - **HTTP:** axios with JWT interceptor
 - **Routing:** react-router-dom
@@ -13,11 +13,14 @@ Web app for tracking pet health records across a shared group of users.
 ## Features
 
 - **Auth** — login / register with JWT stored in localStorage
-- **Groups** — view groups you belong to; create new groups
-- **Pets** — list pets per group; create pets; edit name/species/breed/birth date; upload profile photo
-- **Vets** — group-scoped vet directory with contact details and maps link
-- **Vet visits** — list, add, edit (with confirmation prompt), attach photos; next-visit scheduling
-- **Medications** — placeholder (coming soon)
+- **Pets** — list pets; create, edit (name/species/breed/birth date); upload profile photo; share pets with other users with configurable permissions; transfer ownership via email invite
+- **Vets** — group-scoped vet directory with contact details, maps link, and Google Places search
+- **Vet visits** — list, add, edit with photo attachments; next-visit reminders; mark visits complete
+- **Medications** — log medications with dosage; configure daily/weekly/monthly reminders with exact times
+- **Notes** — multi-pet journal with image attachments
+- **Calendar** — month view of upcoming vet visits across all pets, with per-pet filtering
+- **Profile** — display name and theme preference
+- **Inbox** — accept/decline incoming pet share invitations and ownership transfers
 - **Infinite scroll** — all lists preload the next page 400px before the sentinel
 
 ## Pages
@@ -26,10 +29,11 @@ Web app for tracking pet health records across a shared group of users.
 |---|---|
 | `/login` | Login |
 | `/register` | Register |
-| `/` | Groups list |
-| `/groups/:groupId` | Pets list |
-| `/groups/:groupId/pets/:petId` | Pet detail (vet visits, medications) |
-| `/groups/:groupId/vets` | Vet directory |
+| `/` | Calendar (month view) |
+| `/pets` | Pets list |
+| `/pets/:petId` | Pet detail (vet visits, medications, notes, sharing) |
+| `/vets` | Vet directory |
+| `/profile` | User profile & theme toggle |
 
 ## Setup
 
