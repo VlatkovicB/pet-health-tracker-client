@@ -15,3 +15,9 @@ export const SPECIES_TAG_COLOR: Record<string, string> = {
   dog:    'white',
   rabbit: '#064e3b',
 };
+
+export const SPECIES_ICON_COLOR: Record<string, string> = {
+  cat:    '#6c63ff',
+  dog:    '#fb7185',
+  rabbit: '#34d399',
+};

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Box, Button, Typography, CircularProgress, Tooltip, Chip } from '@mui/material';
 import { InfoOutlined, Pets } from '@mui/icons-material';
 import type { PetShare, SharePermissions } from '../../types';
-import { SPECIES_AVATAR_BG } from '../../utils/speciesStyles';
+import { SPECIES_AVATAR_BG, SPECIES_ICON_COLOR } from '../../utils/speciesStyles';
 
 function daysAgo(iso: string): string {
   const diff = Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000);
@@ -58,12 +58,9 @@ interface Props {
 export function PendingShareCard({ share, onAccept, onDecline, accepting, declining }: Props) {
   const busy = accepting || declining;
   const [tooltipOpen, setTooltipOpen] = useState(false);
-  const speciesKey = share.petSpecies?.toLowerCase() ?? '';
+  const speciesKey = share.petSpecies.toLowerCase();
   const avatarBg = SPECIES_AVATAR_BG[speciesKey] ?? '#e0f2fe';
-  const iconColor =
-    speciesKey === 'cat' ? '#6c63ff' :
-    speciesKey === 'dog' ? '#fb7185' :
-    speciesKey === 'rabbit' ? '#34d399' : '#60a5fa';
+  const iconColor = SPECIES_ICON_COLOR[speciesKey] ?? '#60a5fa';
 
   return (
     <Box
@@ -106,14 +103,18 @@ export function PendingShareCard({ share, onAccept, onDecline, accepting, declin
         title={<PermissionRows permissions={share.permissions} />}
         placement="top"
         open={tooltipOpen}
-        onOpen={() => setTooltipOpen(true)}
         onClose={() => setTooltipOpen(false)}
+        disableHoverListener
         disableFocusListener
         arrow
       >
         <Box
           component="span"
+          role="button"
+          tabIndex={0}
+          aria-label="Show permissions"
           onClick={() => setTooltipOpen((v) => !v)}
+          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setTooltipOpen((v) => !v); }}
           sx={{ display: 'flex', alignItems: 'center', cursor: 'pointer', flexShrink: 0 }}
         >
           <InfoOutlined sx={{ fontSize: 18, color: 'text.disabled' }} />
