@@ -50,6 +50,7 @@ export function DayDetailModal({ date, events, petNames, petColors, pets, vets, 
     retry: 0,
     mutationFn: () =>
       healthApi.createVetVisit(selectedPetId!, {
+        type: 'scheduled',
         visitDate: `${format(date!, 'yyyy-MM-dd')}T${time}:00`,
         vetId: selectedVet?.id,
         reason: reason.trim(),

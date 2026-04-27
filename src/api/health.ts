@@ -11,6 +11,7 @@ export const healthApi = {
   createVetVisit: (
     petId: string,
     data: {
+      type: 'logged' | 'scheduled';
       visitDate: string;
       vetId?: string;
       reason: string;

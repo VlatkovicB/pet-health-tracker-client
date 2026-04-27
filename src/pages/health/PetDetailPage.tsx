@@ -240,6 +240,7 @@ export function PetDetailPage() {
   const vetMutation = useMutation({
     mutationFn: () =>
       healthApi.createVetVisit(petId!, {
+        type: isScheduling ? 'scheduled' : 'logged',
         vetId: vetForm.vetId || undefined,
         reason: vetForm.reason,
         notes: !isScheduling && vetForm.notes ? vetForm.notes : undefined,
