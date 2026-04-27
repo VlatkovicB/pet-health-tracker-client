@@ -11,8 +11,14 @@ import type { PetShare, SharePermissions } from '../../types';
 interface Props {
   open: boolean;
   onClose: () => void;
-  share: PetShare;
-  petId: string;
+  // edit mode
+  share?: PetShare;
+  petId?: string;
+  // create mode
+  mode?: 'create' | 'edit';
+  email?: string;
+  onConfirm?: (permissions: SharePermissions) => void;
+  confirmPending?: boolean;
 }
 
 const PERMISSION_PAIRS: Array<{
@@ -25,19 +31,29 @@ const PERMISSION_PAIRS: Array<{
   { viewKey: 'canViewNotes',        editKey: 'canEditNotes',        label: 'Notes' },
 ];
 
-export function EditPermissionsDialog({ open, onClose, share, petId }: Props) {
+const DEFAULT_PERMISSIONS: SharePermissions = {
+  canViewVetVisits: true,
+  canEditVetVisits: false,
+  canViewMedications: true,
+  canEditMedications: false,
+  canViewNotes: true,
+  canEditNotes: false,
+};
+
+export function EditPermissionsDialog({ open, onClose, share, petId, mode, email, onConfirm, confirmPending }: Props) {
   const { showError } = useNotification();
-  const [perms, setPerms] = useState<SharePermissions>({ ...share.permissions });
+  const isCreate = mode === 'create';
+  const [perms, setPerms] = useState<SharePermissions>(
+    isCreate ? { ...DEFAULT_PERMISSIONS } : { ...share!.permissions },
+  );
   const mutation = useUpdateSharePermissions();
 
   const toggle = (key: keyof SharePermissions, value: boolean) => {
     setPerms((prev) => {
       const next = { ...prev, [key]: value };
-      // Edit implies view: if editing is enabled, ensure view is also enabled
       if (key === 'canEditVetVisits' && value) next.canViewVetVisits = true;
       if (key === 'canEditMedications' && value) next.canViewMedications = true;
       if (key === 'canEditNotes' && value) next.canViewNotes = true;
-      // Disabling view must also disable edit
       if (key === 'canViewVetVisits' && !value) next.canEditVetVisits = false;
       if (key === 'canViewMedications' && !value) next.canEditMedications = false;
       if (key === 'canViewNotes' && !value) next.canEditNotes = false;
@@ -46,8 +62,12 @@ export function EditPermissionsDialog({ open, onClose, share, petId }: Props) {
   };
 
   const handleSave = () => {
+    if (isCreate) {
+      onConfirm?.(perms);
+      return;
+    }
     mutation.mutate(
-      { petId, shareId: share.id, permissions: perms },
+      { petId: petId!, shareId: share!.id, permissions: perms },
       {
         onSuccess: onClose,
         onError: (err) => showError(getApiError(err)),
@@ -55,9 +75,12 @@ export function EditPermissionsDialog({ open, onClose, share, petId }: Props) {
     );
   };
 
+  const isPending = isCreate ? (confirmPending ?? false) : mutation.isPending;
+  const displayEmail = isCreate ? email : share?.sharedWithEmail;
+
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="xs">
-      <DialogTitle>Edit access — {share.sharedWithEmail}</DialogTitle>
+      <DialogTitle>{isCreate ? `Invite ${displayEmail}` : `Edit access — ${displayEmail}`}</DialogTitle>
       <DialogContent>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
           Choose what this person can see and do.
@@ -90,9 +113,11 @@ export function EditPermissionsDialog({ open, onClose, share, petId }: Props) {
         </Box>
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose} disabled={mutation.isPending}>Cancel</Button>
-        <Button variant="contained" onClick={handleSave} disabled={mutation.isPending}>
-          {mutation.isPending ? <CircularProgress size={16} sx={{ color: 'white' }} /> : 'Save'}
+        <Button onClick={onClose} disabled={isPending}>Cancel</Button>
+        <Button variant="contained" onClick={handleSave} disabled={isPending}>
+          {isPending
+            ? <CircularProgress size={16} sx={{ color: 'white' }} />
+            : isCreate ? 'Send invite' : 'Save'}
         </Button>
       </DialogActions>
     </Dialog>
