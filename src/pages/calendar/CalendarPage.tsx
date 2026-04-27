@@ -140,11 +140,13 @@ export function CalendarPage() {
 
   // Medications per pet (parallel)
   const medQueries = useQueries({
-    queries: allPets.map((pet) => ({
-      queryKey: ['medications', pet.id],
-      queryFn: () => medicationsApi.list(pet.id),
-      staleTime: 5 * 60 * 1000,
-    })),
+    queries: allPets
+      .filter((pet) => !sharedPetIds.has(pet.id) || (pet as SharedPet).permissions.canViewMedications)
+      .map((pet) => ({
+        queryKey: ['medications', pet.id],
+        queryFn: () => medicationsApi.list(pet.id),
+        staleTime: 5 * 60 * 1000,
+      })),
   });
   const allMedications = useMemo(
     () => medQueries.flatMap((q) => q.data ?? []),
@@ -153,18 +155,17 @@ export function CalendarPage() {
   );
 
   const sharedVisitQueries = useQueries({
-    queries: sharedPetsData.map((pet) => ({
-      queryKey: ['calendar-vet-visits-shared', pet.id, monthKey],
-      queryFn: () => healthApi.listVetVisitsByPetAndMonth(
-        pet.id,
-        format(monthStart, 'yyyy-MM-dd'),
-        format(monthEnd, 'yyyy-MM-dd'),
-      ).catch((err) => {
-        if (err?.response?.status === 403) return [] as import('../../types').VetVisit[];
-        throw err;
-      }),
-      staleTime: 5 * 60 * 1000,
-    })),
+    queries: sharedPetsData
+      .filter((pet) => pet.permissions.canViewVetVisits)
+      .map((pet) => ({
+        queryKey: ['calendar-vet-visits-shared', pet.id, monthKey],
+        queryFn: () => healthApi.listVetVisitsByPetAndMonth(
+          pet.id,
+          format(monthStart, 'yyyy-MM-dd'),
+          format(monthEnd, 'yyyy-MM-dd'),
+        ),
+        staleTime: 5 * 60 * 1000,
+      })),
   });
 
   const allSharedVisits = useMemo(
