@@ -26,6 +26,7 @@ interface Props {
   onReminderToggle: (enabled: boolean) => void;
   advanceNotice?: AdvanceNotice;
   onAdvanceNoticeChange: (v: AdvanceNotice | undefined) => void;
+  disabled?: boolean;
 }
 
 export function MedicationScheduleSection({
@@ -35,6 +36,7 @@ export function MedicationScheduleSection({
   onReminderToggle,
   advanceNotice,
   onAdvanceNoticeChange,
+  disabled = false,
 }: Props) {
   const handleTypeChange = (type: 'daily' | 'weekly' | 'monthly') => {
     if (type === 'daily') onScheduleChange({ type: 'daily', times: schedule.times });
@@ -69,6 +71,7 @@ export function MedicationScheduleSection({
         value={schedule.type}
         onChange={(e) => handleTypeChange(e.target.value as 'daily' | 'weekly' | 'monthly')}
         fullWidth
+        disabled={disabled}
       >
         <MenuItem value="daily">Daily</MenuItem>
         <MenuItem value="weekly">Weekly</MenuItem>
@@ -82,7 +85,7 @@ export function MedicationScheduleSection({
             return (
               <Box
                 key={d}
-                onClick={() => {
+                onClick={disabled ? undefined : () => {
                   const days = selected
                     ? (schedule as { days: DayOfWeek[] }).days.filter((x) => x !== d)
                     : [...(schedule as { days: DayOfWeek[] }).days, d];
@@ -90,11 +93,12 @@ export function MedicationScheduleSection({
                 }}
                 sx={{
                   px: 1.5, py: 0.5, borderRadius: 2, fontSize: '0.75rem', fontWeight: 700,
-                  cursor: 'pointer', userSelect: 'none',
+                  cursor: disabled ? 'default' : 'pointer', userSelect: 'none',
                   bgcolor: selected ? 'primary.main' : 'background.paper',
                   color: selected ? 'primary.contrastText' : 'text.secondary',
                   border: '1.5px solid',
                   borderColor: selected ? 'primary.main' : 'divider',
+                  opacity: disabled ? 0.5 : 1,
                 }}
               >
                 {d}
@@ -115,7 +119,7 @@ export function MedicationScheduleSection({
               return (
                 <Box
                   key={day}
-                  onClick={() => {
+                  onClick={disabled ? undefined : () => {
                     const current = (schedule as { daysOfMonth: number[] }).daysOfMonth;
                     const next = selected
                       ? current.filter((d) => d !== day)
@@ -127,11 +131,12 @@ export function MedicationScheduleSection({
                     width: 32, height: 32, borderRadius: 1.5,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     fontSize: '0.75rem', fontWeight: 700,
-                    cursor: 'pointer', userSelect: 'none',
+                    cursor: disabled ? 'default' : 'pointer', userSelect: 'none',
                     bgcolor: selected ? 'primary.main' : 'background.paper',
                     color: selected ? 'primary.contrastText' : 'text.secondary',
                     border: '1.5px solid',
                     borderColor: selected ? 'primary.main' : 'divider',
+                    opacity: disabled ? 0.5 : 1,
                   }}
                 >
                   {day}
@@ -153,26 +158,26 @@ export function MedicationScheduleSection({
               onChange={(e) => handleTimeChange(i, e.target.value)}
               slotProps={{ inputLabel: { shrink: true } }}
               sx={{ flex: 1 }}
+              disabled={disabled}
             />
             {schedule.times.length > 1 && (
               <Box
-                onClick={() => removeTime(i)}
-                sx={{ cursor: 'pointer', color: 'text.disabled', px: 1, '&:hover': { color: 'error.main' } }}
+                onClick={disabled ? undefined : () => removeTime(i)}
+                sx={{ cursor: disabled ? 'default' : 'pointer', color: 'text.disabled', px: 1, '&:hover': { color: disabled ? 'text.disabled' : 'error.main' } }}
               >✕</Box>
             )}
           </Box>
         ))}
         {schedule.times.length < 4 && (
           <Box
-            onClick={addTime}
-            sx={{ fontSize: '0.8rem', color: 'primary.main', cursor: 'pointer', pl: 0.5, '&:hover': { opacity: 0.7 } }}
+            onClick={disabled ? undefined : addTime}
+            sx={{ fontSize: '0.8rem', color: 'primary.main', cursor: disabled ? 'default' : 'pointer', pl: 0.5, opacity: disabled ? 0.4 : 1, '&:hover': { opacity: disabled ? 0.4 : 0.7 } }}
           >
             + Add time
           </Box>
         )}
       </Box>
 
-      {/* Reminder toggle */}
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', bgcolor: 'background.paper', border: '1.5px solid', borderColor: 'divider', borderRadius: 2, px: 1.5, py: 1 }}>
         <Box>
           <Typography sx={{ fontWeight: 700, fontSize: '0.875rem', display: 'flex', alignItems: 'center', gap: 0.5 }}>
@@ -180,10 +185,9 @@ export function MedicationScheduleSection({
           </Typography>
           <Typography variant="caption" sx={{ color: 'text.secondary' }}>Get notified before each dose</Typography>
         </Box>
-        <Switch checked={reminderEnabled} onChange={() => onReminderToggle(!reminderEnabled)} />
+        <Switch checked={reminderEnabled} onChange={() => onReminderToggle(!reminderEnabled)} disabled={disabled} />
       </Box>
 
-      {/* Advance notice — only shown when reminder enabled */}
       {reminderEnabled && (
         <TextField
           select
@@ -194,6 +198,7 @@ export function MedicationScheduleSection({
             onAdvanceNoticeChange(opt?.value ?? undefined);
           }}
           fullWidth
+          disabled={disabled}
         >
           {ADVANCE_NOTICE_OPTIONS.map((opt) => (
             <MenuItem key={advanceNoticeKey(opt.value)} value={advanceNoticeKey(opt.value)}>
