@@ -4,7 +4,7 @@ import {
   Box, Button, TextField, Typography, Dialog, Chip,
   DialogTitle, DialogContent, DialogActions, Skeleton, Grid, Tabs, Tab, MenuItem,
 } from '@mui/material';
-import { Add, Pets } from '@mui/icons-material';
+import { Add } from '@mui/icons-material';
 import { useMutation, useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query';
 import { petsApi } from '../../api/pets';
 import { healthApi } from '../../api/health';
@@ -32,11 +32,32 @@ function daysUntil(iso: string): number {
   return Math.round((new Date(year, month - 1, day).getTime() - today.getTime()) / 86_400_000);
 }
 
+const SPECIES_EMOJI: Record<string, string> = {
+  dog: '🐕', cat: '🐈', rabbit: '🐇', bird: '🐦', fish: '🐟', other: '🐾',
+};
+
 function petAge(birthDate?: string): string | null {
   if (!birthDate) return null;
   const birth = new Date(birthDate);
-  const years = Math.floor((Date.now() - birth.getTime()) / (365.25 * 86_400_000));
-  return years <= 0 ? '< 1 year' : `${years} yr${years !== 1 ? 's' : ''}`;
+  const now = new Date();
+  let years = now.getFullYear() - birth.getFullYear();
+  let months = now.getMonth() - birth.getMonth();
+  if (now.getDate() < birth.getDate()) months--;
+  if (months < 0) { years--; months += 12; }
+  if (years < 0) return null;
+  if (years === 0 && months === 0) return '< 1 mo';
+  if (years === 0) return `${months} mo${months !== 1 ? 's' : ''}`;
+  if (months === 0) return `${years} yr${years !== 1 ? 's' : ''}`;
+  return `${years} yr${years !== 1 ? 's' : ''} ${months} mo${months !== 1 ? 's' : ''}`;
+}
+
+function birthdayInDays(birthDate?: string): number | null {
+  if (!birthDate) return null;
+  const birth = new Date(birthDate);
+  const now = new Date();
+  const next = new Date(now.getFullYear(), birth.getMonth(), birth.getDate());
+  if (next < now) next.setFullYear(now.getFullYear() + 1);
+  return Math.ceil((next.getTime() - now.getTime()) / 86_400_000);
 }
 
 function StatusBadge({ pet, upcomingVisits }: { pet: Pet; upcomingVisits: VetVisit[] }) {
@@ -69,6 +90,8 @@ function PetCard({ pet, upcomingVisits, sharedChip }: { pet: Pet; upcomingVisits
   const tagGradient = SPECIES_TAG_GRADIENT[speciesKey] ?? 'linear-gradient(135deg, #fbbf24, #fde68a)';
   const tagColor = SPECIES_TAG_COLOR[speciesKey] ?? '#451a03';
   const age = petAge(pet.birthDate);
+  const bDaysAway = birthdayInDays(pet.birthDate);
+  const birthdaySoon = bDaysAway !== null && bDaysAway <= 30;
 
   return (
     <Box
@@ -102,7 +125,9 @@ function PetCard({ pet, upcomingVisits, sharedChip }: { pet: Pet; upcomingVisits
           {pet.photoUrl ? (
             <img src={`${serverUrl}${pet.photoUrl}`} alt={pet.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           ) : (
-            <Pets sx={{ fontSize: 28, color: pet.color ?? (speciesKey === 'cat' ? '#6c63ff' : speciesKey === 'dog' ? '#fb7185' : '#34d399') }} />
+            <Typography sx={{ fontSize: 28, lineHeight: 1, userSelect: 'none' }}>
+              {SPECIES_EMOJI[speciesKey] ?? '🐾'}
+            </Typography>
           )}
         </Box>
 
@@ -124,9 +149,30 @@ function PetCard({ pet, upcomingVisits, sharedChip }: { pet: Pet; upcomingVisits
               />
             )}
           </Box>
-          <Typography sx={{ fontWeight: 600, fontSize: '0.8125rem', color: 'text.secondary', mt: 0.125 }} noWrap>
-            {pet.species}{age ? ` · ${age}` : ''}
-          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mt: 0.125 }}>
+            <Typography sx={{ fontWeight: 600, fontSize: '0.8125rem', color: 'text.secondary' }} noWrap>
+              {pet.species.charAt(0).toUpperCase() + pet.species.slice(1)}{age ? ` · ${age}` : ''}
+            </Typography>
+            {birthdaySoon && (
+              <Typography
+                component="span"
+                title={bDaysAway === 0 ? "Happy birthday! 🎉" : `Birthday in ${bDaysAway} day${bDaysAway !== 1 ? 's' : ''}!`}
+                sx={{ fontSize: '0.8125rem', cursor: 'default', flexShrink: 0 }}
+              >
+                {bDaysAway === 0 ? '🎂' : '🎂'}
+              </Typography>
+            )}
+          </Box>
+          {birthdaySoon && bDaysAway !== null && bDaysAway > 0 && (
+            <Typography sx={{ fontSize: '0.6875rem', fontWeight: 700, color: '#f59e0b', mt: 0.25 }}>
+              🎉 Birthday in {bDaysAway} day{bDaysAway !== 1 ? 's' : ''}!
+            </Typography>
+          )}
+          {birthdaySoon && bDaysAway === 0 && (
+            <Typography sx={{ fontSize: '0.6875rem', fontWeight: 700, color: '#f59e0b', mt: 0.25 }}>
+              🎂 Happy birthday!
+            </Typography>
+          )}
           <StatusBadge pet={pet} upcomingVisits={upcomingVisits} />
         </Box>
 
