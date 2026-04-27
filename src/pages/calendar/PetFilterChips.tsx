@@ -8,11 +8,12 @@ interface PetFilterChipsProps {
   onChange: (petId: string | null) => void;
   showInactiveMeds?: boolean;
   onToggleInactiveMeds?: () => void;
+  sharedPetIds?: Set<string>;
 }
 
 export function PetFilterChips({
   pets, petColors, selectedPetId, onChange,
-  showInactiveMeds, onToggleInactiveMeds,
+  showInactiveMeds, onToggleInactiveMeds, sharedPetIds,
 }: PetFilterChipsProps) {
   return (
     <Box sx={{ display: 'flex', gap: 0.75, flexWrap: 'wrap', px: { xs: 2, sm: 3 }, pt: 1.5, pb: 0.5 }}>
@@ -28,18 +29,19 @@ export function PetFilterChips({
         }
       />
       {pets.map((pet) => {
-        const petColor = petColors[pet.id];
+        const isShared = sharedPetIds?.has(pet.id) ?? false;
+        const chipColor = isShared ? '#c0a830' : petColors[pet.id];
         const isSelected = selectedPetId === pet.id;
         return (
           <Chip
             key={pet.id}
-            label={pet.name}
+            label={isShared ? `${pet.name} · shared` : pet.name}
             size="small"
             onClick={() => onChange(pet.id)}
             variant={isSelected ? 'filled' : 'outlined'}
             sx={isSelected
-              ? { fontWeight: 800, bgcolor: petColor, color: 'white', '&:hover': { opacity: 0.9 } }
-              : { fontWeight: 800, borderColor: petColor, color: petColor }
+              ? { fontWeight: 800, bgcolor: chipColor, color: 'white', '&:hover': { opacity: 0.9 } }
+              : { fontWeight: 800, borderColor: chipColor, color: chipColor }
             }
           />
         );
