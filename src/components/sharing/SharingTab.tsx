@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import {
   Box, Button, TextField, Typography, Chip, CircularProgress,
-  Dialog, DialogTitle, DialogContent, DialogActions,
+  Dialog, DialogTitle, DialogContent, DialogActions, Tooltip,
 } from '@mui/material';
-import { Add } from '@mui/icons-material';
+import { Add, MedicalServices, Medication, StickyNote2 } from '@mui/icons-material';
+import type { SvgIconComponent } from '@mui/icons-material';
 import { useListPetShares, useSharePet, useRevokeShare } from '../../api/shares';
 import { getApiError } from '../../api/client';
 import { useNotification } from '../../context/NotificationContext';
@@ -16,6 +17,26 @@ interface Props {
   petName: string;
 }
 
+function PermIcon({ Icon, label, view, edit }: { Icon: SvgIconComponent; label: string; view: boolean; edit: boolean }) {
+  const tip = !view ? `No ${label} access` : edit ? `Can edit ${label}` : `View ${label}`;
+  const color = edit ? '#6abf8a' : view ? 'text.secondary' : 'text.disabled';
+  const opacity = !view ? 0.18 : edit ? 1 : 0.55;
+  return (
+    <Tooltip title={tip} placement="top" arrow>
+      <Icon sx={{ fontSize: 14, color, opacity, transition: 'opacity 0.15s' }} />
+    </Tooltip>
+  );
+}
+
+function SharePermIcons({ perms }: { perms: { canViewVetVisits: boolean; canEditVetVisits: boolean; canViewMedications: boolean; canEditMedications: boolean; canViewNotes: boolean; canEditNotes: boolean } }) {
+  return (
+    <Box sx={{ display: 'flex', gap: 0.75, mt: 0.5 }}>
+      <PermIcon Icon={MedicalServices} label="vet visits" view={perms.canViewVetVisits} edit={perms.canEditVetVisits} />
+      <PermIcon Icon={Medication} label="medications" view={perms.canViewMedications} edit={perms.canEditMedications} />
+      <PermIcon Icon={StickyNote2} label="notes" view={perms.canViewNotes} edit={perms.canEditNotes} />
+    </Box>
+  );
+}
 
 export function SharingTab({ petId, petName }: Props) {
   const { showError } = useNotification();
@@ -116,6 +137,7 @@ export function SharingTab({ petId, petName }: Props) {
                   <Typography sx={{ fontWeight: 700, fontSize: '0.875rem', color: 'text.primary' }} noWrap>
                     {share.sharedWithEmail}
                   </Typography>
+                  <SharePermIcons perms={share.permissions} />
                 </Box>
                 <Box sx={{ display: 'flex', gap: 1, flexShrink: 0 }}>
                   <Button size="small" sx={{ fontWeight: 700, fontSize: '0.75rem', minWidth: 0, px: 1 }} onClick={() => setEditShare(share)}>
@@ -144,6 +166,7 @@ export function SharingTab({ petId, petName }: Props) {
                     </Typography>
                     <Chip label="Pending" size="small" sx={{ fontWeight: 800, fontSize: '0.6875rem', borderRadius: 5 }} />
                   </Box>
+                  <SharePermIcons perms={share.permissions} />
                 </Box>
                 <Box sx={{ display: 'flex', gap: 1, flexShrink: 0 }}>
                   <Button size="small" sx={{ fontWeight: 700, fontSize: '0.75rem', minWidth: 0, px: 1 }} onClick={() => setEditShare(share)}>
