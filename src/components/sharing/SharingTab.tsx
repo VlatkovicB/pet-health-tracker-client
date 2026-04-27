@@ -192,7 +192,7 @@ export function SharingTab({ petId, petName }: Props) {
       {inviteDialogOpen && (
         <EditPermissionsDialog
           open
-          onClose={() => setInviteDialogOpen(false)}
+          onClose={() => { setInviteDialogOpen(false); setPendingInviteEmail(''); }}
           mode="create"
           email={pendingInviteEmail}
           onConfirm={handleInviteConfirm}
