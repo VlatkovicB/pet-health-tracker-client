@@ -33,6 +33,7 @@ function toCalendarEvents(
   vetVisits: VetVisit[],
   medications: Medication[],
   notes: Note[],
+  pets: (Pet | SharedPet)[],
   monthStart: Date,
   monthEnd: Date,
 ): CalendarEvent[] {
@@ -72,7 +73,23 @@ function toCalendarEvents(
     note: n,
   }));
 
-  return [...visitEvents, ...medEvents, ...noteEvents];
+  const viewYear = monthStart.getFullYear();
+  const birthdayEvents: CalendarEvent[] = [];
+  for (const pet of pets) {
+    if (!pet.birthDate) continue;
+    const [birthYear, birthMonth, birthDay] = pet.birthDate.split('-').map(Number);
+    const bdDate = new Date(viewYear, birthMonth - 1, birthDay);
+    if (bdDate >= monthStart && bdDate <= monthEnd) {
+      birthdayEvents.push({
+        kind: 'birthday',
+        petId: pet.id,
+        date: format(bdDate, 'yyyy-MM-dd'),
+        age: viewYear - birthYear,
+      });
+    }
+  }
+
+  return [...visitEvents, ...medEvents, ...noteEvents, ...birthdayEvents];
 }
 
 export function CalendarPage() {
@@ -178,9 +195,9 @@ export function CalendarPage() {
   const error = visitsError || notesError || medQueries.some((q) => q.isError);
 
   const allEvents = useMemo(
-    () => toCalendarEvents([...vetVisits, ...allSharedVisits], allMedications, notes, monthStart, monthEnd),
+    () => toCalendarEvents([...vetVisits, ...allSharedVisits], allMedications, notes, allPets as Pet[], monthStart, monthEnd),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [vetVisits, allSharedVisits, allMedications, notes, monthKey],
+    [vetVisits, allSharedVisits, allMedications, notes, allPets, monthKey],
   );
 
   const visibleEvents = useMemo(

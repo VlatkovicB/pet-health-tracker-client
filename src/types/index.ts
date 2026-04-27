@@ -140,7 +140,8 @@ export type CalendarEvent =
       hasReminder: boolean;
       active: boolean;
     }
-  | { kind: 'note'; date: string; note: Note };
+  | { kind: 'note'; date: string; note: Note }
+  | { kind: 'birthday'; petId: string; date: string; age: number };
 
 export interface AuthTokens {
   token: string;
