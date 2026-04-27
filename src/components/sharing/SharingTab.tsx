@@ -9,21 +9,12 @@ import { getApiError } from '../../api/client';
 import { useNotification } from '../../context/NotificationContext';
 import { EditPermissionsDialog } from './EditPermissionsDialog';
 import { InitiateTransferDialog } from './InitiateTransferDialog';
-import type { PetShare } from '../../types';
+import type { PetShare, SharePermissions } from '../../types';
 
 interface Props {
   petId: string;
   petName: string;
 }
-
-const DEFAULT_PERMISSIONS = {
-  canViewVetVisits: true,
-  canEditVetVisits: false,
-  canViewMedications: true,
-  canEditMedications: false,
-  canViewNotes: true,
-  canEditNotes: false,
-};
 
 function permissionSummary(share: PetShare): string {
   const parts: string[] = [];
@@ -36,6 +27,8 @@ function permissionSummary(share: PetShare): string {
 export function SharingTab({ petId, petName }: Props) {
   const { showError } = useNotification();
   const [inviteEmail, setInviteEmail] = useState('');
+  const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
+  const [pendingInviteEmail, setPendingInviteEmail] = useState('');
   const [editShare, setEditShare] = useState<PetShare | null>(null);
   const [revokeShare, setRevokeShare] = useState<PetShare | null>(null);
   const [transferOpen, setTransferOpen] = useState(false);
@@ -44,12 +37,20 @@ export function SharingTab({ petId, petName }: Props) {
   const shareMutation = useSharePet();
   const revokeMutation = useRevokeShare();
 
-  const handleInvite = () => {
+  const handleShareClick = () => {
     if (!inviteEmail.trim()) return;
+    setPendingInviteEmail(inviteEmail.trim());
+    setInviteDialogOpen(true);
+  };
+
+  const handleInviteConfirm = (permissions: SharePermissions) => {
     shareMutation.mutate(
-      { petId, email: inviteEmail.trim(), permissions: DEFAULT_PERMISSIONS },
+      { petId, email: pendingInviteEmail, permissions },
       {
-        onSuccess: () => setInviteEmail(''),
+        onSuccess: () => {
+          setInviteEmail('');
+          setInviteDialogOpen(false);
+        },
         onError: (err) => showError(getApiError(err)),
       },
     );
@@ -83,15 +84,14 @@ export function SharingTab({ petId, petName }: Props) {
             placeholder="Email address"
             value={inviteEmail}
             onChange={(e) => setInviteEmail(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleInvite()}
-            disabled={shareMutation.isPending}
+            onKeyDown={(e) => e.key === 'Enter' && handleShareClick()}
             sx={{ flex: 1 }}
           />
           <Button
             variant="contained"
-            startIcon={shareMutation.isPending ? <CircularProgress size={14} sx={{ color: 'white' }} /> : <Add />}
-            onClick={handleInvite}
-            disabled={!inviteEmail.trim() || shareMutation.isPending}
+            startIcon={<Add />}
+            onClick={handleShareClick}
+            disabled={!inviteEmail.trim()}
             size="small"
           >
             Share
@@ -143,7 +143,7 @@ export function SharingTab({ petId, petName }: Props) {
                 key={share.id}
                 sx={{
                   bgcolor: 'background.default', borderRadius: 1.5, p: 1.5, mb: 1,
-                  display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 1,
+                  display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 1,
                   opacity: 0.7,
                 }}
               >
@@ -154,10 +154,18 @@ export function SharingTab({ petId, petName }: Props) {
                     </Typography>
                     <Chip label="Pending" size="small" sx={{ fontWeight: 800, fontSize: '0.6875rem', borderRadius: 5 }} />
                   </Box>
+                  <Typography sx={{ fontWeight: 600, fontSize: '0.75rem', color: 'primary.main', mt: 0.25 }}>
+                    {permissionSummary(share)}
+                  </Typography>
                 </Box>
-                <Button size="small" color="error" sx={{ fontWeight: 700, fontSize: '0.75rem', minWidth: 0, px: 1 }} onClick={() => setRevokeShare(share)}>
-                  Revoke
-                </Button>
+                <Box sx={{ display: 'flex', gap: 1, flexShrink: 0 }}>
+                  <Button size="small" sx={{ fontWeight: 700, fontSize: '0.75rem', minWidth: 0, px: 1 }} onClick={() => setEditShare(share)}>
+                    Edit
+                  </Button>
+                  <Button size="small" color="error" sx={{ fontWeight: 700, fontSize: '0.75rem', minWidth: 0, px: 1 }} onClick={() => setRevokeShare(share)}>
+                    Revoke
+                  </Button>
+                </Box>
               </Box>
             ))}
           </>
@@ -179,6 +187,18 @@ export function SharingTab({ petId, petName }: Props) {
           Transfer Ownership…
         </Button>
       </Box>
+
+      {/* Invite dialog */}
+      {inviteDialogOpen && (
+        <EditPermissionsDialog
+          open
+          onClose={() => setInviteDialogOpen(false)}
+          mode="create"
+          email={pendingInviteEmail}
+          onConfirm={handleInviteConfirm}
+          confirmPending={shareMutation.isPending}
+        />
+      )}
 
       {/* Edit permissions dialog */}
       {editShare && (
