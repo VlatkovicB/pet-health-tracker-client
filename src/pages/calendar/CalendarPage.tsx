@@ -9,6 +9,7 @@ import { healthApi } from '../../api/health';
 import { medicationsApi } from '../../api/medications';
 import { vetsApi } from '../../api/vets';
 import { useNotes } from '../../api/notes';
+import { useListSharedPets } from '../../api/shares';
 import { MonthCalendar } from './MonthCalendar';
 import { MobileCalendarView } from './MobileCalendarView';
 import { PetFilterChips } from './PetFilterChips';
@@ -16,7 +17,7 @@ import { DayDetailModal } from '../../components/DayDetailModal';
 import { NoteFormDialog } from '../../components/NoteFormDialog';
 import { NoteDetailDialog } from '../../components/NoteDetailDialog';
 import { PET_COLOR_PALETTE } from '../../utils/color';
-import type { CalendarEvent, Note, Pet, Vet, VetVisit, Medication } from '../../types';
+import type { CalendarEvent, Note, Pet, SharedPet, Vet, VetVisit, Medication } from '../../types';
 
 function buildPetColors(pets: Pet[]): Record<string, string> {
   return Object.fromEntries(
@@ -99,8 +100,20 @@ export function CalendarPage() {
     queryFn: () => petsApi.list({ pageParam: 1 }),
   });
   const pets = petsPage?.items ?? [];
-  const petColors = useMemo(() => buildPetColors(pets), [pets]);
-  const petNames = useMemo(() => buildPetNames(pets), [pets]);
+
+  const { data: sharedPetsData = [] } = useListSharedPets();
+
+  const allPets = useMemo<(Pet | SharedPet)[]>(
+    () => [...pets, ...sharedPetsData],
+    [pets, sharedPetsData],
+  );
+  const sharedPetIds = useMemo(
+    () => new Set(sharedPetsData.map((p) => p.id)),
+    [sharedPetsData],
+  );
+
+  const petColors = useMemo(() => buildPetColors(allPets as Pet[]), [allPets]);
+  const petNames = useMemo(() => buildPetNames(allPets as Pet[]), [allPets]);
 
   // All vets (for schedule form autocomplete)
   const { data: vets = [] } = useQuery<Vet[]>({
@@ -127,7 +140,7 @@ export function CalendarPage() {
 
   // Medications per pet (parallel)
   const medQueries = useQueries({
-    queries: pets.map((pet) => ({
+    queries: allPets.map((pet) => ({
       queryKey: ['medications', pet.id],
       queryFn: () => medicationsApi.list(pet.id),
       staleTime: 5 * 60 * 1000,
@@ -139,13 +152,31 @@ export function CalendarPage() {
     [medQueries.map((q) => q.dataUpdatedAt).join(',')],
   );
 
-  const loading = visitsLoading || notesLoading || medQueries.some((q) => q.isLoading);
+  const sharedVisitQueries = useQueries({
+    queries: sharedPetsData.map((pet) => ({
+      queryKey: ['calendar-vet-visits-shared', pet.id, monthKey],
+      queryFn: () => healthApi.listVetVisitsByPetAndMonth(
+        pet.id,
+        format(monthStart, 'yyyy-MM-dd'),
+        format(monthEnd, 'yyyy-MM-dd'),
+      ),
+      staleTime: 5 * 60 * 1000,
+    })),
+  });
+
+  const allSharedVisits = useMemo(
+    () => sharedVisitQueries.flatMap((q) => q.data ?? []),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [sharedVisitQueries.map((q) => q.dataUpdatedAt).join(',')],
+  );
+
+  const loading = visitsLoading || notesLoading || medQueries.some((q) => q.isLoading) || sharedVisitQueries.some((q) => q.isLoading);
   const error = visitsError || notesError || medQueries.some((q) => q.isError);
 
   const allEvents = useMemo(
-    () => toCalendarEvents(vetVisits, allMedications, notes, monthStart, monthEnd),
+    () => toCalendarEvents([...vetVisits, ...allSharedVisits], allMedications, notes, monthStart, monthEnd),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [vetVisits, allMedications, notes, monthKey],
+    [vetVisits, allSharedVisits, allMedications, notes, monthKey],
   );
 
   const visibleEvents = useMemo(
@@ -173,7 +204,8 @@ export function CalendarPage() {
           events={visibleEvents}
           petColors={petColors}
           petNames={petNames}
-          pets={pets}
+          pets={allPets as Pet[]}
+          sharedPetIds={sharedPetIds}
           selectedPetId={selectedPetId}
           onPetChange={setSelectedPetId}
           loading={loading}
@@ -186,7 +218,8 @@ export function CalendarPage() {
         <>
           <Box sx={{ flexShrink: 0 }}>
             <PetFilterChips
-              pets={pets}
+              pets={allPets as Pet[]}
+              sharedPetIds={sharedPetIds}
               petColors={petColors}
               selectedPetId={selectedPetId}
               onChange={setSelectedPetId}
@@ -242,7 +275,7 @@ export function CalendarPage() {
         events={selectedDay?.events ?? []}
         petNames={petNames}
         petColors={petColors}
-        pets={pets}
+        pets={allPets as Pet[]}
         vets={vets}
         onClose={() => setSelectedDay(null)}
         onScheduled={() => {
