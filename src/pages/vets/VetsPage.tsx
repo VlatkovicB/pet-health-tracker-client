@@ -379,9 +379,9 @@ export function VetsPage() {
   const isDragEnabled = sortMode === 'custom';
 
   return (
-    <Box>
+    <Box sx={{ maxWidth: 960, mx: 'auto', px: { xs: 2, md: 3 }, pt: 2.5, pb: 4 }}>
       {/* Page header */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2, px: { xs: 2, md: 3 }, pt: 2.5 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
         <Box>
           <Typography sx={{ fontWeight: 900, fontSize: '1.5rem', color: 'text.primary', letterSpacing: '-0.8px' }}>Vets</Typography>
           <Typography sx={{ fontWeight: 600, fontSize: '0.8125rem', color: 'text.secondary', mt: 0.25 }}>Your trusted veterinarians</Typography>
@@ -390,7 +390,7 @@ export function VetsPage() {
       </Box>
 
       {/* Search + sort controls */}
-      <Box sx={{ px: { xs: 2, md: 3 }, mb: 2, display: 'flex', flexDirection: 'column', gap: 1 }}>
+      <Box sx={{ mb: 2, display: 'flex', flexDirection: 'column', gap: 1 }}>
         <TextField
           placeholder="Search vets…"
           value={search}
@@ -423,56 +423,50 @@ export function VetsPage() {
       </Box>
 
       {listError && (
-        <Box sx={{ px: { xs: 2, md: 3 }, mb: 2 }}>
+        <Box sx={{ mb: 2 }}>
           <Alert severity="error">{getApiError(listErrorObj)}</Alert>
         </Box>
       )}
 
       {isLoading ? (
-        <Box sx={{ px: { xs: 2, md: 3 } }}>
-          <Grid container spacing={2}>
-            {[1, 2].map((i) => (
-              <Grid size={{ xs: 12 }} key={i}>
-                <Skeleton variant="rectangular" height={72} sx={{ borderRadius: 2 }} />
-              </Grid>
-            ))}
-          </Grid>
-        </Box>
+        <Grid container spacing={2}>
+          {[1, 2].map((i) => (
+            <Grid size={{ xs: 12 }} key={i}>
+              <Skeleton variant="rectangular" height={72} sx={{ borderRadius: 2 }} />
+            </Grid>
+          ))}
+        </Grid>
       ) : vets.length === 0 ? (
-        <Box sx={{ px: { xs: 2, md: 3 } }}>
-          <Card elevation={1}>
-            <CardContent sx={{ textAlign: 'center', py: 5 }}>
-              <MedicalServices sx={{ fontSize: 32, color: 'primary.main', mb: 1, opacity: 0.5 }} />
-              <Typography variant="subtitle2" color="text.secondary">No vets added yet</Typography>
-              <Typography variant="body2" color="text.disabled" sx={{ mt: 0.5 }}>
-                Add a vet to link them to visits and get reminders
-              </Typography>
-            </CardContent>
-          </Card>
-        </Box>
+        <Card elevation={1}>
+          <CardContent sx={{ textAlign: 'center', py: 5 }}>
+            <MedicalServices sx={{ fontSize: 32, color: 'primary.main', mb: 1, opacity: 0.5 }} />
+            <Typography variant="subtitle2" color="text.secondary">No vets added yet</Typography>
+            <Typography variant="body2" color="text.disabled" sx={{ mt: 0.5 }}>
+              Add a vet to link them to visits and get reminders
+            </Typography>
+          </CardContent>
+        </Card>
       ) : (
-        <Box sx={{ px: { xs: 2, md: 3 }, pb: 4 }}>
-          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-            <SortableContext items={sortedVets.map((v) => v.id)} strategy={verticalListSortingStrategy}>
-              {sortedVets.map((vet) => (
-                <SortableVetCard
-                  key={vet.id}
-                  vet={vet}
-                  isExpanded={expandedVetId === vet.id}
-                  isDragEnabled={isDragEnabled}
-                  onToggleExpand={() => toggleExpand(vet.id)}
-                  onEdit={() => setEditVet(vet)}
-                  onSync={() => setSyncVet(vet)}
-                />
-              ))}
-            </SortableContext>
-          </DndContext>
-        </Box>
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <SortableContext items={sortedVets.map((v) => v.id)} strategy={verticalListSortingStrategy}>
+            {sortedVets.map((vet) => (
+              <SortableVetCard
+                key={vet.id}
+                vet={vet}
+                isExpanded={expandedVetId === vet.id}
+                isDragEnabled={isDragEnabled}
+                onToggleExpand={() => toggleExpand(vet.id)}
+                onEdit={() => setEditVet(vet)}
+                onSync={() => setSyncVet(vet)}
+              />
+            ))}
+          </SortableContext>
+        </DndContext>
       )}
 
       <div ref={sentinelRef} />
       {isFetchingNextPage && (
-        <Box sx={{ px: { xs: 2, md: 3 }, mt: 2 }}>
+        <Box sx={{ mt: 2 }}>
           <Skeleton variant="rectangular" height={72} sx={{ borderRadius: 2 }} />
         </Box>
       )}
