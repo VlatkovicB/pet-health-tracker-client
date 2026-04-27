@@ -1,3 +1,6 @@
+export const PET_SPECIES = ['dog', 'cat', 'rabbit', 'bird', 'fish', 'other'] as const;
+export type PetSpecies = typeof PET_SPECIES[number];
+
 export interface User {
   id: string;
   name: string;
@@ -8,7 +11,7 @@ export interface User {
 export interface Pet {
   id: string;
   name: string;
-  species: string;
+  species: PetSpecies;
   breed?: string;
   birthDate?: string;
   photoUrl?: string;

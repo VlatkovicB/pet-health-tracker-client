@@ -19,6 +19,7 @@ import { getApiError } from '../../api/client';
 import { useNotification } from '../../context/NotificationContext';
 import { useInfiniteScroll } from '../../hooks/useInfiniteScroll';
 import type { Medication, Note, Pet, VetVisit, Vet, VetWorkHours, DayOfWeek } from '../../types';
+import { PET_SPECIES } from '../../types';
 import { PET_COLOR_PALETTE } from '../../utils/color';
 import { ScheduledVisitDetailDialog } from '../../components/ScheduledVisitDetailDialog';
 import { MedicationDetailDialog } from '../../components/MedicationDetailDialog';
@@ -873,7 +874,11 @@ function EditPetDialog({ pet, open, saving, onClose, onSave }: {
       <DialogContent>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
           <TextField label="Name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} fullWidth required />
-          <TextField label="Species" value={form.species} onChange={(e) => setForm({ ...form, species: e.target.value })} fullWidth required />
+          <TextField select label="Species" value={form.species} onChange={(e) => setForm({ ...form, species: e.target.value as typeof PET_SPECIES[number] })} fullWidth required>
+            {PET_SPECIES.map((s) => (
+              <MenuItem key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</MenuItem>
+            ))}
+          </TextField>
           <TextField label="Breed" value={form.breed} onChange={(e) => setForm({ ...form, breed: e.target.value })} fullWidth />
           <TextField label="Birth Date" type="date" value={form.birthDate} onChange={(e) => setForm({ ...form, birthDate: e.target.value })} fullWidth slotProps={{ inputLabel: { shrink: true } }} />
           <Box>

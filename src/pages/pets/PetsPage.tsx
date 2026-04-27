@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Box, Button, TextField, Typography, Dialog, Chip,
-  DialogTitle, DialogContent, DialogActions, Skeleton, Grid, Tabs, Tab,
+  DialogTitle, DialogContent, DialogActions, Skeleton, Grid, Tabs, Tab, MenuItem,
 } from '@mui/material';
 import { Add, Pets } from '@mui/icons-material';
 import { useMutation, useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -20,6 +20,7 @@ import {
 import { PendingShareCard } from '../../components/sharing/PendingShareCard';
 import { PendingTransferCard } from '../../components/sharing/PendingTransferCard';
 import type { Pet, VetVisit } from '../../types';
+import { PET_SPECIES } from '../../types';
 import { SPECIES_AVATAR_BG, SPECIES_TAG_GRADIENT, SPECIES_TAG_COLOR } from '../../utils/speciesStyles';
 
 const serverUrl = import.meta.env.VITE_SERVER_URL ?? 'http://localhost:3000';
@@ -63,7 +64,7 @@ function StatusBadge({ pet, upcomingVisits }: { pet: Pet; upcomingVisits: VetVis
 
 function PetCard({ pet, upcomingVisits, sharedChip }: { pet: Pet; upcomingVisits: VetVisit[]; sharedChip?: boolean }) {
   const navigate = useNavigate();
-  const speciesKey = pet.species.toLowerCase();
+  const speciesKey = pet.species;
   const avatarBg = SPECIES_AVATAR_BG[speciesKey] ?? '#e0f2fe';
   const tagGradient = SPECIES_TAG_GRADIENT[speciesKey] ?? 'linear-gradient(135deg, #fbbf24, #fde68a)';
   const tagColor = SPECIES_TAG_COLOR[speciesKey] ?? '#451a03';
@@ -233,7 +234,7 @@ function SharedWithMeTab() {
 export function PetsPage() {
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ name: '', species: '', breed: '', birthDate: '' });
+  const [form, setForm] = useState<{ name: string; species: typeof PET_SPECIES[number] | ''; breed: string; birthDate: string }>({ name: '', species: '', breed: '', birthDate: '' });
   const { showError } = useNotification();
   const [searchParams, setSearchParams] = useSearchParams();
   const view = searchParams.get('view') === 'shared' ? 'shared' : 'mine';
@@ -258,7 +259,7 @@ export function PetsPage() {
 
   const mutation = useMutation({
     mutationFn: (data: typeof form) => petsApi.create({
-      name: data.name, species: data.species,
+      name: data.name, species: data.species as typeof PET_SPECIES[number],
       breed: data.breed || undefined,
       birthDate: data.birthDate || undefined,
     }),
@@ -338,7 +339,11 @@ export function PetsPage() {
         <DialogTitle>Add Pet</DialogTitle>
         <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 0.5 }}>
           <TextField label="Name"              value={form.name}      onChange={(e) => setForm({ ...form, name:      e.target.value })} fullWidth required autoFocus />
-          <TextField label="Species"           value={form.species}   onChange={(e) => setForm({ ...form, species:   e.target.value })} fullWidth required />
+          <TextField select label="Species" value={form.species} onChange={(e) => setForm({ ...form, species: e.target.value as typeof PET_SPECIES[number] })} fullWidth required>
+            {PET_SPECIES.map((s) => (
+              <MenuItem key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</MenuItem>
+            ))}
+          </TextField>
           <TextField label="Breed (optional)"  value={form.breed}     onChange={(e) => setForm({ ...form, breed:     e.target.value })} fullWidth />
           <TextField label="Birth Date" type="date" value={form.birthDate} onChange={(e) => setForm({ ...form, birthDate: e.target.value })} fullWidth slotProps={{ inputLabel: { shrink: true } }} />
         </DialogContent>
