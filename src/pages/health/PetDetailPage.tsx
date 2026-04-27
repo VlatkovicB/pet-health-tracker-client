@@ -821,6 +821,7 @@ export function PetDetailPage() {
           med={detailMed}
           petId={petId!}
           onClose={() => setDetailMed(null)}
+          canEdit={canEditMedications}
         />
       )}
 
