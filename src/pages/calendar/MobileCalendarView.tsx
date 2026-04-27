@@ -21,6 +21,7 @@ interface MobileCalendarViewProps {
   showInactiveMeds?: boolean;
   onToggleInactiveMeds?: () => void;
   onDayClick: (date: Date, events: CalendarEvent[]) => void;
+  sharedPetIds?: Set<string>;
 }
 
 function agendaDateLabel(day: Date): string {
@@ -38,7 +39,7 @@ function sortEvents(events: CalendarEvent[]): CalendarEvent[] {
 
 export function MobileCalendarView({
   events, petColors, petNames, pets, selectedPetId, onPetChange,
-  loading, error, showInactiveMeds, onToggleInactiveMeds, onDayClick,
+  loading, error, showInactiveMeds, onToggleInactiveMeds, onDayClick, sharedPetIds,
 }: MobileCalendarViewProps) {
   const theme = useTheme();
   const isDark = theme.palette.mode === 'dark';
@@ -99,6 +100,7 @@ export function MobileCalendarView({
         onChange={onPetChange}
         showInactiveMeds={showInactiveMeds}
         onToggleInactiveMeds={onToggleInactiveMeds}
+        sharedPetIds={sharedPetIds}
       />
 
       {/* 7-day week strip */}
