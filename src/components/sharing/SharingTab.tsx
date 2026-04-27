@@ -16,13 +16,6 @@ interface Props {
   petName: string;
 }
 
-function permissionSummary(share: PetShare): string {
-  const parts: string[] = [];
-  if (share.permissions.canViewVetVisits) parts.push(share.permissions.canEditVetVisits ? 'edit vet visits' : 'view vet visits');
-  if (share.permissions.canViewMedications) parts.push(share.permissions.canEditMedications ? 'edit medications' : 'view medications');
-  if (share.permissions.canViewNotes) parts.push(share.permissions.canEditNotes ? 'edit notes' : 'view notes');
-  return parts.length > 0 ? parts.join(' · ') : 'no permissions';
-}
 
 export function SharingTab({ petId, petName }: Props) {
   const { showError } = useNotification();
@@ -123,9 +116,6 @@ export function SharingTab({ petId, petName }: Props) {
                   <Typography sx={{ fontWeight: 700, fontSize: '0.875rem', color: 'text.primary' }} noWrap>
                     {share.sharedWithEmail}
                   </Typography>
-                  <Typography sx={{ fontWeight: 600, fontSize: '0.75rem', color: 'primary.main', mt: 0.25 }}>
-                    {permissionSummary(share)}
-                  </Typography>
                 </Box>
                 <Box sx={{ display: 'flex', gap: 1, flexShrink: 0 }}>
                   <Button size="small" sx={{ fontWeight: 700, fontSize: '0.75rem', minWidth: 0, px: 1 }} onClick={() => setEditShare(share)}>
@@ -154,9 +144,6 @@ export function SharingTab({ petId, petName }: Props) {
                     </Typography>
                     <Chip label="Pending" size="small" sx={{ fontWeight: 800, fontSize: '0.6875rem', borderRadius: 5 }} />
                   </Box>
-                  <Typography sx={{ fontWeight: 600, fontSize: '0.75rem', color: 'primary.main', mt: 0.25 }}>
-                    {permissionSummary(share)}
-                  </Typography>
                 </Box>
                 <Box sx={{ display: 'flex', gap: 1, flexShrink: 0 }}>
                   <Button size="small" sx={{ fontWeight: 700, fontSize: '0.75rem', minWidth: 0, px: 1 }} onClick={() => setEditShare(share)}>
