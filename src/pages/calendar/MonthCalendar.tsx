@@ -85,6 +85,9 @@ export function MonthCalendar({
               ? medEvents
               : medEvents.filter((e) => e.kind === 'medication' && e.active);
 
+            const noteEvents = dayEvents.filter((e) => e.kind === 'note');
+            const birthdayEvents = dayEvents.filter((e) => e.kind === 'birthday');
+
             const visibleRibbons = vetEvents.slice(0, MAX_RIBBONS);
             const overflow = vetEvents.length - visibleRibbons.length;
 
@@ -95,9 +98,12 @@ export function MonthCalendar({
               <Box
                 key={dateKey}
                 onClick={() => {
-                  const filteredEvents = showInactiveMeds
-                    ? dayEvents
-                    : dayEvents.filter((e) => e.kind === 'vet-visit' || (e.kind === 'medication' && e.active));
+                  const filteredEvents = dayEvents.filter((e) =>
+                    e.kind === 'birthday' ||
+                    e.kind === 'note' ||
+                    e.kind === 'vet-visit' ||
+                    (e.kind === 'medication' && (showInactiveMeds || e.active))
+                  );
                   onDayClick(day, filteredEvents);
                 }}
                 sx={{
@@ -128,6 +134,45 @@ export function MonthCalendar({
                 >
                   {format(day, 'd')}
                 </Typography>
+
+                {/* Birthday banners — shown prominently before vet visits */}
+                {birthdayEvents.map((e) => {
+                  if (e.kind !== 'birthday') return null;
+                  return (
+                    <Box
+                      key={`bd-${e.petId}`}
+                      sx={{
+                        borderRadius: '4px',
+                        px: '3px',
+                        py: '1px',
+                        bgcolor: '#f59e0b22',
+                        border: '1.5px solid #f59e0b',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '2px',
+                        mb: '1px',
+                        overflow: 'hidden',
+                      }}
+                    >
+                      <Typography sx={{ fontSize: '0.5625rem', lineHeight: 1, flexShrink: 0 }}>🎂</Typography>
+                      <Typography
+                        variant="caption"
+                        noWrap
+                        sx={{
+                          fontSize: '0.625rem',
+                          fontWeight: 800,
+                          color: '#f59e0b',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                          lineHeight: 1.4,
+                        }}
+                      >
+                        {petNames[e.petId] ?? 'Pet'}
+                      </Typography>
+                    </Box>
+                  );
+                })}
 
                 {/* Vet visit ribbons */}
                 {visibleRibbons.map((e) => {
@@ -186,6 +231,42 @@ export function MonthCalendar({
                   </Typography>
                 )}
 
+                {/* Note pills */}
+                {noteEvents.slice(0, 2).map((e) => {
+                  if (e.kind !== 'note') return null;
+                  return (
+                    <Box
+                      key={`note-${e.note.id}`}
+                      sx={{
+                        borderRadius: '4px',
+                        px: '3px',
+                        py: '1px',
+                        bgcolor: '#a78bfa22',
+                        border: '1px dashed #a78bfa',
+                        mb: '1px',
+                        overflow: 'hidden',
+                      }}
+                    >
+                      <Typography
+                        variant="caption"
+                        noWrap
+                        sx={{
+                          fontSize: '0.625rem',
+                          fontWeight: 700,
+                          color: '#a78bfa',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                          lineHeight: 1.4,
+                          display: 'block',
+                        }}
+                      >
+                        {e.note.title}
+                      </Typography>
+                    </Box>
+                  );
+                })}
+
                 {/* Medication dots */}
                 {visibleMedDots.length > 0 && (
                   <Box sx={{ display: 'flex', gap: '3px', flexWrap: 'wrap', mt: 'auto', pt: '2px' }}>
@@ -230,6 +311,14 @@ export function MonthCalendar({
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
             <Box sx={{ width: 7, height: 7, borderRadius: '50%', bgcolor: 'text.disabled', flexShrink: 0 }} />
             <Typography sx={{ fontSize: '0.68rem', color: 'text.secondary', fontWeight: 600 }}>Medication</Typography>
+          </Box>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            <Box sx={{ width: 10, height: 10, borderRadius: '3px', border: '1px dashed #a78bfa', bgcolor: '#a78bfa22', flexShrink: 0 }} />
+            <Typography sx={{ fontSize: '0.68rem', color: 'text.secondary', fontWeight: 600 }}>Note</Typography>
+          </Box>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            <Typography sx={{ fontSize: '0.75rem', lineHeight: 1 }}>🎂</Typography>
+            <Typography sx={{ fontSize: '0.68rem', color: 'text.secondary', fontWeight: 600 }}>Birthday</Typography>
           </Box>
           <Typography sx={{ fontSize: '0.68rem', color: 'text.disabled', ml: 'auto' }}>
             Click any day for details
