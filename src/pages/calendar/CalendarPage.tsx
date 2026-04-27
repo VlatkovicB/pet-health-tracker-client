@@ -202,11 +202,11 @@ export function CalendarPage() {
 
   const visibleEvents = useMemo(
     () => selectedPetId
-      ? allEvents.filter((e) =>
-          e.kind === 'note'
-            ? e.note.petIds.includes(selectedPetId)
-            : e.petId === selectedPetId,
-        )
+      ? allEvents.filter((e) => {
+          if (e.kind === 'note') return e.note.petIds.includes(selectedPetId);
+          if (e.kind === 'birthday') return e.petId === selectedPetId;
+          return (e as { petId: string }).petId === selectedPetId;
+        })
       : allEvents,
     [allEvents, selectedPetId],
   );
