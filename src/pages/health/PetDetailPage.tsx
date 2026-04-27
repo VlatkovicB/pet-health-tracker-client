@@ -42,11 +42,15 @@ const serverUrl = import.meta.env.VITE_SERVER_URL ?? 'http://localhost:3000';
 function calcAge(birthDate: string): string {
   const birth = new Date(birthDate);
   const now = new Date();
-  const months = (now.getFullYear() - birth.getFullYear()) * 12 + (now.getMonth() - birth.getMonth());
-  if (months < 1) return '< 1 month';
-  if (months < 24) return `${months} month${months !== 1 ? 's' : ''}`;
-  const y = Math.floor(months / 12);
-  return `${y} year${y !== 1 ? 's' : ''}`;
+  let years = now.getFullYear() - birth.getFullYear();
+  let mos = now.getMonth() - birth.getMonth();
+  if (now.getDate() < birth.getDate()) mos--;
+  if (mos < 0) { years--; mos += 12; }
+  if (years < 0) return '< 1 mo';
+  if (years === 0 && mos === 0) return '< 1 mo';
+  if (years === 0) return `${mos} mo${mos !== 1 ? 's' : ''}`;
+  if (mos === 0) return `${years} yr${years !== 1 ? 's' : ''}`;
+  return `${years} yr${years !== 1 ? 's' : ''} ${mos} mo${mos !== 1 ? 's' : ''}`;
 }
 
 const DAY_INDEX_TO_DOW: Record<number, DayOfWeek> = {
