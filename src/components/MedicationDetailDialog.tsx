@@ -18,9 +18,10 @@ interface Props {
   med: Medication;
   petId: string;
   onClose: () => void;
+  canEdit?: boolean;
 }
 
-export function MedicationDetailDialog({ med, petId, onClose }: Props) {
+export function MedicationDetailDialog({ med, petId, onClose, canEdit = true }: Props) {
   const queryClient = useQueryClient();
   const { showError } = useNotification();
 
@@ -112,6 +113,7 @@ export function MedicationDetailDialog({ med, petId, onClose }: Props) {
             onChange={(e) => set('name', e.target.value)}
             fullWidth
             required
+            disabled={!canEdit}
           />
           <Box sx={{ display: 'flex', gap: 1 }}>
             <TextField
@@ -122,6 +124,7 @@ export function MedicationDetailDialog({ med, petId, onClose }: Props) {
               sx={{ flex: 1 }}
               required
               slotProps={{ htmlInput: { min: 0, step: 'any' } }}
+              disabled={!canEdit}
             />
             <TextField
               select
@@ -129,6 +132,7 @@ export function MedicationDetailDialog({ med, petId, onClose }: Props) {
               value={form.dosageUnit}
               onChange={(e) => set('dosageUnit', e.target.value)}
               sx={{ width: 130 }}
+              disabled={!canEdit}
             >
               {DOSAGE_UNITS.map((u) => (
                 <MenuItem key={u} value={u}>{u}</MenuItem>
@@ -143,9 +147,10 @@ export function MedicationDetailDialog({ med, petId, onClose }: Props) {
             fullWidth
             required
             slotProps={{ inputLabel: { shrink: true } }}
+            disabled={!canEdit}
           />
           <FormControlLabel
-            control={<Checkbox checked={hasEndDate} onChange={(e) => setHasEndDate(e.target.checked)} />}
+            control={<Checkbox checked={hasEndDate} onChange={(e) => setHasEndDate(e.target.checked)} disabled={!canEdit} />}
             label="Set end date"
           />
           {hasEndDate && (
@@ -156,6 +161,7 @@ export function MedicationDetailDialog({ med, petId, onClose }: Props) {
               onChange={(e) => set('endDate', e.target.value)}
               fullWidth
               slotProps={{ inputLabel: { shrink: true } }}
+              disabled={!canEdit}
             />
           )}
           <TextField
@@ -165,9 +171,10 @@ export function MedicationDetailDialog({ med, petId, onClose }: Props) {
             fullWidth
             multiline
             rows={2}
+            disabled={!canEdit}
           />
           <FormControlLabel
-            control={<Switch checked={active} onChange={(e) => setActive(e.target.checked)} />}
+            control={<Switch checked={active} onChange={(e) => setActive(e.target.checked)} disabled={!canEdit} />}
             label="Active"
           />
           <Typography sx={{ fontWeight: 800, fontSize: '0.6875rem', color: 'text.disabled', letterSpacing: '2px', textTransform: 'uppercase', mb: -1 }}>
@@ -180,19 +187,26 @@ export function MedicationDetailDialog({ med, petId, onClose }: Props) {
             onReminderToggle={setReminderEnabled}
             advanceNotice={advanceNotice}
             onAdvanceNoticeChange={setAdvanceNotice}
+            disabled={!canEdit}
           />
         </Box>
       </DialogContent>
 
       <DialogActions>
-        <Button onClick={onClose} color="inherit">Cancel</Button>
-        <Button
-          variant="contained"
-          disabled={!canSave || updateMutation.isPending}
-          onClick={handleSave}
-        >
-          {updateMutation.isPending ? 'Saving…' : 'Save'}
-        </Button>
+        {canEdit ? (
+          <>
+            <Button onClick={onClose} color="inherit">Cancel</Button>
+            <Button
+              variant="contained"
+              disabled={!canSave || updateMutation.isPending}
+              onClick={handleSave}
+            >
+              {updateMutation.isPending ? 'Saving…' : 'Save'}
+            </Button>
+          </>
+        ) : (
+          <Button onClick={onClose} color="inherit">Close</Button>
+        )}
       </DialogActions>
     </Dialog>
   );
