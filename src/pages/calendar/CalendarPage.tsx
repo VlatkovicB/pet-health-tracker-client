@@ -159,7 +159,10 @@ export function CalendarPage() {
         pet.id,
         format(monthStart, 'yyyy-MM-dd'),
         format(monthEnd, 'yyyy-MM-dd'),
-      ),
+      ).catch((err) => {
+        if (err?.response?.status === 403) return [] as import('../../types').VetVisit[];
+        throw err;
+      }),
       staleTime: 5 * 60 * 1000,
     })),
   });
