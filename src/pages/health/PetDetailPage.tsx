@@ -493,17 +493,19 @@ export function PetDetailPage() {
                         border: 'none',
                       }}
                     />
-                    <Switch
-                      size="small"
-                      checked={m.active}
-                      onClick={(e) => e.stopPropagation()}
-                      onChange={(e) => {
-                        e.stopPropagation();
-                        if (canEditMedications) toggleActiveMutation.mutate({ medId: m.id, active: !m.active });
-                      }}
-                      disabled={!canEditMedications || (toggleActiveMutation.isPending && toggleActiveMutation.variables?.medId === m.id)}
-                      sx={{ flexShrink: 0 }}
-                    />
+                    {canEditMedications && (
+                      <Switch
+                        size="small"
+                        checked={m.active}
+                        onClick={(e) => e.stopPropagation()}
+                        onChange={(e) => {
+                          e.stopPropagation();
+                          toggleActiveMutation.mutate({ medId: m.id, active: !m.active });
+                        }}
+                        disabled={toggleActiveMutation.isPending && toggleActiveMutation.variables?.medId === m.id}
+                        sx={{ flexShrink: 0 }}
+                      />
+                    )}
                   </Box>
                 </Box>
               ))}
