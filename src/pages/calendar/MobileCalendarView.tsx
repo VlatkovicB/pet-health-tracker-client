@@ -33,10 +33,13 @@ function agendaDateLabel(day: Date): string {
 }
 
 function sortEvents(events: CalendarEvent[]): CalendarEvent[] {
-  return [...events].sort((a, b) => {
-    if (a.kind === b.kind) return 0;
-    return a.kind === 'vet-visit' ? -1 : 1;
-  });
+  const order: Record<CalendarEvent['kind'], number> = {
+    birthday: 0,
+    'vet-visit': 1,
+    medication: 2,
+    note: 3,
+  };
+  return [...events].sort((a, b) => (order[a.kind] ?? 4) - (order[b.kind] ?? 4));
 }
 
 export function MobileCalendarView({
@@ -60,7 +63,8 @@ export function MobileCalendarView({
   const isCurrentWeek = weekStart.getTime() === currentWeekStart.getTime();
   const dayEvents = getEventsForDay(selectedDay, events);
   const visibleDayEvents = dayEvents.filter((e) =>
-    e.kind === 'note' || e.kind === 'vet-visit' || (e.kind === 'medication' && (showInactiveMeds || e.active))
+    e.kind === 'note' || e.kind === 'birthday' || e.kind === 'vet-visit' ||
+    (e.kind === 'medication' && (showInactiveMeds || e.active))
   );
   const sortedEvents = sortEvents(visibleDayEvents);
 
@@ -115,7 +119,8 @@ export function MobileCalendarView({
           const today = isToday(day);
           const allDayEvents = getEventsForDay(day, events);
           const dots = allDayEvents.filter((e) =>
-            e.kind === 'note' || e.kind === 'vet-visit' || (e.kind === 'medication' && (showInactiveMeds || e.active))
+            e.kind === 'note' || e.kind === 'birthday' || e.kind === 'vet-visit' ||
+            (e.kind === 'medication' && (showInactiveMeds || e.active))
           );
           return (
             <Box
@@ -138,9 +143,17 @@ export function MobileCalendarView({
               {/* Event dots — solid circle per event, dashed for scheduled visit */}
               <Box sx={{ display: 'flex', gap: '2px', flexWrap: 'wrap', justifyContent: 'center', minHeight: 7 }}>
                 {dots.slice(0, 3).map((e) => {
-                  const color = e.kind === 'note' ? '#888' : (petColors[e.petId] ?? '#888');
+                  const color = e.kind === 'note'
+                    ? '#888'
+                    : e.kind === 'birthday'
+                    ? '#f59e0b'
+                    : (petColors[e.petId] ?? '#888');
                   const isScheduled = e.kind === 'vet-visit' && e.type === 'scheduled';
-                  const key = e.kind === 'note' ? `note-${e.note.id}` : e.id;
+                  const key = e.kind === 'note'
+                    ? `note-${e.note.id}`
+                    : e.kind === 'birthday'
+                    ? `birthday-${e.petId}`
+                    : e.id;
                   return (
                     <Box
                       key={key}
@@ -180,20 +193,32 @@ export function MobileCalendarView({
           </Typography>
         ) : (
           sortedEvents.map((e) => {
-            const color = e.kind === 'note' ? '#888' : (petColors[e.petId] ?? '#888');
+            const color = e.kind === 'note'
+              ? '#888'
+              : e.kind === 'birthday'
+              ? '#f59e0b'
+              : (petColors[e.petId] ?? '#888');
             const isScheduled = e.kind === 'vet-visit' && e.type === 'scheduled';
             const isOverdue = e.kind === 'vet-visit' && e.type === 'scheduled' && toLocalDate(e.date) < startOfToday();
             const title = e.kind === 'note'
               ? e.note.title
+              : e.kind === 'birthday'
+              ? `🎂 ${petNames[e.petId] ?? 'Pet'}'s Birthday`
               : e.kind === 'vet-visit'
               ? `${petNames[e.petId] ?? 'Pet'} · Vet visit`
               : `${petNames[e.petId] ?? 'Pet'} · ${e.name}`;
             const subtitle = e.kind === 'note'
               ? (e.note.description ?? '')
+              : e.kind === 'birthday'
+              ? `Turning ${e.age} year${e.age !== 1 ? 's' : ''} old`
               : e.kind === 'vet-visit'
               ? [e.reason, e.vetName].filter(Boolean).join(' · ')
               : `${e.dosageLabel} · ${e.frequencyLabel}${e.hasReminder ? ' 🔔' : ''}`;
-            const key = e.kind === 'note' ? `note-${e.note.id}` : e.id;
+            const key = e.kind === 'note'
+              ? `note-${e.note.id}`
+              : e.kind === 'birthday'
+              ? `birthday-${e.petId}`
+              : e.id;
 
             return (
               <Box
