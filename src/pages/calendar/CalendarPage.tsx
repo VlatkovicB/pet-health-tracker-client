@@ -13,6 +13,7 @@ import { useListSharedPets } from '../../api/shares';
 import { MonthCalendar } from './MonthCalendar';
 import { MobileCalendarView } from './MobileCalendarView';
 import { PetFilterChips } from './PetFilterChips';
+import { CalendarSidebar } from './CalendarSidebar';
 import { DayDetailModal } from '../../components/DayDetailModal';
 import { NoteFormDialog } from '../../components/NoteFormDialog';
 import { NoteDetailDialog } from '../../components/NoteDetailDialog';
@@ -151,6 +152,13 @@ export function CalendarPage() {
     staleTime: 10 * 60 * 1000,
   });
 
+  const { data: upcomingVisits = [], isLoading: upcomingLoading } = useQuery<VetVisit[]>({
+    queryKey: ['upcoming-vet-visits'],
+    queryFn: () => healthApi.listUpcomingVetVisits(),
+    staleTime: 2 * 60 * 1000,
+  });
+  const nextUpcomingVisit = upcomingVisits[0] ?? null;
+
   // Vet visits for the month
   const { data: vetVisits = [], isLoading: visitsLoading, isError: visitsError } = useQuery({
     queryKey: ['calendar-vet-visits', monthKey],
@@ -229,8 +237,8 @@ export function CalendarPage() {
       flexDirection: 'column',
       height: { xs: 'calc(100vh - 56px)', md: '100vh' },
       overflow: 'hidden',
-      px: { xs: 1, sm: 2 },
-      pt: 1,
+      px: { xs: 1, sm: 2, md: 0 },
+      pt: { xs: 1, md: 0 },
     }}>
       {isMobile ? (
         <MobileCalendarView
@@ -250,61 +258,70 @@ export function CalendarPage() {
           onToggleKind={toggleKind}
         />
       ) : (
-        <>
-          <Box sx={{ flexShrink: 0 }}>
-            <PetFilterChips
-              pets={allPets as Pet[]}
-              sharedPetIds={sharedPetIds}
+        <Box sx={{ display: 'flex', flex: 1, minHeight: 0, overflow: 'hidden' }}>
+          <CalendarSidebar
+            upcomingVisit={nextUpcomingVisit}
+            petNames={petNames}
+            petColors={petColors}
+            loading={upcomingLoading}
+          />
+
+          <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
+            <Box sx={{ flexShrink: 0 }}>
+              <PetFilterChips
+                pets={allPets as Pet[]}
+                sharedPetIds={sharedPetIds}
+                petColors={petColors}
+                selectedPetId={selectedPetId}
+                onChange={setSelectedPetId}
+                showInactiveMeds={showInactiveMeds}
+                onToggleInactiveMeds={() => setShowInactiveMeds((v) => !v)}
+                visibleKinds={visibleKinds}
+                onToggleKind={toggleKind}
+              />
+            </Box>
+
+            {/* Page header */}
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', px: { xs: 2, md: 3 }, pt: 2.5, pb: 1, flexShrink: 0 }}>
+              <Typography sx={{ fontWeight: 900, fontSize: { xs: '1.25rem', md: '1.5rem' }, color: 'text.primary', letterSpacing: '-0.8px' }}>
+                {format(currentMonth, 'MMMM yyyy')}
+              </Typography>
+              <Box sx={{ display: 'flex', gap: 0.75 }}>
+                <Box
+                  onClick={() => { setCurrentMonth((m) => subMonths(m, 1)); setSelectedDay(null); }}
+                  sx={{ width: 32, height: 32, borderRadius: 1.5, bgcolor: 'background.paper', border: '1.5px solid', borderColor: 'divider', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'primary.main', fontWeight: 900, fontSize: '1rem', userSelect: 'none', '&:hover': { bgcolor: (t) => t.palette.mode === 'dark' ? '#3d3580' : '#ede9fe' } }}
+                >‹</Box>
+                <Box
+                  onClick={() => { if (!isCurrentMonth) { setCurrentMonth(startOfMonth(new Date())); setSelectedDay(null); } }}
+                  sx={{
+                    px: 1.25, height: 32, borderRadius: 1.5, bgcolor: 'background.paper',
+                    border: '1.5px solid', borderColor: 'divider',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    cursor: isCurrentMonth ? 'default' : 'pointer',
+                    color: 'primary.main', fontWeight: 800, fontSize: '0.72rem',
+                    userSelect: 'none', opacity: isCurrentMonth ? 0.4 : 1,
+                    ...(!isCurrentMonth && { '&:hover': { bgcolor: (t: any) => t.palette.mode === 'dark' ? '#3d3580' : '#ede9fe' } }),
+                  }}
+                >Today</Box>
+                <Box
+                  onClick={() => { setCurrentMonth((m) => addMonths(m, 1)); setSelectedDay(null); }}
+                  sx={{ width: 32, height: 32, borderRadius: 1.5, bgcolor: 'background.paper', border: '1.5px solid', borderColor: 'divider', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'primary.main', fontWeight: 900, fontSize: '1rem', userSelect: 'none', '&:hover': { bgcolor: (t) => t.palette.mode === 'dark' ? '#3d3580' : '#ede9fe' } }}
+                >›</Box>
+              </Box>
+            </Box>
+
+            <MonthCalendar
+              month={currentMonth}
+              events={visibleEvents}
               petColors={petColors}
-              selectedPetId={selectedPetId}
-              onChange={setSelectedPetId}
+              petNames={petNames}
+              loading={loading}
+              error={error}
               showInactiveMeds={showInactiveMeds}
-              onToggleInactiveMeds={() => setShowInactiveMeds((v) => !v)}
-              visibleKinds={visibleKinds}
-              onToggleKind={toggleKind}
+              onDayClick={(date, evts) => setSelectedDay({ date, events: evts })}
             />
           </Box>
-
-          {/* Page header */}
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', px: { xs: 2, md: 3 }, pt: 2.5, pb: 1, flexShrink: 0 }}>
-            <Typography sx={{ fontWeight: 900, fontSize: { xs: '1.25rem', md: '1.5rem' }, color: 'text.primary', letterSpacing: '-0.8px' }}>
-              {format(currentMonth, 'MMMM yyyy')}
-            </Typography>
-            <Box sx={{ display: 'flex', gap: 0.75 }}>
-              <Box
-                onClick={() => { setCurrentMonth((m) => subMonths(m, 1)); setSelectedDay(null); }}
-                sx={{ width: 32, height: 32, borderRadius: 1.5, bgcolor: 'background.paper', border: '1.5px solid', borderColor: 'divider', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'primary.main', fontWeight: 900, fontSize: '1rem', userSelect: 'none', '&:hover': { bgcolor: (t) => t.palette.mode === 'dark' ? '#3d3580' : '#ede9fe' } }}
-              >‹</Box>
-              <Box
-                onClick={() => { if (!isCurrentMonth) { setCurrentMonth(startOfMonth(new Date())); setSelectedDay(null); } }}
-                sx={{
-                  px: 1.25, height: 32, borderRadius: 1.5, bgcolor: 'background.paper',
-                  border: '1.5px solid', borderColor: 'divider',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  cursor: isCurrentMonth ? 'default' : 'pointer',
-                  color: 'primary.main', fontWeight: 800, fontSize: '0.72rem',
-                  userSelect: 'none', opacity: isCurrentMonth ? 0.4 : 1,
-                  ...(!isCurrentMonth && { '&:hover': { bgcolor: (t: any) => t.palette.mode === 'dark' ? '#3d3580' : '#ede9fe' } }),
-                }}
-              >Today</Box>
-              <Box
-                onClick={() => { setCurrentMonth((m) => addMonths(m, 1)); setSelectedDay(null); }}
-                sx={{ width: 32, height: 32, borderRadius: 1.5, bgcolor: 'background.paper', border: '1.5px solid', borderColor: 'divider', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'primary.main', fontWeight: 900, fontSize: '1rem', userSelect: 'none', '&:hover': { bgcolor: (t) => t.palette.mode === 'dark' ? '#3d3580' : '#ede9fe' } }}
-              >›</Box>
-            </Box>
-          </Box>
-
-          <MonthCalendar
-            month={currentMonth}
-            events={visibleEvents}
-            petColors={petColors}
-            petNames={petNames}
-            loading={loading}
-            error={error}
-            showInactiveMeds={showInactiveMeds}
-            onDayClick={(date, evts) => setSelectedDay({ date, events: evts })}
-          />
-        </>
+        </Box>
       )}
 
       <DayDetailModal
