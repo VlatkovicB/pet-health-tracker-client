@@ -136,9 +136,7 @@ export function MonthCalendar({
                 </Typography>
 
                 {/* Birthday banners — shown prominently before vet visits */}
-                {birthdayEvents.map((e) => {
-                  if (e.kind !== 'birthday') return null;
-                  return (
+                {birthdayEvents.map((e) => (
                     <Box
                       key={`bd-${e.petId}`}
                       sx={{
@@ -171,8 +169,7 @@ export function MonthCalendar({
                         {petNames[e.petId] ?? 'Pet'}
                       </Typography>
                     </Box>
-                  );
-                })}
+                ))}
 
                 {/* Vet visit ribbons */}
                 {visibleRibbons.map((e) => {
@@ -232,9 +229,7 @@ export function MonthCalendar({
                 )}
 
                 {/* Note pills */}
-                {noteEvents.slice(0, 2).map((e) => {
-                  if (e.kind !== 'note') return null;
-                  return (
+                {noteEvents.slice(0, 2).map((e) => (
                     <Box
                       key={`note-${e.note.id}`}
                       sx={{
@@ -264,8 +259,7 @@ export function MonthCalendar({
                         {e.note.title}
                       </Typography>
                     </Box>
-                  );
-                })}
+                ))}
 
                 {/* Medication dots */}
                 {visibleMedDots.length > 0 && (
