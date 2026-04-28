@@ -1,7 +1,6 @@
-import { Box, Typography, Skeleton } from '@mui/material';
+import { Box, Typography, Skeleton, useTheme } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
-import { useTheme } from '@mui/material';
 import type { VetVisit } from '../../types';
 
 interface CalendarSidebarProps {
@@ -101,7 +100,13 @@ export function CalendarSidebar({ upcomingVisit, petNames, petColors, loading }:
             )}
             {(() => {
               const days = daysUntil(upcomingVisit.visitDate);
-              const label = days === 0 ? 'Today' : days === 1 ? 'Tomorrow' : `in ${days} day${days !== 1 ? 's' : ''}`;
+              const label = days < 0
+                ? 'Overdue'
+                : days === 0
+                ? 'Today'
+                : days === 1
+                ? 'Tomorrow'
+                : `in ${days} day${days !== 1 ? 's' : ''}`;
               return (
                 <Box
                   sx={{
