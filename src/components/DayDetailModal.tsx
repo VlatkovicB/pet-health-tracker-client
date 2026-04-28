@@ -45,6 +45,7 @@ export function DayDetailModal({ date, events, petNames, petColors, pets, vets, 
   const vetVisits = events.filter((e): e is CalendarEvent & { kind: 'vet-visit' } => e.kind === 'vet-visit');
   const medications = events.filter((e): e is CalendarEvent & { kind: 'medication' } => e.kind === 'medication');
   const noteEvents = events.filter((e): e is CalendarEvent & { kind: 'note' } => e.kind === 'note');
+  const birthdayEvents = events.filter((e): e is CalendarEvent & { kind: 'birthday' } => e.kind === 'birthday');
 
   const { mutate: scheduleVisit, isPending } = useMutation({
     retry: 0,
@@ -98,6 +99,41 @@ export function DayDetailModal({ date, events, petNames, petColors, pets, vets, 
           <Typography variant="body2" color="text.disabled" sx={{ py: 2, textAlign: 'center' }}>
             No events this day
           </Typography>
+        )}
+
+        {birthdayEvents.length > 0 && (
+          <Box sx={{ mb: 1.5 }}>
+            <Typography variant="caption" sx={{ fontWeight: 800, fontSize: '0.6875rem', color: 'text.disabled', letterSpacing: '2px', textTransform: 'uppercase', mb: 1, display: 'block' }}>
+              Birthdays
+            </Typography>
+            <Box sx={{ mt: 0.75, display: 'flex', flexDirection: 'column', gap: 0.75 }}>
+              {birthdayEvents.map((e) => (
+                <Box
+                  key={`bd-${e.petId}`}
+                  sx={{
+                    p: 1.25, borderRadius: 1,
+                    bgcolor: '#f59e0b15',
+                    border: '1.5px solid #f59e0b55',
+                  }}
+                >
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Typography sx={{ fontSize: '1.1rem', lineHeight: 1 }}>🎂</Typography>
+                    <Box>
+                      <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                        {petNames[e.petId] ?? 'Pet'}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        {e.age === 0 ? 'First birthday! 🎉' : `Turning ${e.age} year${e.age !== 1 ? 's' : ''} old`}
+                      </Typography>
+                    </Box>
+                  </Box>
+                </Box>
+              ))}
+            </Box>
+          </Box>
+        )}
+        {birthdayEvents.length > 0 && (vetVisits.length > 0 || medications.length > 0 || noteEvents.length > 0) && (
+          <Divider sx={{ my: 1.25 }} />
         )}
 
         {vetVisits.length > 0 && (
