@@ -98,6 +98,18 @@ export function CalendarPage() {
   const [selectedPetId, setSelectedPetId] = useState<string | null>(null);
   const [selectedDay, setSelectedDay] = useState<{ date: Date; events: CalendarEvent[] } | null>(null);
   const [showInactiveMeds, setShowInactiveMeds] = useState(false);
+  const [visibleKinds, setVisibleKinds] = useState<Set<CalendarEvent['kind']>>(
+    () => new Set(['vet-visit', 'medication', 'note', 'birthday'] as const)
+  );
+
+  function toggleKind(kind: CalendarEvent['kind']) {
+    setVisibleKinds((prev) => {
+      const next = new Set(prev);
+      if (next.has(kind)) next.delete(kind);
+      else next.add(kind);
+      return next;
+    });
+  }
   const [noteFormOpen, setNoteFormOpen] = useState(false);
   const [selectedNote, setSelectedNote] = useState<Note | null>(null);
   const [noteFormNote, setNoteFormNote] = useState<Note | undefined>(undefined);
@@ -200,16 +212,16 @@ export function CalendarPage() {
     [vetVisits, allSharedVisits, allMedications, notes, allPets, monthKey],
   );
 
-  const visibleEvents = useMemo(
-    () => selectedPetId
+  const visibleEvents = useMemo(() => {
+    const byPet = selectedPetId
       ? allEvents.filter((e) => {
           if (e.kind === 'note') return e.note.petIds.includes(selectedPetId);
           if (e.kind === 'birthday') return e.petId === selectedPetId;
           return (e as { petId: string }).petId === selectedPetId;
         })
-      : allEvents,
-    [allEvents, selectedPetId],
-  );
+      : allEvents;
+    return byPet.filter((e) => visibleKinds.has(e.kind));
+  }, [allEvents, selectedPetId, visibleKinds]);
 
   return (
     <Box sx={{
@@ -234,6 +246,8 @@ export function CalendarPage() {
           showInactiveMeds={showInactiveMeds}
           onToggleInactiveMeds={() => setShowInactiveMeds((v) => !v)}
           onDayClick={(date, evts) => setSelectedDay({ date, events: evts })}
+          visibleKinds={visibleKinds}
+          onToggleKind={toggleKind}
         />
       ) : (
         <>
@@ -246,6 +260,8 @@ export function CalendarPage() {
               onChange={setSelectedPetId}
               showInactiveMeds={showInactiveMeds}
               onToggleInactiveMeds={() => setShowInactiveMeds((v) => !v)}
+              visibleKinds={visibleKinds}
+              onToggleKind={toggleKind}
             />
           </Box>
 
