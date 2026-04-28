@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Box, Fab, Typography, useTheme, useMediaQuery } from '@mui/material';
 import { Add } from '@mui/icons-material';
@@ -102,14 +102,14 @@ export function CalendarPage() {
     () => new Set(['vet-visit', 'medication', 'note', 'birthday'] as const)
   );
 
-  function toggleKind(kind: CalendarEvent['kind']) {
+  const toggleKind = useCallback((kind: CalendarEvent['kind']) => {
     setVisibleKinds((prev) => {
       const next = new Set(prev);
       if (next.has(kind)) next.delete(kind);
       else next.add(kind);
       return next;
     });
-  }
+  }, []);
   const [noteFormOpen, setNoteFormOpen] = useState(false);
   const [selectedNote, setSelectedNote] = useState<Note | null>(null);
   const [noteFormNote, setNoteFormNote] = useState<Note | undefined>(undefined);
