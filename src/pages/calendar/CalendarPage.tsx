@@ -300,7 +300,7 @@ export function CalendarPage() {
                     cursor: isCurrentMonth ? 'default' : 'pointer',
                     color: 'primary.main', fontWeight: 800, fontSize: '0.72rem',
                     userSelect: 'none', opacity: isCurrentMonth ? 0.4 : 1,
-                    ...(!isCurrentMonth && { '&:hover': { bgcolor: (t: any) => t.palette.mode === 'dark' ? '#3d3580' : '#ede9fe' } }),
+                    ...(!isCurrentMonth && { '&:hover': { bgcolor: (t) => t.palette.mode === 'dark' ? '#3d3580' : '#ede9fe' } }),
                   }}
                 >Today</Box>
                 <Box
@@ -334,6 +334,7 @@ export function CalendarPage() {
         onClose={() => setSelectedDay(null)}
         onScheduled={() => {
           queryClient.invalidateQueries({ queryKey: ['calendar-vet-visits', monthKey] });
+          queryClient.invalidateQueries({ queryKey: ['upcoming-vet-visits'] });
           setSelectedDay(null);
         }}
         onNoteClick={(note) => {
