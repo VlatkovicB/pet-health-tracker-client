@@ -210,7 +210,7 @@ export function MobileCalendarView({
             const subtitle = e.kind === 'note'
               ? (e.note.description ?? '')
               : e.kind === 'birthday'
-              ? `Turning ${e.age} year${e.age !== 1 ? 's' : ''} old`
+              ? e.age === 0 ? 'First birthday! 🎉' : `Turning ${e.age} year${e.age !== 1 ? 's' : ''} old`
               : e.kind === 'vet-visit'
               ? [e.reason, e.vetName].filter(Boolean).join(' · ')
               : `${e.dosageLabel} · ${e.frequencyLabel}${e.hasReminder ? ' 🔔' : ''}`;
