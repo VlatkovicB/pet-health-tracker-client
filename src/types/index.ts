@@ -189,3 +189,29 @@ export interface PetOwnershipTransfer {
   expiresAt: string;
   createdAt: string;
 }
+
+export type WeightUnit = 'kg' | 'lb';
+
+export interface WeightEntry {
+  id: string;
+  petId: string;
+  date: string; // 'YYYY-MM-DD'
+  value: number;
+  unit: WeightUnit;
+  notes?: string;
+  createdAt: string;
+}
+
+export interface CreateWeightEntryDto {
+  date: string;
+  value: number;
+  unit: WeightUnit;
+  notes?: string;
+}
+
+export interface UpdateWeightEntryDto {
+  date?: string;
+  value?: number;
+  unit?: WeightUnit;
+  notes?: string | null;
+}
