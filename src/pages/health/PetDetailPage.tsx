@@ -28,8 +28,9 @@ import { NoteFormDialog } from '../../components/NoteFormDialog';
 import { NoteDetailDialog } from '../../components/NoteDetailDialog';
 import { SharingTab } from '../../components/sharing/SharingTab';
 import type { ReminderScheduleProps, AdvanceNotice } from '../../types';
+import { WeightSection } from '../../components/WeightSection';
 
-type TabValue = 'vet-visits' | 'medications' | 'notes' | 'sharing';
+type TabValue = 'vet-visits' | 'medications' | 'notes' | 'weight' | 'sharing';
 
 const toIso = (v: string) => (v ? new Date(v + ':00').toISOString() : '');
 const fmtDate = (iso: string) => new Date(iso).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
@@ -131,6 +132,7 @@ export function PetDetailPage() {
   const canEditNotes = isOwner || (sharePerms?.canEditNotes ?? false);
 
   const tab: TabValue = (() => {
+    if (rawTab === 'weight') return 'weight';
     if (rawTab === 'sharing' && isOwner) return 'sharing';
     if (rawTab === 'medications' && showMedications) return 'medications';
     if (rawTab === 'notes' && showNotes) return 'notes';
@@ -378,6 +380,7 @@ export function PetDetailPage() {
           {showVetVisits && <Tab value="vet-visits" label="Vet Visits" />}
           {showMedications && <Tab label="Medications" value="medications" />}
           {showNotes && <Tab value="notes" label="Notes" icon={<StickyNote2 sx={{ fontSize: '1rem' }} />} iconPosition="start" />}
+          <Tab value="weight" label="Weight" />
           {isOwner && <Tab value="sharing" label="Sharing" />}
         </Tabs>
         {tab === 'vet-visits' && canEditVetVisits && (
@@ -616,6 +619,9 @@ export function PetDetailPage() {
               })}
             </>
           )
+        )}
+        {tab === 'weight' && (
+          <WeightSection petId={petId!} canEdit={isOwner} />
         )}
         {tab === 'sharing' && isOwner && pet && (
           <SharingTab petId={petId!} petName={pet.name} />
