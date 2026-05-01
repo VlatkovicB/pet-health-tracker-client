@@ -3,7 +3,7 @@ import {
   Box, Badge, BottomNavigation, BottomNavigationAction, Typography, useMediaQuery, useTheme,
 } from '@mui/material';
 import {
-  CalendarMonth, Pets, LocalHospital, Person,
+  CalendarMonth, Pets, LocalHospital, Person, PhotoLibrary,
 } from '@mui/icons-material';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -15,6 +15,7 @@ const NAV_ITEMS_BASE = [
   { label: 'Calendar', icon: <CalendarMonth />, path: '/' },
   { label: 'Pets',     icon: <Pets />,          path: '/pets' },
   { label: 'Vets',     icon: <LocalHospital />, path: '/vets' },
+  { label: 'Photos',   icon: <PhotoLibrary />,  path: '/photos' },
 ];
 
 const PROFILE_NAV = { label: 'Profile', icon: <Person />, path: '/profile' };

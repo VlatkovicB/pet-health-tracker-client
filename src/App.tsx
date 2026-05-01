@@ -13,6 +13,7 @@ import { PetsPage } from './pages/pets/PetsPage';
 import { PetDetailPage } from './pages/health/PetDetailPage';
 import { VetsPage } from './pages/vets/VetsPage';
 import { ProfilePage } from './pages/profile/ProfilePage';
+import { PhotosPage } from './pages/photos/PhotosPage';
 
 const queryClient = new QueryClient();
 
@@ -32,6 +33,7 @@ export default function App() {
                 <Route path="/vets"     element={<ProtectedRoute><Layout><VetsPage /></Layout></ProtectedRoute>} />
                 <Route path="/pets/:petId" element={<ProtectedRoute><Layout><PetDetailPage /></Layout></ProtectedRoute>} />
                 <Route path="/profile"  element={<ProtectedRoute><Layout><ProfilePage /></Layout></ProtectedRoute>} />
+                <Route path="/photos"   element={<ProtectedRoute><Layout><PhotosPage /></Layout></ProtectedRoute>} />
                 <Route path="*"         element={<Navigate to="/" replace />} />
               </Routes>
             </BrowserRouter>

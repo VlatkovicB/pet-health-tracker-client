@@ -1,3 +1,4 @@
+import { useQuery } from '@tanstack/react-query';
 import { apiClient } from './client';
 import type { Pet, PaginatedResult } from '../types';
 
@@ -22,3 +23,10 @@ export const petsApi = {
     }).then((r) => r.data);
   },
 };
+
+export function usePets() {
+  return useQuery({
+    queryKey: ['pets', 'all'],
+    queryFn: () => petsApi.list({ pageParam: 1 }).then((r) => r.items),
+  });
+}
