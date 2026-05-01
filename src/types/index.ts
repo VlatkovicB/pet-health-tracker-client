@@ -30,7 +30,6 @@ export interface VetVisit {
   reason: string;
   notes?: string;
   visitDate: string;
-  imageUrls: string[];
   createdAt: string;
 }
 
@@ -99,7 +98,6 @@ export interface Note {
   description?: string;
   noteDate: string;        // 'YYYY-MM-DD'
   petIds: string[];
-  imageUrls: string[];
   createdAt: string;
 }
 

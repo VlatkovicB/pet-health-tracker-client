@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import {
-  Box, Button, Chip, CircularProgress, Dialog, DialogActions,
+  Box, Button, Chip, Dialog, DialogActions,
   DialogContent, DialogTitle, IconButton, Typography,
 } from '@mui/material';
 import { Close } from '@mui/icons-material';
@@ -8,11 +8,9 @@ import { useQuery } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import type { Note, Pet } from '../types';
 import { petsApi } from '../api/pets';
-import { useDeleteNote, useAddNoteImage } from '../api/notes';
+import { useDeleteNote } from '../api/notes';
 import { useNotification } from '../context/NotificationContext';
 import { getApiError } from '../api/client';
-
-const SERVER_URL = import.meta.env.VITE_SERVER_URL ?? '';
 
 const SECTION_LABEL_SX = {
   fontWeight: 800,
@@ -37,10 +35,6 @@ interface NoteDetailDialogProps {
 export function NoteDetailDialog({ open, onClose, note, onEdit }: NoteDetailDialogProps) {
   const { showError, showSuccess } = useNotification();
   const [confirmDelete, setConfirmDelete] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [imageUrls, setImageUrls] = useState(note.imageUrls);
-
-  useEffect(() => { setImageUrls(note.imageUrls); }, [note.imageUrls]);
 
   const petsQuery = useQuery({
     queryKey: ['pets-calendar'],
@@ -51,7 +45,6 @@ export function NoteDetailDialog({ open, onClose, note, onEdit }: NoteDetailDial
   const taggedPets = allPets.filter((p) => note.petIds.includes(p.id));
 
   const deleteMutation = useDeleteNote();
-  const addImageMutation = useAddNoteImage();
 
   function handleDelete() {
     deleteMutation.mutate(note.id, {
@@ -62,22 +55,6 @@ export function NoteDetailDialog({ open, onClose, note, onEdit }: NoteDetailDial
       },
       onError: (err) => showError(getApiError(err)),
     });
-  }
-
-  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    addImageMutation.mutate(
-      { noteId: note.id, file },
-      {
-        onSuccess: (updatedNote) => {
-          setImageUrls(updatedNote.imageUrls);
-          showSuccess('Image added');
-        },
-        onError: (err) => showError(getApiError(err)),
-      },
-    );
-    e.target.value = '';
   }
 
   return (
@@ -141,85 +118,6 @@ export function NoteDetailDialog({ open, onClose, note, onEdit }: NoteDetailDial
             </Typography>
           </Box>
         )}
-
-        {/* ── Images ── */}
-        <Box>
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
-            <Typography sx={SECTION_LABEL_SX}>Images</Typography>
-            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                hidden
-                onChange={handleFileChange}
-              />
-              <Button
-                size="small"
-                variant="outlined"
-                disabled={addImageMutation.isPending}
-                onClick={() => fileInputRef.current?.click()}
-                startIcon={
-                  addImageMutation.isPending ? <CircularProgress size={12} color="inherit" /> : undefined
-                }
-                sx={{ borderRadius: '14px', fontWeight: 800, fontSize: '0.6875rem', py: 0.25 }}
-              >
-                {addImageMutation.isPending ? 'Uploading…' : 'Add image'}
-              </Button>
-            </Box>
-          </Box>
-
-          {imageUrls.length > 0 && (
-            <Box
-              sx={{
-                display: 'flex',
-                gap: 1.25,
-                overflowX: 'auto',
-                pb: 0.5,
-                scrollbarWidth: 'none',
-                '&::-webkit-scrollbar': { display: 'none' },
-              }}
-            >
-              {imageUrls.map((url, i) => {
-                const fullUrl = url.startsWith('http') ? url : `${SERVER_URL}${url}`;
-                return (
-                  <Box
-                    key={i}
-                    component="a"
-                    href={fullUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    sx={{
-                      flexShrink: 0,
-                      width: 100,
-                      height: 100,
-                      borderRadius: '16px',
-                      overflow: 'hidden',
-                      display: 'block',
-                      border: '1.5px solid',
-                      borderColor: 'divider',
-                      '&:hover': { opacity: 0.85 },
-                      transition: 'opacity 0.15s ease',
-                    }}
-                  >
-                    <Box
-                      component="img"
-                      src={fullUrl}
-                      alt={`Note image ${i + 1}`}
-                      sx={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-                    />
-                  </Box>
-                );
-              })}
-            </Box>
-          )}
-
-          {imageUrls.length === 0 && (
-            <Typography variant="body2" color="text.disabled" sx={{ fontStyle: 'italic' }}>
-              No images yet
-            </Typography>
-          )}
-        </Box>
 
         {/* ── Delete confirmation (inline) ── */}
         {confirmDelete && (

@@ -267,7 +267,7 @@ export function PetDetailPage() {
 
   // Vet visit update mutation
   const updateVisitMutation = useMutation({
-    mutationFn: ({ visitId, data }: { visitId: string; data: Partial<Omit<VetVisit, 'id' | 'petId' | 'createdAt' | 'imageUrls' | 'type'>> }) =>
+    mutationFn: ({ visitId, data }: { visitId: string; data: Partial<Omit<VetVisit, 'id' | 'petId' | 'createdAt' | 'type'>> }) =>
       healthApi.updateVetVisit(petId!, visitId, data),
     onSuccess: (updatedVisit) => {
       queryClient.invalidateQueries({ queryKey: ['vet-visits', petId] });
@@ -532,9 +532,7 @@ export function PetDetailPage() {
               {notes.map((note) => {
                 const [y, m2, d] = note.noteDate.split('-').map(Number);
                 const formattedDate = new Date(y, m2 - 1, d).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
-                const thumbnail = note.imageUrls[0]
-                  ? (note.imageUrls[0].startsWith('http') ? note.imageUrls[0] : `${serverUrl}${note.imageUrls[0]}`)
-                  : null;
+                const thumbnail = null;
                 const extraPets = note.petIds.length > 1 ? note.petIds.length - 1 : 0;
                 return (
                   <Box
@@ -969,10 +967,9 @@ function VetVisitDetailDialog({
   saving: boolean;
   onClose: () => void;
   onAddPhoto: () => void;
-  onSave: (data: Partial<Omit<VetVisit, 'id' | 'petId' | 'createdAt' | 'imageUrls' | 'type'>>) => void;
+  onSave: (data: Partial<Omit<VetVisit, 'id' | 'petId' | 'createdAt' | 'type'>>) => void;
   canEdit?: boolean;
 }) {
-  const serverUrl = import.meta.env.VITE_SERVER_URL ?? 'http://localhost:3000';
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState<VetVisitEditForm>(() => visitToForm(visit));
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -1058,14 +1055,6 @@ function VetVisitDetailDialog({
 
           {/* Photos — always visible */}
           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: editing ? 1 : 0, mb: 1 }}>
-            {visit.imageUrls.map((url) => (
-              <Box
-                key={url}
-                component="img"
-                src={`${serverUrl}${url}`}
-                sx={{ width: 96, height: 96, objectFit: 'cover', borderRadius: 1, border: '1px solid rgba(255,255,255,0.1)' }}
-              />
-            ))}
             <IconButton
               onClick={onAddPhoto}
               disabled={uploading}
