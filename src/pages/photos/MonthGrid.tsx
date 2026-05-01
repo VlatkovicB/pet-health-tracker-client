@@ -2,7 +2,6 @@ import { Box, Grid, Typography, Chip } from '@mui/material';
 import type { Photo, PhotoTimeline } from '../../types/photo';
 
 const SOURCE_LABELS: Record<string, string> = {
-  'standalone': 'Photo',
   'vet-visit': 'Vet visit',
   'note': 'Note',
 };
@@ -84,11 +83,13 @@ export function MonthGrid({ year, month, timeline, onPhotoClick }: Props) {
               <Typography variant="caption" sx={{ color: 'text.secondary' }}>
                 {new Date(photo.takenAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
               </Typography>
-              <Chip
-                label={SOURCE_LABELS[photo.sourceType] ?? photo.sourceType}
-                size="small"
-                sx={{ height: 16, fontSize: '0.6rem' }}
-              />
+              {SOURCE_LABELS[photo.sourceType] && (
+                <Chip
+                  label={SOURCE_LABELS[photo.sourceType]}
+                  size="small"
+                  sx={{ height: 16, fontSize: '0.6rem' }}
+                />
+              )}
             </Box>
           </Box>
         </Grid>
