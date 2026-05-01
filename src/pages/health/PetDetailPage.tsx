@@ -4,7 +4,7 @@ import {
   Box, Button, Tab, Tabs, Typography, Dialog, DialogTitle,
   DialogContent, DialogActions, TextField, MenuItem,
   Skeleton, Checkbox, FormControlLabel, Switch, IconButton, Chip, Tooltip,
-  CircularProgress, Alert, useTheme,
+  Alert, useTheme,
 } from '@mui/material';
 import { Add, AddAPhoto, Edit, Pets, Close, StickyNote2 } from '@mui/icons-material';
 import { useMutation, useQuery, useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
@@ -105,7 +105,6 @@ export function PetDetailPage() {
   const [noteFormOpen, setNoteFormOpen] = useState(false);
   const [noteDetailOpen, setNoteDetailOpen] = useState(false);
   const [selectedNote, setSelectedNote] = useState<Note | null>(null);
-  const imageInputRef = useRef<HTMLInputElement>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
 
   // Pet info
@@ -276,22 +275,6 @@ export function PetDetailPage() {
     onError: (err) => showError(getApiError(err)),
   });
 
-  // Vet visit image upload mutation
-  const imageMutation = useMutation({
-    mutationFn: ({ visitId, file }: { visitId: string; file: File }) =>
-      healthApi.uploadVetVisitImage(petId!, visitId, file),
-    onSuccess: (updatedVisit) => {
-      queryClient.invalidateQueries({ queryKey: ['vet-visits', petId] });
-      setDetailVisit(updatedVisit);
-    },
-    onError: (err) => showError(getApiError(err)),
-  });
-
-  const handleImagePick = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file && detailVisit) imageMutation.mutate({ visitId: detailVisit.id, file });
-    e.target.value = '';
-  };
 
   return (
     <Box sx={{ maxWidth: { md: 960 }, mx: 'auto' }}>
@@ -367,7 +350,6 @@ export function PetDetailPage() {
 
       {/* Hidden file inputs */}
       <input ref={photoInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handlePhotoPick} />
-      <input ref={imageInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleImagePick} />
 
       {/* Content + side panel */}
       <Box sx={{ display: 'flex', mt: -3 }}>
@@ -805,12 +787,9 @@ export function PetDetailPage() {
           key={detailVisit.id}
           visit={detailVisit}
           vets={vets}
-          imageInputRef={imageInputRef}
-          uploading={imageMutation.isPending}
           saving={updateVisitMutation.isPending}
           canEdit={canEditVetVisits}
           onClose={() => setDetailVisit(null)}
-          onAddPhoto={() => imageInputRef.current?.click()}
           onSave={(data) => updateVisitMutation.mutate({ visitId: detailVisit.id, data })}
         />
       )}
@@ -958,15 +937,12 @@ function formChanged(original: VetVisitEditForm, current: VetVisitEditForm): boo
 }
 
 function VetVisitDetailDialog({
-  visit, vets, imageInputRef: _imageInputRef, uploading, saving, onClose, onAddPhoto, onSave, canEdit = true,
+  visit, vets, saving, onClose, onSave, canEdit = true,
 }: {
   visit: VetVisit;
   vets: import('../../types').Vet[];
-  imageInputRef: React.RefObject<HTMLInputElement | null>;
-  uploading: boolean;
   saving: boolean;
   onClose: () => void;
-  onAddPhoto: () => void;
   onSave: (data: Partial<Omit<VetVisit, 'id' | 'petId' | 'createdAt' | 'type'>>) => void;
   canEdit?: boolean;
 }) {
@@ -1053,20 +1029,6 @@ function VetVisitDetailDialog({
             </>
           )}
 
-          {/* Photos — always visible */}
-          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: editing ? 1 : 0, mb: 1 }}>
-            <IconButton
-              onClick={onAddPhoto}
-              disabled={uploading}
-              sx={{
-                width: 96, height: 96, borderRadius: 1,
-                border: '1px dashed rgba(255,255,255,0.2)',
-                '&:hover': { borderColor: 'primary.main' },
-              }}
-            >
-              {uploading ? <CircularProgress size={20} /> : <AddAPhoto fontSize="small" />}
-            </IconButton>
-          </Box>
         </DialogContent>
 
         <DialogActions>

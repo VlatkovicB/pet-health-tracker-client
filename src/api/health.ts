@@ -35,17 +35,7 @@ export const healthApi = {
       .patch<VetVisit>(`/pets/${petId}/vet-visits/${visitId}/complete`, { notes })
       .then((r) => r.data),
 
-  uploadVetVisitImage: (petId: string, visitId: string, file: File) => {
-    const form = new FormData();
-    form.append('image', file);
-    return apiClient
-      .post<VetVisit>(`/pets/${petId}/vet-visits/${visitId}/images`, form, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      })
-      .then((r) => r.data);
-  },
-
-  listUpcomingVetVisits: () =>
+listUpcomingVetVisits: () =>
     apiClient.get<VetVisit[]>('/vet-visits/upcoming').then((r) => r.data),
 
   listVetVisitsByMonth: (from: string, to: string) =>
