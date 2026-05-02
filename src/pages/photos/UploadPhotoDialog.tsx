@@ -49,9 +49,9 @@ export function UploadPhotoDialog({ open, onClose, pets }: Props) {
   const handleUpload = () => {
     if (!file || !petId || !takenAt) return;
     const form = new FormData();
-    form.append('photo', file);
+    form.append('file', file);
     form.append('petId', petId);
-    form.append('takenAt', new Date(takenAt + 'T12:00:00').toISOString());
+    form.append('takenAt', takenAt);
     if (caption.trim()) form.append('caption', caption.trim());
     upload(form, { onSuccess: handleClose });
   };
