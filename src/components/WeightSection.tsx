@@ -1,17 +1,72 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import {
   Box, Button, IconButton, Stack, Typography, CircularProgress,
-  List, ListItem, ListItemText, Divider,
+  List, ListItem, ListItemText, Divider, Tooltip,
 } from '@mui/material';
-import { Add, Edit, Delete } from '@mui/icons-material';
+import { Add, AddAPhoto, Edit, Delete } from '@mui/icons-material';
 import { WeightChart } from './WeightChart';
 import { WeightEntryDialog } from './WeightEntryDialog';
 import { useWeightEntries, useAddWeightEntry, useUpdateWeightEntry, useDeleteWeightEntry } from '../api/weight';
+import { useAttachPhotoToWeightEntry } from '../api/photos';
 import type { WeightEntry } from '../types';
 
 interface Props {
   petId: string;
   canEdit: boolean;
+}
+
+function WeightEntryActions({
+  entry,
+  canEdit,
+  onEdit,
+  onDelete,
+}: {
+  entry: WeightEntry;
+  canEdit: boolean;
+  onEdit: (entry: WeightEntry) => void;
+  onDelete: (id: string) => void;
+}) {
+  const photoInputRef = useRef<HTMLInputElement>(null);
+  const attachPhoto = useAttachPhotoToWeightEntry(entry.id);
+
+  const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('takenAt', entry.date);
+    attachPhoto.mutate(formData);
+    e.target.value = '';
+  };
+
+  return (
+    <Stack direction="row" sx={{ alignItems: 'center' }}>
+      <input
+        ref={photoInputRef}
+        type="file"
+        accept="image/*"
+        style={{ display: 'none' }}
+        onChange={handlePhotoSelect}
+      />
+      <Tooltip title="Attach photo">
+        <span>
+          <IconButton
+            size="small"
+            onClick={() => photoInputRef.current?.click()}
+            disabled={attachPhoto.isPending}
+          >
+            {attachPhoto.isPending ? <CircularProgress size={16} /> : <AddAPhoto fontSize="small" />}
+          </IconButton>
+        </span>
+      </Tooltip>
+      {canEdit && (
+        <>
+          <IconButton size="small" onClick={() => onEdit(entry)}><Edit fontSize="small" /></IconButton>
+          <IconButton size="small" onClick={() => onDelete(entry.id)}><Delete fontSize="small" /></IconButton>
+        </>
+      )}
+    </Stack>
+  );
 }
 
 export function WeightSection({ petId, canEdit }: Props) {
@@ -65,12 +120,12 @@ export function WeightSection({ petId, canEdit }: Props) {
               {idx > 0 && <Divider />}
               <ListItem
                 secondaryAction={
-                  canEdit && (
-                    <Stack direction="row">
-                      <IconButton size="small" onClick={() => handleEdit(entry)}><Edit fontSize="small" /></IconButton>
-                      <IconButton size="small" onClick={() => handleDelete(entry.id)}><Delete fontSize="small" /></IconButton>
-                    </Stack>
-                  )
+                  <WeightEntryActions
+                    entry={entry}
+                    canEdit={canEdit}
+                    onEdit={handleEdit}
+                    onDelete={handleDelete}
+                  />
                 }
               >
                 <ListItemText

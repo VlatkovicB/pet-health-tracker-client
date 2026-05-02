@@ -1,4 +1,4 @@
-export type PhotoSourceType = 'standalone' | 'vet-visit' | 'note';
+export type PhotoSourceType = 'standalone' | 'vet-visit' | 'note' | 'weight-entry';
 
 export interface Photo {
   id: string;

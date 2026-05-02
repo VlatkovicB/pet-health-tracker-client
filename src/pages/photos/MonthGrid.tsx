@@ -4,6 +4,7 @@ import type { Photo, PhotoTimeline } from '../../types/photo';
 const SOURCE_LABELS: Record<string, string> = {
   'vet-visit': 'Vet visit',
   'note': 'Note',
+  'weight-entry': 'Weight',
 };
 
 interface Props {

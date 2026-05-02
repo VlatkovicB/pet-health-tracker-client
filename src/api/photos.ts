@@ -54,3 +54,36 @@ export function useDeletePhoto() {
     },
   });
 }
+
+export function useAttachPhotoToVisit(visitId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: FormData) =>
+      apiClient.post<Photo>(`/photos/vet-visits/${visitId}`, data, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      }).then((r) => r.data),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['photos'] }); },
+  });
+}
+
+export function useAttachPhotoToNote(noteId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: FormData) =>
+      apiClient.post<Photo>(`/photos/notes/${noteId}`, data, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      }).then((r) => r.data),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['photos'] }); },
+  });
+}
+
+export function useAttachPhotoToWeightEntry(entryId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: FormData) =>
+      apiClient.post<Photo>(`/photos/weight-entries/${entryId}`, data, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      }).then((r) => r.data),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['photos'] }); },
+  });
+}

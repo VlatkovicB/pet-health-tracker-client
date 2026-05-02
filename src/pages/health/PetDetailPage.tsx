@@ -4,7 +4,7 @@ import {
   Box, Button, Tab, Tabs, Typography, Dialog, DialogTitle,
   DialogContent, DialogActions, TextField, MenuItem,
   Skeleton, Checkbox, FormControlLabel, Switch, IconButton, Chip, Tooltip,
-  Alert, useTheme,
+  Alert, useTheme, CircularProgress,
 } from '@mui/material';
 import { Add, AddAPhoto, Edit, Pets, Close, StickyNote2 } from '@mui/icons-material';
 import { useMutation, useQuery, useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
@@ -14,6 +14,7 @@ import { petsApi } from '../../api/pets';
 import { usersApi } from '../../api/users';
 import { medicationsApi, type CreateMedicationInput } from '../../api/medications';
 import { useNotes } from '../../api/notes';
+import { useAttachPhotoToVisit } from '../../api/photos';
 import { useListSharedPets } from '../../api/shares';
 import { getApiError } from '../../api/client';
 import { useNotification } from '../../context/NotificationContext';
@@ -949,6 +950,8 @@ function VetVisitDetailDialog({
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState<VetVisitEditForm>(() => visitToForm(visit));
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const visitPhotoInputRef = useRef<HTMLInputElement>(null);
+  const attachPhoto = useAttachPhotoToVisit(visit.id);
   const originalForm = visitToForm(visit);
 
   const vetName = vets.find((v) => v.id === visit.vetId)?.name ?? visit.clinic;
@@ -967,6 +970,16 @@ function VetVisitDetailDialog({
       visitDate: form.visitDate ? new Date(form.visitDate + ':00').toISOString() : undefined,
     });
     setEditing(false);
+  };
+
+  const handleVisitPhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const form = new FormData();
+    form.append('file', file);
+    form.append('takenAt', new Date().toISOString().slice(0, 10));
+    attachPhoto.mutate(form);
+    e.target.value = '';
   };
 
   return (
@@ -1032,6 +1045,13 @@ function VetVisitDetailDialog({
         </DialogContent>
 
         <DialogActions>
+          <input
+            ref={visitPhotoInputRef}
+            type="file"
+            accept="image/*"
+            style={{ display: 'none' }}
+            onChange={handleVisitPhotoSelect}
+          />
           {editing ? (
             <>
               <Button onClick={() => { setEditing(false); setForm(visitToForm(visit)); }}>Cancel</Button>
@@ -1040,7 +1060,21 @@ function VetVisitDetailDialog({
               </Button>
             </>
           ) : (
-            <Button onClick={onClose}>Close</Button>
+            <>
+              <Tooltip title="Attach photo">
+                <span>
+                  <IconButton
+                    size="small"
+                    onClick={() => visitPhotoInputRef.current?.click()}
+                    disabled={attachPhoto.isPending}
+                    sx={{ mr: 'auto' }}
+                  >
+                    {attachPhoto.isPending ? <CircularProgress size={18} /> : <AddAPhoto fontSize="small" />}
+                  </IconButton>
+                </span>
+              </Tooltip>
+              <Button onClick={onClose}>Close</Button>
+            </>
           )}
         </DialogActions>
       </Dialog>

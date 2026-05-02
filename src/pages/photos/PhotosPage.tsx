@@ -22,6 +22,13 @@ import type { Photo } from '../../types/photo';
 
 const MONTH_LABELS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
+const SOURCE_TYPE_OPTIONS = [
+  { value: 'vet-visit', label: 'Vet visits' },
+  { value: 'note', label: 'Notes' },
+  { value: 'weight-entry', label: 'Weight' },
+  { value: 'standalone', label: 'Standalone' },
+] as const;
+
 export function PhotosPage() {
   const currentYear = new Date().getFullYear();
   const [year, setYear] = useState(currentYear);
@@ -29,6 +36,7 @@ export function PhotosPage() {
   const [lightboxPhoto, setLightboxPhoto] = useState<Photo | null>(null);
   const [uploadOpen, setUploadOpen] = useState(false);
   const [petFilter, setPetFilter] = useState<string[]>([]);
+  const [sourceFilter, setSourceFilter] = useState<string[]>([]);
 
   const { data: pets = [] } = usePets();
   const { data: years = [] } = usePhotoYears(petFilter.length ? petFilter : undefined);
@@ -42,6 +50,29 @@ export function PhotosPage() {
       prev.includes(petId) ? prev.filter((id) => id !== petId) : [...prev, petId],
     );
   };
+
+  const toggleSource = (value: string) => {
+    setSourceFilter((prev) =>
+      prev.includes(value) ? prev.filter((s) => s !== value) : [...prev, value],
+    );
+  };
+
+  // Apply sourceType filter client-side
+  const filteredTimeline: typeof timeline = timeline
+    ? Object.fromEntries(
+        Object.entries(timeline).map(([yr, months]) => [
+          yr,
+          Object.fromEntries(
+            Object.entries(months).map(([month, photos]) => [
+              month,
+              sourceFilter.length
+                ? photos.filter((p) => sourceFilter.includes(p.sourceType))
+                : photos,
+            ]),
+          ),
+        ]),
+      )
+    : undefined;
 
   const minYear = years.length ? Math.min(...years) : currentYear - 5;
   const maxYear = years.length ? Math.max(...years, currentYear) : currentYear;
@@ -59,7 +90,7 @@ export function PhotosPage() {
 
       {/* Pet filter chips */}
       {pets.length > 0 && (
-        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 2 }}>
+        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 1.5 }}>
           {pets.map((pet) => (
             <Chip
               key={pet.id}
@@ -72,6 +103,20 @@ export function PhotosPage() {
           ))}
         </Box>
       )}
+
+      {/* Source type filter chips */}
+      <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 2 }}>
+        {SOURCE_TYPE_OPTIONS.map((opt) => (
+          <Chip
+            key={opt.value}
+            label={opt.label}
+            onClick={() => toggleSource(opt.value)}
+            variant={sourceFilter.includes(opt.value) ? 'filled' : 'outlined'}
+            color={sourceFilter.includes(opt.value) ? 'secondary' : 'default'}
+            size="small"
+          />
+        ))}
+      </Box>
 
       {/* Year navigation */}
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
@@ -113,7 +158,7 @@ export function PhotosPage() {
       {selectedMonth === null ? (
         <YearScrapbook
           year={year}
-          timeline={timeline}
+          timeline={filteredTimeline}
           loading={timelineLoading}
           onMonthClick={setSelectedMonth}
           selectedMonth={selectedMonth}
@@ -122,7 +167,7 @@ export function PhotosPage() {
         <MonthGrid
           year={year}
           month={selectedMonth}
-          timeline={timeline}
+          timeline={filteredTimeline}
           onPhotoClick={setLightboxPhoto}
         />
       )}

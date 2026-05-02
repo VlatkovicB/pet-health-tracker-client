@@ -1,14 +1,15 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import {
-  Box, Button, Chip, Dialog, DialogActions,
-  DialogContent, DialogTitle, IconButton, Typography,
+  Box, Button, Chip, CircularProgress, Dialog, DialogActions,
+  DialogContent, DialogTitle, IconButton, Tooltip, Typography,
 } from '@mui/material';
-import { Close } from '@mui/icons-material';
+import { AddAPhoto, Close } from '@mui/icons-material';
 import { useQuery } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import type { Note, Pet } from '../types';
 import { petsApi } from '../api/pets';
 import { useDeleteNote } from '../api/notes';
+import { useAttachPhotoToNote } from '../api/photos';
 import { useNotification } from '../context/NotificationContext';
 import { getApiError } from '../api/client';
 
@@ -35,6 +36,18 @@ interface NoteDetailDialogProps {
 export function NoteDetailDialog({ open, onClose, note, onEdit }: NoteDetailDialogProps) {
   const { showError, showSuccess } = useNotification();
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const notePhotoInputRef = useRef<HTMLInputElement>(null);
+  const attachPhoto = useAttachPhotoToNote(note.id);
+
+  const handleNotePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('takenAt', new Date().toISOString().slice(0, 10));
+    attachPhoto.mutate(formData);
+    e.target.value = '';
+  };
 
   const petsQuery = useQuery({
     queryKey: ['pets-calendar'],
@@ -164,6 +177,13 @@ export function NoteDetailDialog({ open, onClose, note, onEdit }: NoteDetailDial
 
       {/* ── Actions ── */}
       <DialogActions sx={{ px: 3, pb: 2.5, pt: 1, gap: 1 }}>
+        <input
+          ref={notePhotoInputRef}
+          type="file"
+          accept="image/*"
+          style={{ display: 'none' }}
+          onChange={handleNotePhotoSelect}
+        />
         {!confirmDelete && (
           <Button
             size="small"
@@ -179,6 +199,17 @@ export function NoteDetailDialog({ open, onClose, note, onEdit }: NoteDetailDial
             Delete
           </Button>
         )}
+        <Tooltip title="Attach photo">
+          <span>
+            <IconButton
+              size="small"
+              onClick={() => notePhotoInputRef.current?.click()}
+              disabled={attachPhoto.isPending}
+            >
+              {attachPhoto.isPending ? <CircularProgress size={18} /> : <AddAPhoto fontSize="small" />}
+            </IconButton>
+          </span>
+        </Tooltip>
         <Button
           onClick={onClose}
           color="inherit"
