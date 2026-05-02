@@ -23,17 +23,19 @@ const photoApi = {
     apiClient.delete(`/photos/${photoId}`).then(() => undefined),
 };
 
-export function usePhotoTimeline(year: number, petIds?: string[], sourceTypes?: PhotoSourceType[]) {
+export function usePhotoTimeline(year: number, petIds?: string[], sourceTypes?: PhotoSourceType[], options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: ['photos', 'timeline', year, petIds, sourceTypes],
     queryFn: () => photoApi.getTimeline(year, petIds, sourceTypes),
+    enabled: options?.enabled ?? true,
   });
 }
 
-export function usePhotoYears(petIds?: string[], sourceTypes?: PhotoSourceType[]) {
+export function usePhotoYears(petIds?: string[], sourceTypes?: PhotoSourceType[], options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: ['photos', 'years', petIds, sourceTypes],
     queryFn: () => photoApi.getYears(petIds, sourceTypes),
+    enabled: options?.enabled ?? true,
   });
 }
 

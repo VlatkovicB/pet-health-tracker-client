@@ -32,8 +32,12 @@ export function PhotosPage() {
     ? ALL_SOURCE_TYPES.filter((t) => !excludedTypes.includes(t))
     : undefined;
 
-  const { data: years = [] } = usePhotoYears(activePetIds, activeSourceTypes);
-  const { data: timeline, isLoading: timelineLoading } = usePhotoTimeline(year, activePetIds, activeSourceTypes);
+  const nothingToShow =
+    (activePetIds !== undefined && activePetIds.length === 0) ||
+    (activeSourceTypes !== undefined && activeSourceTypes.length === 0);
+
+  const { data: years = [] } = usePhotoYears(activePetIds, activeSourceTypes, { enabled: !nothingToShow });
+  const { data: timeline, isLoading: timelineLoading } = usePhotoTimeline(year, activePetIds, activeSourceTypes, { enabled: !nothingToShow });
 
   const togglePet = (petId: string) => {
     setExcludedPets((prev) =>
