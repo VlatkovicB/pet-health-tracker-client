@@ -1,16 +1,18 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from './client';
-import type { Photo, PhotoTimeline } from '../types/photo';
+import type { Photo, PhotoTimeline, PhotoSourceType } from '../types/photo';
 
 const photoApi = {
-  getTimeline: (year: number, petIds?: string[]): Promise<PhotoTimeline> => {
+  getTimeline: (year: number, petIds?: string[], sourceTypes?: PhotoSourceType[]): Promise<PhotoTimeline> => {
     const params: Record<string, unknown> = { year };
     if (petIds?.length) params['petIds[]'] = petIds;
+    if (sourceTypes !== undefined) params['sourceTypes[]'] = sourceTypes;
     return apiClient.get<PhotoTimeline>('/photos/timeline', { params }).then((r) => r.data);
   },
-  getYears: (petIds?: string[]): Promise<number[]> => {
+  getYears: (petIds?: string[], sourceTypes?: PhotoSourceType[]): Promise<number[]> => {
     const params: Record<string, unknown> = {};
     if (petIds?.length) params['petIds[]'] = petIds;
+    if (sourceTypes !== undefined) params['sourceTypes[]'] = sourceTypes;
     return apiClient.get<number[]>('/photos/years', { params }).then((r) => r.data);
   },
   upload: (data: FormData): Promise<Photo> =>
@@ -21,17 +23,19 @@ const photoApi = {
     apiClient.delete(`/photos/${photoId}`).then(() => undefined),
 };
 
-export function usePhotoTimeline(year: number, petIds?: string[]) {
+export function usePhotoTimeline(year: number, petIds?: string[], sourceTypes?: PhotoSourceType[], options?: { enabled?: boolean }) {
   return useQuery({
-    queryKey: ['photos', 'timeline', year, petIds],
-    queryFn: () => photoApi.getTimeline(year, petIds),
+    queryKey: ['photos', 'timeline', year, petIds, sourceTypes],
+    queryFn: () => photoApi.getTimeline(year, petIds, sourceTypes),
+    enabled: options?.enabled ?? true,
   });
 }
 
-export function usePhotoYears(petIds?: string[]) {
+export function usePhotoYears(petIds?: string[], sourceTypes?: PhotoSourceType[], options?: { enabled?: boolean }) {
   return useQuery({
-    queryKey: ['photos', 'years', petIds],
-    queryFn: () => photoApi.getYears(petIds),
+    queryKey: ['photos', 'years', petIds, sourceTypes],
+    queryFn: () => photoApi.getYears(petIds, sourceTypes),
+    enabled: options?.enabled ?? true,
   });
 }
 
