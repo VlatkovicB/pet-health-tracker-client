@@ -11,6 +11,7 @@ import { format } from 'date-fns';
 import { useMutation } from '@tanstack/react-query';
 import type { CalendarEvent, Note, Pet, Vet } from '../types';
 import { healthApi } from '../api/health';
+import { getApiError } from '../api/client';
 import { useNotification } from '../context/NotificationContext';
 
 interface DayDetailModalProps {
@@ -64,9 +65,7 @@ export function DayDetailModal({ date, events, petNames, petColors, pets, vets, 
       setSelectedVet(null);
       onScheduled();
     },
-    onError: () => {
-      showError('Failed to schedule visit');
-    },
+    onError: (err) => showError(getApiError(err)),
   });
 
   function handleClose() {

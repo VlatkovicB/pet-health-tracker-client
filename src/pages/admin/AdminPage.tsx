@@ -3,7 +3,7 @@ import {
   Box, Typography, Table, TableHead, TableRow, TableCell, TableBody,
   Chip, Drawer, IconButton, Divider, Grid, Paper, Button, Dialog,
   DialogTitle, DialogContent, DialogContentText, DialogActions,
-  TextField, CircularProgress, Pagination,
+  TextField, CircularProgress, Pagination, useTheme, useMediaQuery,
 } from '@mui/material';
 import { Close } from '@mui/icons-material';
 import { useAuth } from '../../context/AuthContext';
@@ -278,13 +278,15 @@ export function AdminPage() {
   const [page, setPage] = useState(1);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const { data, isLoading } = useAdminUsers(page);
+  const theme = useTheme();
+  const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
 
   const totalPages = data ? Math.ceil(data.total / 20) : 1;
 
   return (
-    <Box sx={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
+    <Box sx={{ display: 'flex' }}>
       {/* Table area */}
-      <Box sx={{ flex: 1, overflow: 'auto', p: 3 }}>
+      <Box sx={{ flex: 1, minWidth: 0, overflow: 'hidden', p: 3 }}>
         <Typography sx={{ fontWeight: 900, fontSize: '1.5rem', mb: 2 }}>
           Users
         </Typography>
@@ -295,6 +297,7 @@ export function AdminPage() {
           </Box>
         ) : (
           <>
+            <Box sx={{ overflowX: 'auto' }}>
             <Table size="small" sx={{ '& td, & th': { whiteSpace: 'nowrap' } }}>
               <TableHead>
                 <TableRow>
@@ -337,6 +340,7 @@ export function AdminPage() {
                 ))}
               </TableBody>
             </Table>
+            </Box>
 
             {totalPages > 1 && (
               <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
@@ -350,12 +354,12 @@ export function AdminPage() {
       {/* Detail drawer */}
       <Drawer
         anchor="right"
-        variant="persistent"
+        variant={isDesktop ? 'persistent' : 'temporary'}
         open={!!selectedUserId}
         sx={{
           '& .MuiDrawer-paper': {
-            width: 380,
-            position: 'relative',
+            width: isDesktop ? 380 : '100%',
+            position: isDesktop ? 'relative' : 'fixed',
             boxSizing: 'border-box',
             borderLeft: '1px solid',
             borderColor: 'divider',

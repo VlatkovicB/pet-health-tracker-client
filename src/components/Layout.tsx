@@ -206,7 +206,9 @@ export function Layout({ children }: { children: ReactNode }) {
     ...(isAdmin ? [{ label: 'Admin', icon: <AdminPanelSettings />, path: '/admin' }] : []),
     { ...PROFILE_NAV, label: firstName },
   ];
-  const activeIndex = getActiveIndex(location.pathname);
+  const mobileActiveIndex = mobileNavItems.findIndex((item) =>
+    item.path === '/' ? location.pathname === '/' : location.pathname.startsWith(item.path),
+  );
 
   return (
     <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: 'background.default' }}>
@@ -231,7 +233,7 @@ export function Layout({ children }: { children: ReactNode }) {
       {/* Mobile bottom nav */}
       {!isDesktop && (
         <BottomNavigation
-          value={activeIndex === -1 ? false : activeIndex}
+          value={mobileActiveIndex === -1 ? false : mobileActiveIndex}
           onChange={(_, v) => navigate(mobileNavItems[v].path)}
           sx={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 100 }}
         >

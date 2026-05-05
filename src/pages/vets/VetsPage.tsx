@@ -209,6 +209,22 @@ export function VetsPage() {
     setEditForm((f) => ({ ...f, [field]: e.target.value }));
 
   const { showError } = useNotification();
+  const [duplicateError, setDuplicateError] = useState<string | null>(null);
+
+  const validateDuplicate = (name: string, phone: string, excludeId?: string): string | null => {
+    const normName = name.trim().toLowerCase();
+    const normPhone = phone.replace(/\D/g, '');
+    for (const v of vets) {
+      if (excludeId && v.id === excludeId) continue;
+      if (v.name.trim().toLowerCase() === normName) {
+        return `A vet named "${v.name}" already exists`;
+      }
+      if (normPhone && v.phone && v.phone.replace(/\D/g, '') === normPhone) {
+        return `A vet with this phone number already exists (${v.name})`;
+      }
+    }
+    return null;
+  };
 
   const resetSearch = () => {
     setSearchState('idle');
@@ -220,6 +236,7 @@ export function VetsPage() {
   const handleClose = () => {
     setOpen(false);
     setForm(emptyForm);
+    setDuplicateError(null);
     resetSearch();
   };
 
@@ -349,10 +366,20 @@ export function VetsPage() {
       queryClient.invalidateQueries({ queryKey: ['vets-all'] });
       setOpen(false);
       setForm(emptyForm);
+      setDuplicateError(null);
       resetSearch();
     },
     onError: (err) => showError(getApiError(err)),
   });
+
+  const handleAddVet = () => {
+    const err = validateDuplicate(form.name, form.phone);
+    if (err) { setDuplicateError(err); return; }
+    setDuplicateError(null);
+    mutation.mutate();
+  };
+
+  const [editDuplicateError, setEditDuplicateError] = useState<string | null>(null);
 
   const editMutation = useMutation({
     mutationFn: () => vetsApi.update(editVet!.id, {
@@ -369,9 +396,17 @@ export function VetsPage() {
       queryClient.invalidateQueries({ queryKey: ['vets'] });
       queryClient.invalidateQueries({ queryKey: ['vets-all'] });
       setEditVet(null);
+      setEditDuplicateError(null);
     },
     onError: (err) => showError(getApiError(err)),
   });
+
+  const handleSaveVet = () => {
+    const err = validateDuplicate(editForm.name, editForm.phone, editVet!.id);
+    if (err) { setEditDuplicateError(err); return; }
+    setEditDuplicateError(null);
+    editMutation.mutate();
+  };
 
   const toggleExpand = (id: string) =>
     setExpandedVetId((prev) => (prev === id ? null : id));
@@ -542,10 +577,13 @@ export function VetsPage() {
           <WorkHoursEditor value={form.workHours} onChange={(wh) => setForm((f) => ({ ...f, workHours: wh }))} />
           <TextField label="Google Maps URL" value={form.googleMapsUrl} onChange={set('googleMapsUrl')} fullWidth />
           <TextField label="Notes" value={form.notes} onChange={set('notes')} fullWidth multiline rows={3} />
+          {duplicateError && (
+            <Alert severity="warning" sx={{ mt: 0.5 }}>{duplicateError}</Alert>
+          )}
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2.5 }}>
           <Button onClick={handleClose} color="inherit">Cancel</Button>
-          <Button variant="contained" onClick={() => mutation.mutate()} disabled={!form.name.trim() || mutation.isPending}>
+          <Button variant="contained" onClick={handleAddVet} disabled={!form.name.trim() || mutation.isPending}>
             Add
           </Button>
         </DialogActions>
@@ -562,10 +600,13 @@ export function VetsPage() {
             <WorkHoursEditor value={editForm.workHours} onChange={(wh) => setEditForm((f) => ({ ...f, workHours: wh }))} />
             <TextField label="Google Maps URL" value={editForm.googleMapsUrl} onChange={setEdit('googleMapsUrl')} fullWidth />
             <TextField label="Notes" value={editForm.notes} onChange={setEdit('notes')} fullWidth multiline rows={3} />
+            {editDuplicateError && (
+              <Alert severity="warning" sx={{ mt: 0.5 }}>{editDuplicateError}</Alert>
+            )}
           </DialogContent>
           <DialogActions sx={{ px: 3, pb: 2.5 }}>
-            <Button onClick={() => setEditVet(null)} color="inherit">Cancel</Button>
-            <Button variant="contained" onClick={() => editMutation.mutate()} disabled={!editForm.name.trim() || editMutation.isPending}>
+            <Button onClick={() => { setEditVet(null); setEditDuplicateError(null); }} color="inherit">Cancel</Button>
+            <Button variant="contained" onClick={handleSaveVet} disabled={!editForm.name.trim() || editMutation.isPending}>
               {editMutation.isPending ? 'Saving…' : 'Save'}
             </Button>
           </DialogActions>
