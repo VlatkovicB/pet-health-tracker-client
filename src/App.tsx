@@ -5,7 +5,9 @@ import { ThemeContextProvider } from './context/ThemeContext';
 import { AuthProvider } from './context/AuthContext';
 import { NotificationProvider } from './context/NotificationContext';
 import { ProtectedRoute } from './routes/ProtectedRoute';
+import { AdminRoute } from './routes/AdminRoute';
 import { Layout } from './components/Layout';
+import { AdminPage } from './pages/admin/AdminPage';
 import { LoginPage } from './pages/auth/LoginPage';
 import { RegisterPage } from './pages/auth/RegisterPage';
 import { CalendarPage } from './pages/calendar/CalendarPage';
@@ -34,6 +36,7 @@ export default function App() {
                 <Route path="/pets/:petId" element={<ProtectedRoute><Layout><PetDetailPage /></Layout></ProtectedRoute>} />
                 <Route path="/profile"  element={<ProtectedRoute><Layout><ProfilePage /></Layout></ProtectedRoute>} />
                 <Route path="/photos"   element={<ProtectedRoute><Layout><PhotosPage /></Layout></ProtectedRoute>} />
+                <Route path="/admin"     element={<AdminRoute><Layout><AdminPage /></Layout></AdminRoute>} />
                 <Route path="*"         element={<Navigate to="/" replace />} />
               </Routes>
             </BrowserRouter>
