@@ -5,6 +5,8 @@ export interface User {
   id: string;
   name: string;
   email: string;
+  role: 'user' | 'admin';
+  theme: 'light' | 'dark';
   createdAt: string;
 }
 
@@ -212,4 +214,30 @@ export interface UpdateWeightEntryDto {
   value?: number;
   unit?: WeightUnit;
   notes?: string | null;
+}
+
+export interface UserLimits {
+  pets:           { used: number; max: number | null };
+  vets:           { used: number; max: number | null };
+  medications:    { used: number; max: number | null };
+  notes:          { used: number; max: number | null };
+  storage:        { usedBytes: number; maxBytes: number | null };
+  placesSearches: { usedThisMonth: number; max: number | null };
+}
+
+export interface AdminUserStats {
+  pets: number;
+  vets: number;
+  vetVisits: number;
+  medications: number;
+  notes: number;
+  photos: number;
+  reminders: number;
+  storageUsedBytes: number;
+  placesSearchesThisMonth: number;
+}
+
+export interface AdminUser extends User {
+  stats: AdminUserStats;
+  limits: UserLimits | null;
 }
