@@ -3,13 +3,14 @@ import {
   Box, Badge, BottomNavigation, BottomNavigationAction, Typography, useMediaQuery, useTheme,
 } from '@mui/material';
 import {
-  CalendarMonth, Pets, LocalHospital, Person, PhotoLibrary,
+  CalendarMonth, Pets, LocalHospital, Person, PhotoLibrary, AdminPanelSettings,
 } from '@mui/icons-material';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { usersApi } from '../api/users';
 import { useListPendingShares } from '../api/shares';
 import { useListPendingTransfers } from '../api/transfers';
+import { useAuth } from '../context/AuthContext';
 
 const NAV_ITEMS_BASE = [
   { label: 'Calendar', icon: <CalendarMonth />, path: '/' },
@@ -50,6 +51,9 @@ function Sidebar() {
   const { data: user } = useQuery({ queryKey: ['me'], queryFn: usersApi.getMe });
   const displayName = user?.name ?? 'Account';
   const initials = user?.name ? user.name.split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase() : 'U';
+
+  const { user: authUser } = useAuth();
+  const isAdmin = authUser?.role === 'admin';
 
   return (
     <Box
@@ -117,6 +121,32 @@ function Sidebar() {
         );
       })}
 
+      {isAdmin && (
+        <Box
+          onClick={() => navigate('/admin')}
+          sx={{
+            display: 'flex', alignItems: 'center', gap: 1.5,
+            px: 1.5, py: 1.25,
+            borderRadius: 1.5,
+            mb: 0.5,
+            cursor: 'pointer',
+            bgcolor: location.pathname.startsWith('/admin') ? activeNav : 'transparent',
+            color: location.pathname.startsWith('/admin') ? primaryMain : 'text.secondary',
+            fontWeight: location.pathname.startsWith('/admin') ? 800 : 700,
+            fontSize: '0.875rem',
+            transition: 'background 0.18s ease, color 0.18s ease',
+            '&:hover': { bgcolor: activeNav },
+          }}
+        >
+          <Box sx={{ color: 'inherit', display: 'flex', fontSize: 20 }}>
+            <AdminPanelSettings />
+          </Box>
+          <Typography sx={{ fontWeight: 'inherit', fontSize: 'inherit', color: 'inherit' }}>
+            Admin
+          </Typography>
+        </Box>
+      )}
+
       <Box sx={{ flex: 1 }} />
 
       {/* User / Profile button */}
@@ -168,8 +198,12 @@ export function Layout({ children }: { children: ReactNode }) {
   const { data: user } = useQuery({ queryKey: ['me'], queryFn: usersApi.getMe });
   const firstName = user?.name?.split(' ')[0] ?? 'Profile';
 
+  const { user: authUser } = useAuth();
+  const isAdmin = authUser?.role === 'admin';
+
   const mobileNavItems = [
     ...NAV_ITEMS_BASE,
+    ...(isAdmin ? [{ label: 'Admin', icon: <AdminPanelSettings />, path: '/admin' }] : []),
     { ...PROFILE_NAV, label: firstName },
   ];
   const activeIndex = getActiveIndex(location.pathname);
