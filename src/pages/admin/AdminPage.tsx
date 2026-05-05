@@ -65,12 +65,12 @@ function EditLimitsDialog({
 }) {
   const { mutate, isPending } = useUpsertLimits();
   const [form, setForm] = useState<LimitFormState>({
-    maxPets:                  currentLimits?.pets.max != null         ? String(currentLimits.pets.max)                  : '',
-    maxVets:                  currentLimits?.vets.max != null         ? String(currentLimits.vets.max)                  : '',
-    maxMedications:           currentLimits?.medications.max != null  ? String(currentLimits.medications.max)           : '',
-    maxNotes:                 currentLimits?.notes.max != null        ? String(currentLimits.notes.max)                 : '',
-    maxStorageBytes:          currentLimits?.storage.maxBytes != null ? String(currentLimits.storage.maxBytes)          : '',
-    maxPlacesSearchesMonthly: currentLimits?.placesSearches.max != null ? String(currentLimits.placesSearches.max)      : '',
+    maxPets:                  currentLimits?.pets?.max != null         ? String(currentLimits.pets?.max)                  : '',
+    maxVets:                  currentLimits?.vets?.max != null         ? String(currentLimits.vets?.max)                  : '',
+    maxMedications:           currentLimits?.medications?.max != null  ? String(currentLimits.medications?.max)           : '',
+    maxNotes:                 currentLimits?.notes?.max != null        ? String(currentLimits.notes?.max)                 : '',
+    maxStorageBytes:          currentLimits?.storage?.maxBytes != null ? String(currentLimits.storage?.maxBytes)          : '',
+    maxPlacesSearchesMonthly: currentLimits?.placesSearches?.max != null ? String(currentLimits.placesSearches?.max)      : '',
   });
 
   const handleSave = () => {
@@ -216,7 +216,7 @@ function UserDrawer({
             { label: 'Storage',     value: formatBytes(user.stats.storageUsedBytes) },
             { label: 'Places/mo',   value: user.stats.placesSearchesThisMonth },
           ].map(({ label, value }) => (
-            <Grid item xs={4} key={label}>
+            <Grid size={{ xs: 4 }} key={label}>
               <StatCard label={label} value={value} />
             </Grid>
           ))}
@@ -366,7 +366,7 @@ export function AdminPage() {
           <UserDrawer
             userId={selectedUserId}
             onClose={() => setSelectedUserId(null)}
-            currentUserId={authUser?.id ?? ''}
+            currentUserId={authUser?.id ?? '__unknown__'}
           />
         )}
       </Drawer>
