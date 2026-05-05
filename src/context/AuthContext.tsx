@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback } from 'react';
+import { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import type { User } from '../types';
 import { usersApi } from '../api/users';
@@ -35,11 +35,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   // On mount: if token exists (returning user), populate user state
-  useState(() => {
+  useEffect(() => {
     if (token) {
       usersApi.getMe().then(setUser).catch(() => {});
     }
-  });
+  }, []);
 
   return (
     <AuthContext.Provider value={{ token, user, login, logout, isAuthenticated: !!token }}>
