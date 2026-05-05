@@ -13,7 +13,7 @@ export function LoginPage() {
 
   const mutation = useMutation({
     mutationFn: authApi.login,
-    onSuccess: ({ token }) => { login(token); navigate('/'); },
+    onSuccess: async ({ token }) => { await login(token); navigate('/'); },
   });
 
   const handleSubmit = (e: React.FormEvent) => {
