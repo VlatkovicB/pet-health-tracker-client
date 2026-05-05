@@ -98,7 +98,7 @@ function EditLimitsDialog({
             value={form[key]}
             onChange={(e) => setForm((f) => ({ ...f, [key]: e.target.value }))}
             placeholder="default"
-            inputProps={{ min: 0 }}
+            slotProps={{ htmlInput: { min: 0 } }}
           />
         ))}
       </DialogContent>
