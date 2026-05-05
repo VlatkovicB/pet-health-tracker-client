@@ -1,10 +1,91 @@
-import { Box, Typography, Switch, useTheme } from '@mui/material';
+import { Box, Typography, Switch, useTheme, LinearProgress } from '@mui/material';
 import { ChevronRight, Logout } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../../context/AuthContext';
 import { useAppTheme } from '../../context/ThemeContext';
-import { usersApi } from '../../api/users';
+import { usersApi, useMyLimits } from '../../api/users';
+
+function formatBytes(bytes: number): string {
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
+  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+}
+
+function limitColor(used: number, max: number): 'primary' | 'warning' | 'error' {
+  const pct = used / max;
+  if (pct >= 0.95) return 'error';
+  if (pct >= 0.80) return 'warning';
+  return 'primary';
+}
+
+interface LimitBarProps {
+  label: string;
+  used: number;
+  max: number | null;
+  formatUsed?: (n: number) => string;
+  formatMax?: (n: number) => string;
+}
+
+function LimitBar({ label, used, max, formatUsed, formatMax }: LimitBarProps) {
+  const usedStr = formatUsed ? formatUsed(used) : String(used);
+  if (max === null) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem' }}>
+        <Typography sx={{ fontSize: 'inherit', color: 'text.secondary' }}>{label}</Typography>
+        <Typography sx={{ fontSize: 'inherit', color: 'text.disabled' }}>{usedStr} / unlimited</Typography>
+      </Box>
+    );
+  }
+  const maxStr = formatMax ? formatMax(max) : String(max);
+  const color = limitColor(used, max);
+  const value = Math.min((used / max) * 100, 100);
+  return (
+    <Box>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+        <Typography sx={{ fontSize: '0.875rem', color: 'text.secondary' }}>{label}</Typography>
+        <Typography sx={{ fontSize: '0.875rem', color: color === 'primary' ? 'text.disabled' : `${color}.main` }}>
+          {usedStr} / {maxStr}
+        </Typography>
+      </Box>
+      <LinearProgress
+        variant="determinate"
+        value={value}
+        color={color}
+        sx={{ borderRadius: 1, height: 5 }}
+      />
+    </Box>
+  );
+}
+
+function UsageLimitsSection() {
+  const { data: limits, isLoading } = useMyLimits();
+  if (isLoading || !limits) return null;
+  return (
+    <Box sx={{ bgcolor: 'background.paper', borderRadius: 2, px: 2, py: 1.75 }}>
+      <Typography sx={{ fontWeight: 700, fontSize: '0.9375rem', color: 'text.primary', mb: 1.5 }}>
+        📊 Usage
+      </Typography>
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.25 }}>
+        <LimitBar label="Pets"        used={limits.pets.used}        max={limits.pets.max} />
+        <LimitBar label="Vets"        used={limits.vets.used}        max={limits.vets.max} />
+        <LimitBar label="Medications" used={limits.medications.used} max={limits.medications.max} />
+        <LimitBar label="Notes"       used={limits.notes.used}       max={limits.notes.max} />
+        <LimitBar
+          label="Storage"
+          used={limits.storage.usedBytes}
+          max={limits.storage.maxBytes}
+          formatUsed={formatBytes}
+          formatMax={formatBytes}
+        />
+        <LimitBar
+          label="Places searches this month"
+          used={limits.placesSearches.usedThisMonth}
+          max={limits.placesSearches.max}
+        />
+      </Box>
+    </Box>
+  );
+}
 
 export function ProfilePage() {
   const navigate = useNavigate();
@@ -90,6 +171,9 @@ export function ProfilePage() {
           </Box>
           <ChevronRight sx={{ color: 'secondary.main', fontSize: 20 }} />
         </Box>
+
+        {/* Usage limits */}
+        <UsageLimitsSection />
       </Box>
     </Box>
   );
