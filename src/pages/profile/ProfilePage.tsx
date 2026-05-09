@@ -97,8 +97,8 @@ export function ProfilePage() {
   const displayName = user?.name ?? 'My Account';
   const initials = user?.name ? user.name.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase() : '🐾';
 
-  const handleSignOut = () => {
-    logout();
+  const handleSignOut = async () => {
+    await logout();
     navigate('/login');
   };
 
