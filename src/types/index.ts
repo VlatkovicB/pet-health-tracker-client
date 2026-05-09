@@ -143,10 +143,6 @@ export type CalendarEvent =
   | { kind: 'note'; date: string; note: Note }
   | { kind: 'birthday'; petId: string; date: string; age: number };
 
-export interface AuthTokens {
-  token: string;
-}
-
 export interface PaginatedResult<T> {
   items: T[];
   total: number;

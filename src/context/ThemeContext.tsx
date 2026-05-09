@@ -18,11 +18,10 @@ export function ThemeContextProvider({ children }: { children: ReactNode }) {
     () => (localStorage.getItem('theme') as ThemeMode) ?? 'light',
   );
 
-  // Fetch saved preference from server on mount (if authenticated)
+  // Fetch saved preference from server on mount — cookie sent automatically; 401 is silently ignored
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (!token) return;
-    usersApi.getMe()
+    usersApi
+      .getMe()
       .then((user) => {
         setMode(user.theme);
         localStorage.setItem('theme', user.theme);
@@ -34,10 +33,7 @@ export function ThemeContextProvider({ children }: { children: ReactNode }) {
     const next: ThemeMode = mode === 'light' ? 'dark' : 'light';
     setMode(next);
     localStorage.setItem('theme', next);
-    const token = localStorage.getItem('token');
-    if (token) {
-      usersApi.updateTheme(next).catch(() => {/* best-effort */});
-    }
+    usersApi.updateTheme(next).catch(() => {/* best-effort */});
   };
 
   const muiTheme = useMemo(() => createAppTheme(mode), [mode]);

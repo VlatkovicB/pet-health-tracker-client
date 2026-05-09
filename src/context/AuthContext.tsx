@@ -2,47 +2,47 @@ import { createContext, useContext, useState, useCallback, useEffect } from 'rea
 import type { ReactNode } from 'react';
 import type { User } from '../types';
 import { usersApi } from '../api/users';
+import { authApi } from '../api/auth';
 
 interface AuthContextValue {
-  token: string | null;
   user: User | null;
-  login: (token: string) => Promise<void>;
-  logout: () => void;
   isAuthenticated: boolean;
+  isLoading: boolean;
+  login: () => Promise<void>;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue>(null!);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [token, setToken] = useState<string | null>(() => localStorage.getItem('token'));
   const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const login = useCallback(async (t: string) => {
-    localStorage.setItem('token', t);
-    setToken(t);
-    try {
-      const me = await usersApi.getMe();
-      setUser(me);
-    } catch {
-      // Non-fatal — user stays null until next getMe resolves
-    }
+  // On mount: attempt getMe to restore auth state from cookie
+  useEffect(() => {
+    usersApi
+      .getMe()
+      .then(setUser)
+      .catch(() => {
+        setUser(null);
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
   }, []);
 
-  const logout = useCallback(() => {
-    localStorage.removeItem('token');
-    setToken(null);
+  const login = useCallback(async () => {
+    const me = await usersApi.getMe();
+    setUser(me);
+  }, []);
+
+  const logout = useCallback(async () => {
+    await authApi.logout().catch(() => {});
     setUser(null);
   }, []);
 
-  // On mount: if token exists (returning user), populate user state
-  useEffect(() => {
-    if (token) {
-      usersApi.getMe().then(setUser).catch(() => {});
-    }
-  }, []);
-
   return (
-    <AuthContext.Provider value={{ token, user, login, logout, isAuthenticated: !!token }}>
+    <AuthContext.Provider value={{ user, isAuthenticated: user !== null, isLoading, login, logout }}>
       {children}
     </AuthContext.Provider>
   );
