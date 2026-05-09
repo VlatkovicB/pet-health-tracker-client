@@ -8,8 +8,7 @@ import { ProtectedRoute } from './routes/ProtectedRoute';
 import { AdminRoute } from './routes/AdminRoute';
 import { Layout } from './components/Layout';
 import { AdminPage } from './pages/admin/AdminPage';
-import { LoginPage } from './pages/auth/LoginPage';
-import { RegisterPage } from './pages/auth/RegisterPage';
+import { AuthPage } from './pages/auth/AuthPage';
 import { CalendarPage } from './pages/calendar/CalendarPage';
 import { PetsPage } from './pages/pets/PetsPage';
 import { PetDetailPage } from './pages/health/PetDetailPage';
@@ -28,8 +27,9 @@ export default function App() {
           <AuthProvider>
             <BrowserRouter>
               <Routes>
-                <Route path="/login"    element={<LoginPage />} />
-                <Route path="/register" element={<RegisterPage />} />
+                <Route path="/auth"     element={<AuthPage />} />
+                <Route path="/login"    element={<Navigate to="/auth" replace />} />
+                <Route path="/register" element={<Navigate to="/auth" replace />} />
                 <Route path="/"         element={<ProtectedRoute><Layout><CalendarPage /></Layout></ProtectedRoute>} />
                 <Route path="/pets"     element={<ProtectedRoute><Layout><PetsPage /></Layout></ProtectedRoute>} />
                 <Route path="/vets"     element={<ProtectedRoute><Layout><VetsPage /></Layout></ProtectedRoute>} />
