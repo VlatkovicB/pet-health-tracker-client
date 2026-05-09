@@ -13,8 +13,7 @@ import {
 import { useMutation } from '@tanstack/react-query';
 import { authApi } from '../../api/auth';
 import { useAuth } from '../../context/AuthContext';
-
-const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000/api/v1';
+import { API_BASE_URL } from '../../api/client';
 
 const ERROR_MESSAGES: Record<string, string> = {
   oauth_email_missing: 'Your account did not share an email address. Please use email/password login.',
@@ -109,7 +108,11 @@ export function AuthPage() {
         {/* Tab toggle */}
         <Tabs
           value={tab}
-          onChange={(_, v) => setTab(v)}
+          onChange={(_, v) => {
+            setTab(v);
+            loginMutation.reset();
+            registerMutation.reset();
+          }}
           variant="fullWidth"
           sx={{ borderRadius: 2, bgcolor: 'action.hover' }}
         >
@@ -226,7 +229,7 @@ export function AuthPage() {
             <Button
               variant="outlined"
               fullWidth
-              onClick={() => { window.location.href = `${API_URL}/auth/google`; }}
+              onClick={() => { window.location.href = `${API_BASE_URL}/auth/google`; }}
               sx={{ justifyContent: 'flex-start', pl: 2, gap: 1.5 }}
             >
               <Box
@@ -241,7 +244,7 @@ export function AuthPage() {
             <Button
               variant="outlined"
               fullWidth
-              onClick={() => { window.location.href = `${API_URL}/auth/facebook`; }}
+              onClick={() => { window.location.href = `${API_BASE_URL}/auth/facebook`; }}
               sx={{ justifyContent: 'flex-start', pl: 2, gap: 1.5 }}
             >
               <Box
@@ -256,7 +259,7 @@ export function AuthPage() {
             <Button
               variant="outlined"
               fullWidth
-              onClick={() => { window.location.href = `${API_URL}/auth/apple`; }}
+              onClick={() => { window.location.href = `${API_BASE_URL}/auth/apple`; }}
               sx={{ justifyContent: 'flex-start', pl: 2, gap: 1.5 }}
             >
               <Box
