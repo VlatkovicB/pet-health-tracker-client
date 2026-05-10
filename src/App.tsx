@@ -9,6 +9,7 @@ import { AdminRoute } from './routes/AdminRoute';
 import { Layout } from './components/Layout';
 import { AdminPage } from './pages/admin/AdminPage';
 import { AuthPage } from './pages/auth/AuthPage';
+import { AuthCallbackPage } from './pages/auth/AuthCallbackPage';
 import { CalendarPage } from './pages/calendar/CalendarPage';
 import { PetsPage } from './pages/pets/PetsPage';
 import { PetDetailPage } from './pages/health/PetDetailPage';
@@ -27,7 +28,8 @@ export default function App() {
           <AuthProvider>
             <BrowserRouter>
               <Routes>
-                <Route path="/auth"     element={<AuthPage />} />
+                <Route path="/auth"          element={<AuthPage />} />
+                <Route path="/auth/callback" element={<AuthCallbackPage />} />
                 <Route path="/login"    element={<Navigate to="/auth" replace />} />
                 <Route path="/register" element={<Navigate to="/auth" replace />} />
                 <Route path="/"         element={<ProtectedRoute><Layout><CalendarPage /></Layout></ProtectedRoute>} />

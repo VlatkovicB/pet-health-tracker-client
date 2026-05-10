@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import type { User } from '../types';
 import { usersApi } from '../api/users';
 import { authApi } from '../api/auth';
+import { TOKEN_KEY } from '../api/client';
 
 interface AuthContextValue {
   user: User | null;
@@ -38,6 +39,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(async () => {
     await authApi.logout().catch(() => {});
+    localStorage.removeItem(TOKEN_KEY);
     setUser(null);
   }, []);
 
