@@ -28,7 +28,7 @@ apiClient.interceptors.request.use((config) => {
 apiClient.interceptors.response.use(
   (res) => res,
   (err) => {
-    if (err.response?.status === 401 && window.location.pathname !== '/auth') {
+    if (err.response?.status === 401 && !window.location.pathname.startsWith('/auth')) {
       localStorage.removeItem(TOKEN_KEY);
       window.location.href = '/auth';
     }

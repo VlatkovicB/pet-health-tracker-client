@@ -15,9 +15,15 @@ export function AuthCallbackPage() {
     if (token) {
       localStorage.setItem(TOKEN_KEY, token);
       window.history.replaceState(null, '', window.location.pathname);
-      login().then(() => navigate('/', { replace: true }));
+      login()
+        .then(() => navigate('/', { replace: true }))
+        .catch((err) => {
+          console.error('OAuth login failed after token store:', err);
+          localStorage.removeItem(TOKEN_KEY);
+          navigate('/auth?error=server_error', { replace: true });
+        });
     } else {
-      navigate('/', { replace: true });
+      navigate('/auth?error=oauth_failed', { replace: true });
     }
   }, [login, navigate]);
 
