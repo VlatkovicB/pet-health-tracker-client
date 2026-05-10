@@ -28,5 +28,15 @@ export function AuthCallbackPage() {
     }
   }, [searchParams, login, navigate]);
 
-  return null;
+  return (
+    <div style={{ padding: 40, fontFamily: 'monospace', whiteSpace: 'pre-wrap' }}>
+      Completing login...
+      <br />
+      token in URL: {searchParams.get('token') ? 'YES (' + searchParams.get('token')!.slice(0, 20) + '...)' : 'NO'}
+      <br />
+      pathname: {window.location.pathname}
+      <br />
+      search: {window.location.search.slice(0, 60)}
+    </div>
+  );
 }
