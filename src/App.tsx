@@ -5,6 +5,7 @@ import { ThemeContextProvider } from './context/ThemeContext';
 import { AuthProvider } from './context/AuthContext';
 import { NotificationProvider } from './context/NotificationContext';
 import { ProtectedRoute } from './routes/ProtectedRoute';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { AdminRoute } from './routes/AdminRoute';
 import { Layout } from './components/Layout';
 import { AdminPage } from './pages/admin/AdminPage';
@@ -21,6 +22,7 @@ const queryClient = new QueryClient();
 
 export default function App() {
   return (
+    <ErrorBoundary>
     <QueryClientProvider client={queryClient}>
       <ThemeContextProvider>
         <CssBaseline />
@@ -46,5 +48,6 @@ export default function App() {
         </NotificationProvider>
       </ThemeContextProvider>
     </QueryClientProvider>
+    </ErrorBoundary>
   );
 }
