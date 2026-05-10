@@ -13,11 +13,10 @@ export class ErrorBoundary extends Component<Props, State> {
   render() {
     if (this.state.error) {
       return (
-        <pre style={{ padding: 24, whiteSpace: 'pre-wrap', wordBreak: 'break-all', color: 'red' }}>
-          {this.state.error.message}
-          {'\n\n'}
-          {this.state.error.stack}
-        </pre>
+        <div style={{ padding: 40, textAlign: 'center', fontFamily: 'system-ui' }}>
+          <h2>Something went wrong</h2>
+          <p>Please refresh the page or try again.</p>
+        </div>
       );
     }
     return this.props.children;
