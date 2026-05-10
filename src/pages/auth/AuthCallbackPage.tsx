@@ -1,9 +1,11 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { TOKEN_KEY } from '../../api/client';
+import { useAuth } from '../../context/AuthContext';
 
 export function AuthCallbackPage() {
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   useEffect(() => {
     const hash = window.location.hash.slice(1);
@@ -13,10 +15,11 @@ export function AuthCallbackPage() {
     if (token) {
       localStorage.setItem(TOKEN_KEY, token);
       window.history.replaceState(null, '', window.location.pathname);
+      login().then(() => navigate('/', { replace: true }));
+    } else {
+      navigate('/', { replace: true });
     }
-
-    navigate('/', { replace: true });
-  }, [navigate]);
+  }, [login, navigate]);
 
   return null;
 }
