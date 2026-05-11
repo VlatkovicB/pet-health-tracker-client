@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <defs>
+    <linearGradient id="purple" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6c63ff"/>
+      <stop offset="100%" stop-color="#a78bfa"/>
+    </linearGradient>
+  </defs>
+  <circle cx="100" cy="100" r="96" fill="#f0f4ff"/>
+  <polygon points="68,76 56,44 88,64" fill="#6c63ff"/>
+  <polygon points="132,76 144,44 112,64" fill="#6c63ff"/>
+  <polygon points="68,72 62,52 84,64" fill="#c4b5fd" opacity="0.5"/>
+  <polygon points="132,72 138,52 116,64" fill="#c4b5fd" opacity="0.5"/>
+  <circle cx="100" cy="106" r="54" fill="url(#purple)"/>
+  <ellipse cx="83" cy="98" rx="9" ry="7" fill="#ede9fe"/>
+  <ellipse cx="117" cy="98" rx="9" ry="7" fill="#ede9fe"/>
+  <ellipse cx="84" cy="99" rx="5" ry="6" fill="#1a1340"/>
+  <ellipse cx="118" cy="99" rx="5" ry="6" fill="#1a1340"/>
+  <circle cx="86" cy="97" r="2" fill="#ede9fe"/>
+  <circle cx="120" cy="97" r="2" fill="#ede9fe"/>
+  <polygon points="100,113 95,118 105,118" fill="#fb7185" opacity="0.9"/>
+  <line x1="60" y1="114" x2="90" y2="116" stroke="#ede9fe" stroke-width="1.5" opacity="0.6" stroke-linecap="round"/>
+  <line x1="60" y1="120" x2="90" y2="120" stroke="#ede9fe" stroke-width="1.5" opacity="0.6" stroke-linecap="round"/>
+  <line x1="110" y1="116" x2="140" y2="114" stroke="#ede9fe" stroke-width="1.5" opacity="0.6" stroke-linecap="round"/>
+  <line x1="110" y1="120" x2="140" y2="120" stroke="#ede9fe" stroke-width="1.5" opacity="0.6" stroke-linecap="round"/>
+</svg>

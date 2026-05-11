@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { Box, Button, Typography, CircularProgress, Tooltip, Chip } from '@mui/material';
-import { InfoOutlined, Pets } from '@mui/icons-material';
+import { InfoOutlined } from '@mui/icons-material';
 import type { PetShare, SharePermissions } from '../../types';
-import { SPECIES_AVATAR_BG, SPECIES_ICON_COLOR } from '../../utils/speciesStyles';
+import { SPECIES_AVATAR_BG, SPECIES_ICON_COLOR, SPECIES_PLACEHOLDER_IMG } from '../../utils/speciesStyles';
 
 function daysAgo(iso: string): string {
   const diff = Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000);
@@ -85,7 +85,10 @@ export function PendingShareCard({ share, onAccept, onDecline, accepting, declin
           display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}
       >
-        <Pets sx={{ color: iconColor, fontSize: 22 }} />
+        {SPECIES_PLACEHOLDER_IMG[speciesKey]
+          ? <img src={SPECIES_PLACEHOLDER_IMG[speciesKey]} alt={speciesKey} style={{ width: 26, height: 26, objectFit: 'contain' }} />
+          : <span style={{ fontSize: 22, color: iconColor }}>🐾</span>
+        }
       </Box>
 
       {/* Pet name + metadata */}

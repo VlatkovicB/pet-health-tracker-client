@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 200">
+  <!-- Calendar shadow -->
+  <rect x="66" y="56" width="160" height="130" rx="16" fill="#a78bfa" opacity="0.12"/>
+  <!-- Calendar body -->
+  <rect x="60" y="48" width="160" height="130" rx="16" fill="#ede9fe"/>
+  <!-- Header -->
+  <rect x="60" y="48" width="160" height="46" rx="16" fill="#6c63ff"/>
+  <rect x="60" y="74" width="160" height="20" fill="#6c63ff"/>
+  <!-- Binding rings -->
+  <rect x="96" y="38" width="9" height="22" rx="4.5" fill="#a78bfa"/>
+  <rect x="136" y="38" width="9" height="22" rx="4.5" fill="#a78bfa"/>
+  <rect x="176" y="38" width="9" height="22" rx="4.5" fill="#a78bfa"/>
+  <!-- Day dots row 1 -->
+  <circle cx="94" cy="116" r="5" fill="#c4b5fd"/>
+  <circle cx="118" cy="116" r="5" fill="#c4b5fd"/>
+  <circle cx="142" cy="116" r="5" fill="#c4b5fd"/>
+  <circle cx="166" cy="116" r="5" fill="#c4b5fd"/>
+  <circle cx="190" cy="116" r="5" fill="#c4b5fd"/>
+  <!-- Day dots row 2 -->
+  <circle cx="94" cy="140" r="5" fill="#c4b5fd"/>
+  <circle cx="118" cy="140" r="5" fill="#c4b5fd"/>
+  <!-- Paw print center-right -->
+  <ellipse cx="166" cy="150" rx="11" ry="9" fill="#6c63ff" opacity="0.75"/>
+  <ellipse cx="153" cy="139" rx="5.5" ry="6.5" fill="#6c63ff" opacity="0.75"/>
+  <ellipse cx="162" cy="134" rx="5.5" ry="6.5" fill="#6c63ff" opacity="0.75"/>
+  <ellipse cx="172" cy="134" rx="5.5" ry="6.5" fill="#6c63ff" opacity="0.75"/>
+  <ellipse cx="181" cy="139" rx="5.5" ry="6.5" fill="#6c63ff" opacity="0.75"/>
+  <circle cx="190" cy="140" r="5" fill="#c4b5fd"/>
+</svg>

@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 200">
+  <!-- Dog (left) -->
+  <!-- Floppy ears -->
+  <ellipse cx="72" cy="118" rx="14" ry="20" fill="#8b5cf6"/>
+  <ellipse cx="104" cy="118" rx="14" ry="20" fill="#8b5cf6"/>
+  <!-- Body -->
+  <ellipse cx="88" cy="154" rx="34" ry="28" fill="#a78bfa"/>
+  <!-- Head -->
+  <circle cx="88" cy="100" r="28" fill="#a78bfa"/>
+  <!-- Eyes -->
+  <circle cx="80" cy="95" r="5.5" fill="#ede9fe"/>
+  <circle cx="96" cy="95" r="5.5" fill="#ede9fe"/>
+  <circle cx="81" cy="96" r="3" fill="#1a1340"/>
+  <circle cx="97" cy="96" r="3" fill="#1a1340"/>
+  <circle cx="80" cy="94" r="1.2" fill="#ede9fe"/>
+  <circle cx="96" cy="94" r="1.2" fill="#ede9fe"/>
+  <!-- Nose -->
+  <ellipse cx="88" cy="108" rx="5" ry="3.5" fill="#6d28d9" opacity="0.65"/>
+  <!-- Tail -->
+  <path d="M120 158 Q146 136 140 114" stroke="#a78bfa" stroke-width="9" fill="none" stroke-linecap="round"/>
+
+  <!-- Cat (right) -->
+  <!-- Ears -->
+  <polygon points="174,92 164,64 190,80" fill="#c4b5fd"/>
+  <polygon points="214,92 224,64 200,80" fill="#c4b5fd"/>
+  <polygon points="174,88 168,70 188,80" fill="#ede9fe" opacity="0.6"/>
+  <polygon points="214,88 220,70 202,80" fill="#ede9fe" opacity="0.6"/>
+  <!-- Body -->
+  <ellipse cx="194" cy="154" rx="30" ry="28" fill="#c4b5fd"/>
+  <!-- Head -->
+  <circle cx="194" cy="100" r="28" fill="#c4b5fd"/>
+  <!-- Eyes -->
+  <ellipse cx="184" cy="95" rx="7" ry="5.5" fill="#ede9fe"/>
+  <ellipse cx="204" cy="95" rx="7" ry="5.5" fill="#ede9fe"/>
+  <ellipse cx="185" cy="96" rx="4" ry="5" fill="#1a1340"/>
+  <ellipse cx="205" cy="96" rx="4" ry="5" fill="#1a1340"/>
+  <circle cx="187" cy="94" r="1.5" fill="#ede9fe"/>
+  <circle cx="207" cy="94" r="1.5" fill="#ede9fe"/>
+  <!-- Nose -->
+  <polygon points="194,109 190,113 198,113" fill="#fb7185" opacity="0.85"/>
+  <!-- Tail -->
+  <path d="M164 170 Q140 154 150 132 Q158 116 166 128" stroke="#c4b5fd" stroke-width="8" fill="none" stroke-linecap="round"/>
+
+  <!-- Ground -->
+  <ellipse cx="140" cy="182" rx="90" ry="7" fill="#ede9fe" opacity="0.4"/>
+</svg>

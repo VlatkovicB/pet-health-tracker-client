@@ -30,6 +30,8 @@ import { NoteDetailDialog } from '../../components/NoteDetailDialog';
 import { SharingTab } from '../../components/sharing/SharingTab';
 import type { ReminderScheduleProps, AdvanceNotice } from '../../types';
 import { WeightSection } from '../../components/WeightSection';
+import emptyCalendarUrl from '../../assets/empty-state-calendar.svg';
+import emptyMedicationsUrl from '../../assets/empty-state-medications.svg';
 
 type TabValue = 'vet-visits' | 'medications' | 'notes' | 'weight' | 'sharing';
 
@@ -390,7 +392,7 @@ export function PetDetailPage() {
               <>
                 {/* Unified visit list: scheduled first (ascending), then logged (descending) */}
                 {vetVisits.length === 0 ? (
-                  <EmptyState />
+                  <EmptyState label="No vet visits yet" illustration={emptyCalendarUrl} />
                 ) : (
                   <>
                     {[...vetVisits]
@@ -452,7 +454,7 @@ export function PetDetailPage() {
         {tab === 'medications' && (
           medicationsQuery.isLoading ? <LoadingState /> : medicationsQuery.isError ? (
             <Box sx={{ p: 2 }}><Alert severity="error">{getApiError(medicationsQuery.error)}</Alert></Box>
-          ) : !medications.length ? <EmptyState /> : (
+          ) : !medications.length ? <EmptyState label="No medications yet" illustration={emptyMedicationsUrl} /> : (
             <>
               {medications.map((m) => (
                 <Box
@@ -1188,9 +1190,12 @@ function AddMedicationDialog({ open, saving, onClose, onSave }: {
   );
 }
 
-function EmptyState({ label = 'No records yet' }: { label?: string }) {
+function EmptyState({ label = 'No records yet', illustration }: { label?: string; illustration?: string }) {
   return (
     <Box sx={{ py: 4, textAlign: 'center' }}>
+      {illustration && (
+        <img src={illustration} alt="" style={{ width: 140, height: 100, marginBottom: 8 }} />
+      )}
       <Typography color="text.secondary">{label}</Typography>
     </Box>
   );

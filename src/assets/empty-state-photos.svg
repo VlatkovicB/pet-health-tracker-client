@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 200">
+  <!-- Back polaroid (rotated) -->
+  <rect x="94" y="34" width="116" height="140" rx="8" fill="#c4b5fd" opacity="0.4" transform="rotate(-7 152 104)"/>
+  <!-- Main polaroid -->
+  <rect x="82" y="26" width="116" height="144" rx="8" fill="#ede9fe"/>
+  <!-- Photo area -->
+  <rect x="94" y="38" width="92" height="92" rx="6" fill="#ddd6fe"/>
+  <!-- Paw in photo -->
+  <ellipse cx="140" cy="92" rx="17" ry="14" fill="#a78bfa"/>
+  <ellipse cx="122" cy="78" rx="8.5" ry="9.5" fill="#a78bfa"/>
+  <ellipse cx="134" cy="72" rx="8.5" ry="9.5" fill="#a78bfa"/>
+  <ellipse cx="146" cy="72" rx="8.5" ry="9.5" fill="#a78bfa"/>
+  <ellipse cx="158" cy="78" rx="8.5" ry="9.5" fill="#a78bfa"/>
+  <!-- Polaroid bottom strip -->
+  <rect x="82" y="130" width="116" height="40" rx="0" fill="#ede9fe"/>
+  <rect x="82" y="162" width="116" height="8" rx="8" fill="#ede9fe"/>
+  <!-- Small heart on strip -->
+  <path d="M133 148 Q140 142 147 148 Q154 142 154 149 Q154 156 140 164 Q126 156 126 149 Q126 142 133 148 Z" fill="#c4b5fd" opacity="0.8"/>
+</svg>

@@ -21,7 +21,8 @@ import { PendingShareCard } from '../../components/sharing/PendingShareCard';
 import { PendingTransferCard } from '../../components/sharing/PendingTransferCard';
 import type { Pet, VetVisit } from '../../types';
 import { PET_SPECIES } from '../../types';
-import { SPECIES_AVATAR_BG, SPECIES_TAG_GRADIENT, SPECIES_TAG_COLOR } from '../../utils/speciesStyles';
+import { SPECIES_AVATAR_BG, SPECIES_TAG_GRADIENT, SPECIES_TAG_COLOR, SPECIES_PLACEHOLDER_IMG } from '../../utils/speciesStyles';
+import emptyStatePetsUrl from '../../assets/empty-state-pets.svg';
 
 const serverUrl = import.meta.env.VITE_SERVER_URL ?? 'http://localhost:3000';
 
@@ -124,6 +125,8 @@ function PetCard({ pet, upcomingVisits, sharedChip }: { pet: Pet; upcomingVisits
         >
           {pet.photoUrl ? (
             <img src={`${serverUrl}${pet.photoUrl}`} alt={pet.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          ) : SPECIES_PLACEHOLDER_IMG[speciesKey] ? (
+            <img src={SPECIES_PLACEHOLDER_IMG[speciesKey]} alt={pet.species} style={{ width: 38, height: 38, objectFit: 'contain' }} />
           ) : (
             <Typography sx={{ fontSize: 28, lineHeight: 1, userSelect: 'none' }}>
               {SPECIES_EMOJI[speciesKey] ?? '🐾'}
@@ -357,7 +360,7 @@ export function PetsPage() {
                 '&:hover': { borderColor: 'primary.light' },
               }}
             >
-              <Typography sx={{ fontSize: '2rem', mb: 1 }}>🐾</Typography>
+              <img src={emptyStatePetsUrl} alt="" style={{ width: 140, height: 100, marginBottom: 8 }} />
               <Typography sx={{ fontWeight: 700, color: 'text.secondary', fontSize: '0.875rem' }}>
                 No pets yet — tap to add one
               </Typography>

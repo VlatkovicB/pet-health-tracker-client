@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 200">
+  <!-- Bottle shadow -->
+  <rect x="112" y="76" width="68" height="96" rx="12" fill="#34d399" opacity="0.15"/>
+  <!-- Bottle body -->
+  <rect x="108" y="72" width="68" height="96" rx="12" fill="#d1fae5"/>
+  <!-- Bottle cap -->
+  <rect x="100" y="52" width="84" height="28" rx="10" fill="#34d399"/>
+  <!-- Label -->
+  <rect x="118" y="94" width="48" height="52" rx="8" fill="#ecfdf5"/>
+  <!-- Paw on label -->
+  <ellipse cx="142" cy="126" rx="9.5" ry="8" fill="#34d399" opacity="0.85"/>
+  <ellipse cx="131" cy="116" rx="5" ry="5.5" fill="#34d399" opacity="0.85"/>
+  <ellipse cx="138" cy="112" rx="5" ry="5.5" fill="#34d399" opacity="0.85"/>
+  <ellipse cx="146" cy="112" rx="5" ry="5.5" fill="#34d399" opacity="0.85"/>
+  <ellipse cx="153" cy="116" rx="5" ry="5.5" fill="#34d399" opacity="0.85"/>
+  <!-- Cross on cap -->
+  <rect x="134" y="59" width="4" height="14" rx="2" fill="#ecfdf5" opacity="0.7"/>
+  <rect x="129" y="64" width="14" height="4" rx="2" fill="#ecfdf5" opacity="0.7"/>
+  <!-- Pill left -->
+  <ellipse cx="78" cy="132" rx="16" ry="9" fill="#6ee7b7" transform="rotate(-30 78 132)"/>
+  <line x1="78" y1="123.2" x2="78" y2="140.8" stroke="#34d399" stroke-width="1.5" stroke-linecap="round" transform="rotate(-30 78 132)"/>
+  <!-- Pill right -->
+  <ellipse cx="206" cy="122" rx="16" ry="9" fill="#a7f3d0" transform="rotate(20 206 122)"/>
+  <line x1="206" y1="113.3" x2="206" y2="130.7" stroke="#34d399" stroke-width="1.5" stroke-linecap="round" transform="rotate(20 206 122)"/>
+</svg>
