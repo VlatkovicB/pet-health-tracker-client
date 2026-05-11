@@ -244,21 +244,6 @@ export function AuthPage() {
             <Button
               variant="outlined"
               fullWidth
-              onClick={() => { window.location.href = `${API_BASE_URL}/auth/facebook`; }}
-              sx={{ justifyContent: 'flex-start', pl: 2, gap: 1.5 }}
-            >
-              <Box
-                component="img"
-                src="https://www.facebook.com/favicon.ico"
-                alt=""
-                sx={{ width: 18, height: 18 }}
-              />
-              Continue with Facebook
-            </Button>
-
-            <Button
-              variant="outlined"
-              fullWidth
               onClick={() => { window.location.href = `${API_BASE_URL}/auth/apple`; }}
               sx={{ justifyContent: 'flex-start', pl: 2, gap: 1.5 }}
             >
