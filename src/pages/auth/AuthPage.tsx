@@ -241,21 +241,6 @@ export function AuthPage() {
               Continue with Google
             </Button>
 
-            <Button
-              variant="outlined"
-              fullWidth
-              onClick={() => { window.location.href = `${API_BASE_URL}/auth/apple`; }}
-              sx={{ justifyContent: 'flex-start', pl: 2, gap: 1.5 }}
-            >
-              <Box
-                component="svg"
-                viewBox="0 0 814 1000"
-                sx={{ width: 18, height: 18, fill: 'currentColor' }}
-              >
-                <path d="M788.1 340.9c-5.8 4.5-108.2 62.2-108.2 190.5 0 148.4 130.3 200.9 134.2 202.2-.6 3.2-20.7 71.9-68.7 141.9-42.8 61.6-87.5 123.1-155.5 123.1s-85.5-39.5-164-39.5c-76 0-103.7 40.8-165.9 40.8s-105-57.8-155.5-127.4C46 442.1 0 331.2 0 226.8 0 101.5 77.5 31.2 148.4 3.1c38.7-15.2 92.8-27.5 147.3-27.5 57.2 0 115.9 21.7 159.3 58.2a400.5 400.5 0 0 1 60.8 66.8c14.5 21.7 27.5 49.2 34.7 76.7h.5c-107.7 46.9-120.4 178.9-120.4 258.7 0 49.2 10.2 97.1 28.2 141.3 18 44.2 44.7 84.2 76.7 117.2 32 33 66.8 59.5 104.7 78.2 37.9 18.7 77.8 28.2 117.7 28.2h.3l-1.4 2.8z" />
-              </Box>
-              Continue with Apple
-            </Button>
           </Box>
         </Box>
       </Box>
