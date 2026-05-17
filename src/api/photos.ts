@@ -28,6 +28,8 @@ export function usePhotoTimeline(year: number, petIds?: string[], sourceTypes?: 
     queryKey: ['photos', 'timeline', year, petIds, sourceTypes],
     queryFn: () => photoApi.getTimeline(year, petIds, sourceTypes),
     enabled: options?.enabled ?? true,
+    staleTime: 10 * 60 * 1000,
+    refetchInterval: 10 * 60 * 1000,
   });
 }
 
@@ -36,6 +38,8 @@ export function usePhotoYears(petIds?: string[], sourceTypes?: PhotoSourceType[]
     queryKey: ['photos', 'years', petIds, sourceTypes],
     queryFn: () => photoApi.getYears(petIds, sourceTypes),
     enabled: options?.enabled ?? true,
+    staleTime: 10 * 60 * 1000,
+    refetchInterval: 10 * 60 * 1000,
   });
 }
 
