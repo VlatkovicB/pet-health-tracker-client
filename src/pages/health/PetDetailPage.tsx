@@ -22,6 +22,7 @@ import { useInfiniteScroll } from '../../hooks/useInfiniteScroll';
 import type { Medication, Note, Pet, VetVisit, Vet, VetWorkHours, DayOfWeek } from '../../types';
 import { PET_SPECIES } from '../../types';
 import { PET_COLOR_PALETTE } from '../../utils/color';
+import { petAge } from '../../utils/petUtils';
 import { ScheduledVisitDetailDialog } from '../../components/ScheduledVisitDetailDialog';
 import { MedicationDetailDialog } from '../../components/MedicationDetailDialog';
 import { MedicationScheduleSection } from '../../components/MedicationScheduleSection';
@@ -41,21 +42,6 @@ const fmtDateTime = (iso: string) => new Date(iso).toLocaleString();
 const todayNoon = () => { const d = new Date(); d.setHours(12, 0, 0, 0); return d.toISOString().slice(0, 16); };
 const weekFromNow = () => { const d = new Date(); d.setDate(d.getDate() + 7); d.setHours(12, 0, 0, 0); return d.toISOString().slice(0, 16); };
 const serverUrl = import.meta.env.VITE_SERVER_URL ?? 'http://localhost:3000';
-
-
-function calcAge(birthDate: string): string {
-  const birth = new Date(birthDate);
-  const now = new Date();
-  let years = now.getFullYear() - birth.getFullYear();
-  let mos = now.getMonth() - birth.getMonth();
-  if (now.getDate() < birth.getDate()) mos--;
-  if (mos < 0) { years--; mos += 12; }
-  if (years < 0) return '< 1 mo';
-  if (years === 0 && mos === 0) return '< 1 mo';
-  if (years === 0) return `${mos} mo${mos !== 1 ? 's' : ''}`;
-  if (mos === 0) return `${years} yr${years !== 1 ? 's' : ''}`;
-  return `${years} yr${years !== 1 ? 's' : ''} ${mos} mo${mos !== 1 ? 's' : ''}`;
-}
 
 const DAY_INDEX_TO_DOW: Record<number, DayOfWeek> = {
   0: 'SUN', 1: 'MON', 2: 'TUE', 3: 'WED', 4: 'THU', 5: 'FRI', 6: 'SAT',
@@ -325,7 +311,7 @@ export function PetDetailPage() {
                 {pet.name}
               </Typography>
               <Typography sx={{ fontWeight: 600, fontSize: '0.8125rem', color: 'rgba(255,255,255,0.75)', mt: 0.25 }}>
-                {pet.species}{pet.breed ? ` · ${pet.breed}` : ''}{pet.birthDate ? ` · ${calcAge(pet.birthDate)}` : ''}
+                {pet.species}{pet.breed ? ` · ${pet.breed}` : ''}{pet.birthDate ? ` · ${petAge(pet.birthDate) ?? '< 1 mo'}` : ''}
               </Typography>
             </>
           ) : (

@@ -22,6 +22,7 @@ import { PendingTransferCard } from '../../components/sharing/PendingTransferCar
 import type { Pet, VetVisit } from '../../types';
 import { PET_SPECIES } from '../../types';
 import { SPECIES_AVATAR_BG, SPECIES_TAG_GRADIENT, SPECIES_TAG_COLOR, SPECIES_PLACEHOLDER_IMG } from '../../utils/speciesStyles';
+import { petAge } from '../../utils/petUtils';
 import emptyStatePetsUrl from '../../assets/empty-state-pets.svg';
 
 const serverUrl = import.meta.env.VITE_SERVER_URL ?? 'http://localhost:3000';
@@ -36,21 +37,6 @@ function daysUntil(iso: string): number {
 const SPECIES_EMOJI: Record<string, string> = {
   dog: '🐕', cat: '🐈', rabbit: '🐇', bird: '🐦', fish: '🐟', other: '🐾',
 };
-
-function petAge(birthDate?: string): string | null {
-  if (!birthDate) return null;
-  const birth = new Date(birthDate);
-  const now = new Date();
-  let years = now.getFullYear() - birth.getFullYear();
-  let months = now.getMonth() - birth.getMonth();
-  if (now.getDate() < birth.getDate()) months--;
-  if (months < 0) { years--; months += 12; }
-  if (years < 0) return null;
-  if (years === 0 && months === 0) return '< 1 mo';
-  if (years === 0) return `${months} mo${months !== 1 ? 's' : ''}`;
-  if (months === 0) return `${years} yr${years !== 1 ? 's' : ''}`;
-  return `${years} yr${years !== 1 ? 's' : ''} ${months} mo${months !== 1 ? 's' : ''}`;
-}
 
 function birthdayInDays(birthDate?: string): number | null {
   if (!birthDate) return null;
