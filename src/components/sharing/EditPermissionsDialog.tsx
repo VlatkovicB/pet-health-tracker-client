@@ -27,6 +27,7 @@ const PERMISSION_PAIRS: Array<{
   { viewKey: 'canViewVetVisits',    editKey: 'canEditVetVisits',    label: 'Vet visits' },
   { viewKey: 'canViewMedications',  editKey: 'canEditMedications',  label: 'Medications' },
   { viewKey: 'canViewNotes',        editKey: 'canEditNotes',        label: 'Notes' },
+  { viewKey: 'canViewPhotos',       editKey: 'canEditPhotos',       label: 'Photos' },
 ];
 
 const DEFAULT_PERMISSIONS: SharePermissions = {
@@ -36,6 +37,8 @@ const DEFAULT_PERMISSIONS: SharePermissions = {
   canEditMedications: false,
   canViewNotes: true,
   canEditNotes: false,
+  canViewPhotos: false,
+  canEditPhotos: false,
 };
 
 export function EditPermissionsDialog({ open, onClose, share, petId, mode, email, onConfirm, confirmPending }: Props) {
@@ -54,6 +57,8 @@ export function EditPermissionsDialog({ open, onClose, share, petId, mode, email
       if (key === 'canViewVetVisits' && !value) next.canEditVetVisits = false;
       if (key === 'canViewMedications' && !value) next.canEditMedications = false;
       if (key === 'canViewNotes' && !value) next.canEditNotes = false;
+      if (key === 'canEditPhotos' && value) next.canViewPhotos = true;
+      if (key === 'canViewPhotos' && !value) next.canEditPhotos = false;
       return next;
     });
   };

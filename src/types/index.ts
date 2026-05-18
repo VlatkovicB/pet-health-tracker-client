@@ -157,6 +157,8 @@ export interface SharePermissions {
   canEditMedications: boolean;
   canViewNotes: boolean;
   canEditNotes: boolean;
+  canViewPhotos: boolean;
+  canEditPhotos: boolean;
 }
 
 export interface PetShare {

@@ -3,7 +3,7 @@ import {
   Box, Button, TextField, Typography, Chip, CircularProgress,
   Dialog, DialogTitle, DialogContent, DialogActions, Tooltip,
 } from '@mui/material';
-import { Add, MedicalServices, Medication, StickyNote2 } from '@mui/icons-material';
+import { Add, MedicalServices, Medication, StickyNote2, Photo } from '@mui/icons-material';
 import type { SvgIconComponent } from '@mui/icons-material';
 import { useListPetShares, useSharePet, useRevokeShare } from '../../api/shares';
 import { EditPermissionsDialog } from './EditPermissionsDialog';
@@ -26,12 +26,20 @@ function PermIcon({ Icon, label, view, edit }: { Icon: SvgIconComponent; label: 
   );
 }
 
-function SharePermIcons({ perms }: { perms: { canViewVetVisits: boolean; canEditVetVisits: boolean; canViewMedications: boolean; canEditMedications: boolean; canViewNotes: boolean; canEditNotes: boolean } }) {
+function SharePermIcons({ perms }: {
+  perms: {
+    canViewVetVisits: boolean; canEditVetVisits: boolean;
+    canViewMedications: boolean; canEditMedications: boolean;
+    canViewNotes: boolean; canEditNotes: boolean;
+    canViewPhotos: boolean; canEditPhotos: boolean;
+  }
+}) {
   return (
     <Box sx={{ display: 'flex', gap: 0.75, mt: 0.5 }}>
-      <PermIcon Icon={MedicalServices} label="vet visits" view={perms.canViewVetVisits} edit={perms.canEditVetVisits} />
-      <PermIcon Icon={Medication} label="medications" view={perms.canViewMedications} edit={perms.canEditMedications} />
-      <PermIcon Icon={StickyNote2} label="notes" view={perms.canViewNotes} edit={perms.canEditNotes} />
+      <PermIcon Icon={MedicalServices} label="vet visits"  view={perms.canViewVetVisits}  edit={perms.canEditVetVisits} />
+      <PermIcon Icon={Medication}      label="medications" view={perms.canViewMedications} edit={perms.canEditMedications} />
+      <PermIcon Icon={StickyNote2}     label="notes"       view={perms.canViewNotes}       edit={perms.canEditNotes} />
+      <PermIcon Icon={Photo}           label="photos"      view={perms.canViewPhotos}      edit={perms.canEditPhotos} />
     </Box>
   );
 }
