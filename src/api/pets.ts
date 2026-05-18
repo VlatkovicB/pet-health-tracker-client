@@ -1,4 +1,5 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import { apiClient } from './client';
 import type { Pet, PaginatedResult } from '../types';
 
@@ -28,5 +29,17 @@ export function usePets() {
   return useQuery({
     queryKey: ['pets', 'all'],
     queryFn: () => petsApi.list({ pageParam: 1 }).then((r) => r.items),
+  });
+}
+
+export function useDeletePet() {
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
+  return useMutation({
+    mutationFn: (petId: string) => apiClient.delete(`/pets/${petId}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['pets'] });
+      navigate('/pets');
+    },
   });
 }

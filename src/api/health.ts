@@ -1,3 +1,4 @@
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from './client';
 import type { VetVisit, Medication, PaginatedResult } from '../types';
 
@@ -50,3 +51,23 @@ listUpcomingVetVisits: () =>
   createMedication: (petId: string, data: Omit<Medication, 'id' | 'petId' | 'createdAt'>) =>
     apiClient.post<Medication>(`/pets/${petId}/medications`, data).then((r) => r.data),
 };
+
+export function useDeleteVetVisit(petId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (visitId: string) => apiClient.delete(`/pets/${petId}/vet-visits/${visitId}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['vet-visits', petId] });
+    },
+  });
+}
+
+export function useDeleteMedication(petId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (medicationId: string) => apiClient.delete(`/pets/${petId}/medications/${medicationId}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['medications', petId] });
+    },
+  });
+}
