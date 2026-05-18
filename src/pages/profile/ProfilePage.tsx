@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../../context/AuthContext';
 import { useAppTheme } from '../../context/ThemeContext';
+import { getApiError } from '../../api/client';
 import { usersApi, useMyLimits, useChangePassword } from '../../api/users';
 
 function formatBytes(bytes: number): string {
@@ -109,8 +110,7 @@ function ChangePasswordSection() {
     );
   }
 
-  const errorMessage =
-    error instanceof Error ? error.message : error ? 'Something went wrong' : null;
+  const errorMessage = error ? getApiError(error) : null;
 
   return (
     <Box
@@ -126,7 +126,7 @@ function ChangePasswordSection() {
           label="Current password"
           type="password"
           value={currentPassword}
-          onChange={(e) => setCurrentPassword(e.target.value)}
+          onChange={(e) => { setCurrentPassword(e.target.value); setSuccess(false); }}
           size="small"
           required
           fullWidth
@@ -135,7 +135,7 @@ function ChangePasswordSection() {
           label="New password"
           type="password"
           value={newPassword}
-          onChange={(e) => setNewPassword(e.target.value)}
+          onChange={(e) => { setNewPassword(e.target.value); setSuccess(false); }}
           size="small"
           required
           inputProps={{ minLength: 8 }}
