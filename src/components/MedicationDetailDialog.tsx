@@ -8,6 +8,7 @@ import type { Medication, ReminderScheduleProps, AdvanceNotice } from '../types'
 import type { UpdateMedicationInput } from '../api/medications';
 import { medicationsApi } from '../api/medications';
 import { petsApi } from '../api/pets';
+import { useDeleteMedication } from '../api/health';
 import { MedicationScheduleSection } from './MedicationScheduleSection';
 
 const DOSAGE_UNITS = ['mg', 'ml', 'g', 'mcg', 'tab', 'pip', 'injection', 'collar', 'drop'];
@@ -21,6 +22,8 @@ interface Props {
 
 export function MedicationDetailDialog({ med, petId, onClose, canEdit = true }: Props) {
   const queryClient = useQueryClient();
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const deleteMutation = useDeleteMedication(petId);
 
   const [form, setForm] = useState({
     name: med.name,
@@ -188,22 +191,53 @@ export function MedicationDetailDialog({ med, petId, onClose, canEdit = true }: 
         </Box>
       </DialogContent>
 
-      <DialogActions>
-        {canEdit ? (
-          <>
-            <Button onClick={onClose} color="inherit">Cancel</Button>
-            <Button
-              variant="contained"
-              disabled={!canSave || updateMutation.isPending}
-              onClick={handleSave}
-            >
-              {updateMutation.isPending ? 'Saving…' : 'Save'}
-            </Button>
-          </>
-        ) : (
-          <Button onClick={onClose} color="inherit">Close</Button>
+      <DialogActions sx={{ justifyContent: 'space-between' }}>
+        {canEdit && (
+          <Button
+            color="error"
+            onClick={() => setDeleteConfirmOpen(true)}
+            disabled={deleteMutation.isPending}
+          >
+            Delete
+          </Button>
         )}
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          {canEdit ? (
+            <>
+              <Button onClick={onClose} color="inherit">Cancel</Button>
+              <Button
+                variant="contained"
+                disabled={!canSave || updateMutation.isPending}
+                onClick={handleSave}
+              >
+                {updateMutation.isPending ? 'Saving…' : 'Save'}
+              </Button>
+            </>
+          ) : (
+            <Button onClick={onClose} color="inherit">Close</Button>
+          )}
+        </Box>
       </DialogActions>
+
+      <Dialog open={deleteConfirmOpen} onClose={() => setDeleteConfirmOpen(false)} maxWidth="xs" fullWidth>
+        <DialogTitle>Delete medication?</DialogTitle>
+        <DialogContent>
+          <Typography>Delete this medication? Any scheduled reminders will be cancelled.</Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteConfirmOpen(false)} color="inherit">Cancel</Button>
+          <Button
+            color="error"
+            variant="contained"
+            disabled={deleteMutation.isPending}
+            onClick={() => {
+              deleteMutation.mutate(med.id, { onSuccess: onClose });
+            }}
+          >
+            {deleteMutation.isPending ? 'Deleting…' : 'Delete'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Dialog>
   );
 }

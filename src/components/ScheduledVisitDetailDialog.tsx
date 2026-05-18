@@ -1,11 +1,11 @@
 import {
-  Button, CircularProgress, Dialog, DialogActions, DialogContent,
+  Box, Button, CircularProgress, Dialog, DialogActions, DialogContent,
   DialogTitle, Divider, Typography,
 } from '@mui/material';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState, useEffect } from 'react';
 import type { Reminder, ReminderScheduleProps, Vet, VetVisit } from '../types';
-import { healthApi } from '../api/health';
+import { healthApi, useDeleteVetVisit } from '../api/health';
 import { remindersApi } from '../api/reminders';
 import { ReminderScheduleEditor } from './ReminderScheduleEditor';
 import { daysUntil } from '../utils/dateUtils';
@@ -30,6 +30,8 @@ interface Props {
 
 export function ScheduledVisitDetailDialog({ visit, petId, vets, onClose }: Props) {
   const queryClient = useQueryClient();
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const deleteMutation = useDeleteVetVisit(petId);
 
   const vetName = vets.find((v) => v.id === visit.vetId)?.name ?? visit.clinic ?? '—';
   const [reminderEnabled, setReminderEnabled] = useState(false);
@@ -106,17 +108,46 @@ export function ScheduledVisitDetailDialog({ visit, petId, vets, onClose }: Prop
         )}
       </DialogContent>
 
-      <DialogActions>
+      <DialogActions sx={{ justifyContent: 'space-between' }}>
         <Button
-          variant="outlined"
-          color="success"
-          disabled={completeMutation.isPending}
-          onClick={() => completeMutation.mutate()}
+          color="error"
+          onClick={() => setDeleteConfirmOpen(true)}
+          disabled={deleteMutation.isPending}
         >
-          {completeMutation.isPending ? 'Saving…' : 'Mark as done'}
+          Delete
         </Button>
-        <Button onClick={onClose}>Close</Button>
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <Button
+            variant="outlined"
+            color="success"
+            disabled={completeMutation.isPending}
+            onClick={() => completeMutation.mutate()}
+          >
+            {completeMutation.isPending ? 'Saving…' : 'Mark as done'}
+          </Button>
+          <Button onClick={onClose}>Close</Button>
+        </Box>
       </DialogActions>
+
+      <Dialog open={deleteConfirmOpen} onClose={() => setDeleteConfirmOpen(false)} maxWidth="xs" fullWidth>
+        <DialogTitle>Delete scheduled visit?</DialogTitle>
+        <DialogContent>
+          <Typography>Delete this scheduled visit? Any reminders will be cancelled.</Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteConfirmOpen(false)} color="inherit">Cancel</Button>
+          <Button
+            color="error"
+            variant="contained"
+            disabled={deleteMutation.isPending}
+            onClick={() => {
+              deleteMutation.mutate(visit.id, { onSuccess: onClose });
+            }}
+          >
+            {deleteMutation.isPending ? 'Deleting…' : 'Delete'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Dialog>
   );
 }

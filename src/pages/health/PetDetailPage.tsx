@@ -6,11 +6,11 @@ import {
   Skeleton, Checkbox, FormControlLabel, Switch, IconButton, Chip, Tooltip,
   Alert, useTheme, CircularProgress,
 } from '@mui/material';
-import { Add, AddAPhoto, Edit, Pets, Close, StickyNote2 } from '@mui/icons-material';
+import { Add, AddAPhoto, Edit, Pets, Close, StickyNote2, DeleteOutline } from '@mui/icons-material';
 import { useMutation, useQuery, useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
-import { healthApi } from '../../api/health';
+import { healthApi, useDeleteVetVisit } from '../../api/health';
 import { vetsApi } from '../../api/vets';
-import { petsApi } from '../../api/pets';
+import { petsApi, useDeletePet } from '../../api/pets';
 import { usersApi } from '../../api/users';
 import { medicationsApi, type CreateMedicationInput } from '../../api/medications';
 import { useNotes } from '../../api/notes';
@@ -83,6 +83,10 @@ export function PetDetailPage() {
   const isDark = theme.palette.mode === 'dark';
   const rawTab = searchParams.get('tab');
   const setTab = (value: TabValue) => setSearchParams({ tab: value }, { replace: true });
+  const [deletePetOpen, setDeletePetOpen] = useState(false);
+  const deletePetMutation = useDeletePet();
+  const [deleteVisitId, setDeleteVisitId] = useState<string | null>(null);
+  const deleteVetVisitMutation = useDeleteVetVisit(petId ?? '');
   const [addOpen, setAddOpen] = useState(false);
   const [addMedOpen, setAddMedOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
@@ -314,18 +318,34 @@ export function PetDetailPage() {
           )}
         </Box>
         {isOwner && (
-          <Button
-            onClick={() => setEditOpen(true)}
-            size="small"
-            disabled={!pet}
-            sx={{
-              color: 'white', fontWeight: 800, fontSize: '0.8125rem',
-              bgcolor: 'rgba(255,255,255,0.2)', borderRadius: 1.5, px: 1.5, py: 0.625,
-              '&:hover': { bgcolor: 'rgba(255,255,255,0.3)' },
-            }}
-          >
-            Edit
-          </Button>
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <Button
+              onClick={() => setEditOpen(true)}
+              size="small"
+              disabled={!pet}
+              sx={{
+                color: 'white', fontWeight: 800, fontSize: '0.8125rem',
+                bgcolor: 'rgba(255,255,255,0.2)', borderRadius: 1.5, px: 1.5, py: 0.625,
+                '&:hover': { bgcolor: 'rgba(255,255,255,0.3)' },
+              }}
+            >
+              Edit
+            </Button>
+            <Button
+              variant="outlined"
+              color="error"
+              size="small"
+              disabled={!pet}
+              onClick={() => setDeletePetOpen(true)}
+              sx={{
+                color: 'rgba(255,255,255,0.85)', borderColor: 'rgba(255,255,255,0.4)', fontWeight: 800, fontSize: '0.8125rem',
+                borderRadius: 1.5, px: 1.5, py: 0.625,
+                '&:hover': { bgcolor: 'rgba(255,0,0,0.2)', borderColor: 'rgba(255,255,255,0.7)' },
+              }}
+            >
+              Delete pet
+            </Button>
+          </Box>
         )}
       </Box>
 
@@ -416,6 +436,15 @@ export function PetDetailPage() {
                                   borderColor: isDark ? '#5a5478' : '#d4d0f8',
                                 }}
                               />
+                              {!isScheduled && canEditVetVisits && (
+                                <IconButton
+                                  size="small"
+                                  color="error"
+                                  onClick={(e) => { e.stopPropagation(); setDeleteVisitId(v.id); }}
+                                >
+                                  <DeleteOutline fontSize="small" />
+                                </IconButton>
+                              )}
                             </Box>
                           </Box>
                         );
@@ -801,6 +830,52 @@ export function PetDetailPage() {
           }}
         />
       )}
+
+      {/* Delete pet confirmation dialog */}
+      <Dialog open={deletePetOpen} onClose={() => setDeletePetOpen(false)} maxWidth="xs" fullWidth>
+        <DialogTitle>Delete {pet?.name ?? 'this pet'}?</DialogTitle>
+        <DialogContent>
+          <Typography>
+            This will permanently remove all their health records, photos, and reminders. This cannot be undone.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeletePetOpen(false)} color="inherit">Cancel</Button>
+          <Button
+            color="error"
+            variant="contained"
+            disabled={deletePetMutation.isPending}
+            onClick={() => deletePetMutation.mutate(petId!)}
+          >
+            {deletePetMutation.isPending ? 'Deleting…' : 'Delete'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Delete logged visit confirmation dialog */}
+      <Dialog open={deleteVisitId !== null} onClose={() => setDeleteVisitId(null)} maxWidth="xs" fullWidth>
+        <DialogTitle>Delete visit record?</DialogTitle>
+        <DialogContent>
+          <Typography>Delete this visit record? This cannot be undone.</Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteVisitId(null)} color="inherit">Cancel</Button>
+          <Button
+            color="error"
+            variant="contained"
+            disabled={deleteVetVisitMutation.isPending}
+            onClick={() => {
+              if (deleteVisitId) {
+                deleteVetVisitMutation.mutate(deleteVisitId, {
+                  onSuccess: () => setDeleteVisitId(null),
+                });
+              }
+            }}
+          >
+            {deleteVetVisitMutation.isPending ? 'Deleting…' : 'Delete'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }
