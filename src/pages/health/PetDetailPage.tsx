@@ -503,7 +503,6 @@ export function PetDetailPage() {
               {notes.map((note) => {
                 const [y, m2, d] = note.noteDate.split('-').map(Number);
                 const formattedDate = new Date(y, m2 - 1, d).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
-                const thumbnail = null;
                 const extraPets = note.petIds.length > 1 ? note.petIds.length - 1 : 0;
                 return (
                   <Box
