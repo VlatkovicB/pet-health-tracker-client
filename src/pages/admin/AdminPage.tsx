@@ -12,11 +12,7 @@ import {
   useUpsertLimits, useDeleteUser,
 } from '../../api/admin';
 import type { AdminUser } from '../../types';
-
-function formatBytes(bytes: number): string {
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
-  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
-}
+import { formatBytes } from '../../utils/formatUtils';
 
 // ── Stat card used in drawer ──────────────────────────────────────────────────
 function StatCard({ label, value }: { label: string; value: string | number }) {

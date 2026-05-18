@@ -7,11 +7,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useAppTheme } from '../../context/ThemeContext';
 import { getApiError } from '../../api/client';
 import { usersApi, useMyLimits, useChangePassword } from '../../api/users';
-
-function formatBytes(bytes: number): string {
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
-  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
-}
+import { formatBytes } from '../../utils/formatUtils';
 
 function limitColor(used: number, max: number): 'primary' | 'warning' | 'error' {
   const pct = used / max;
