@@ -1,10 +1,11 @@
-import { Box, Typography, Switch, useTheme, LinearProgress } from '@mui/material';
+import { useState } from 'react';
+import { Box, Typography, Switch, useTheme, LinearProgress, TextField, Button } from '@mui/material';
 import { ChevronRight, Logout } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../../context/AuthContext';
 import { useAppTheme } from '../../context/ThemeContext';
-import { usersApi, useMyLimits } from '../../api/users';
+import { usersApi, useMyLimits, useChangePassword } from '../../api/users';
 
 function formatBytes(bytes: number): string {
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
@@ -82,6 +83,82 @@ function UsageLimitsSection() {
           used={limits.placesSearches.usedThisMonth}
           max={limits.placesSearches.max}
         />
+      </Box>
+    </Box>
+  );
+}
+
+function ChangePasswordSection() {
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [success, setSuccess] = useState(false);
+  const { mutate, isPending, error } = useChangePassword();
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setSuccess(false);
+    mutate(
+      { currentPassword, newPassword },
+      {
+        onSuccess: () => {
+          setCurrentPassword('');
+          setNewPassword('');
+          setSuccess(true);
+        },
+      },
+    );
+  }
+
+  const errorMessage =
+    error instanceof Error ? error.message : error ? 'Something went wrong' : null;
+
+  return (
+    <Box
+      component="form"
+      onSubmit={handleSubmit}
+      sx={{ bgcolor: 'background.paper', borderRadius: 2, px: 2, py: 1.75 }}
+    >
+      <Typography sx={{ fontWeight: 700, fontSize: '0.9375rem', color: 'text.primary', mb: 1.5 }}>
+        Change Password
+      </Typography>
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+        <TextField
+          label="Current password"
+          type="password"
+          value={currentPassword}
+          onChange={(e) => setCurrentPassword(e.target.value)}
+          size="small"
+          required
+          fullWidth
+        />
+        <TextField
+          label="New password"
+          type="password"
+          value={newPassword}
+          onChange={(e) => setNewPassword(e.target.value)}
+          size="small"
+          required
+          inputProps={{ minLength: 8 }}
+          fullWidth
+        />
+        {errorMessage && (
+          <Typography sx={{ fontSize: '0.8125rem', color: 'error.main' }}>
+            {errorMessage}
+          </Typography>
+        )}
+        {success && (
+          <Typography sx={{ fontSize: '0.8125rem', color: 'success.main' }}>
+            Password changed successfully.
+          </Typography>
+        )}
+        <Button
+          type="submit"
+          variant="contained"
+          disabled={isPending || !currentPassword || newPassword.length < 8}
+          sx={{ alignSelf: 'flex-start' }}
+        >
+          {isPending ? 'Saving…' : 'Change Password'}
+        </Button>
       </Box>
     </Box>
   );
@@ -171,6 +248,9 @@ export function ProfilePage() {
           </Box>
           <ChevronRight sx={{ color: 'secondary.main', fontSize: 20 }} />
         </Box>
+
+        {/* Change password */}
+        {user?.hasPassword && <ChangePasswordSection />}
 
         {/* Usage limits */}
         <UsageLimitsSection />

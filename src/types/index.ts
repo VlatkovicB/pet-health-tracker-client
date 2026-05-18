@@ -7,6 +7,7 @@ export interface User {
   email: string;
   role: 'user' | 'admin';
   theme: 'light' | 'dark';
+  hasPassword: boolean;
   createdAt: string;
 }
 
