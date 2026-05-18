@@ -566,22 +566,6 @@ export function PetDetailPage() {
                         </Typography>
                       )}
                     </Box>
-                    {thumbnail && (
-                      <Box
-                        component="img"
-                        src={thumbnail}
-                        alt="Note thumbnail"
-                        sx={{
-                          width: 52,
-                          height: 52,
-                          borderRadius: '12px',
-                          objectFit: 'cover',
-                          flexShrink: 0,
-                          border: '1.5px solid',
-                          borderColor: 'divider',
-                        }}
-                      />
-                    )}
                   </Box>
                 );
               })}
