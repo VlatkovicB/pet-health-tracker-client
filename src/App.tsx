@@ -43,10 +43,10 @@ const queryClient = new QueryClient({
 export default function App() {
   return (
     <ErrorBoundary>
-      <QueryClientProvider client={queryClient}>
-        <ThemeContextProvider>
-          <CssBaseline />
-          <NotificationProvider>
+      <ThemeContextProvider>
+        <CssBaseline />
+        <NotificationProvider>
+          <QueryClientProvider client={queryClient}>
             <AuthProvider>
               <BrowserRouter>
                 <Routes>
@@ -65,9 +65,9 @@ export default function App() {
                 </Routes>
               </BrowserRouter>
             </AuthProvider>
-          </NotificationProvider>
-        </ThemeContextProvider>
-      </QueryClientProvider>
+          </QueryClientProvider>
+        </NotificationProvider>
+      </ThemeContextProvider>
     </ErrorBoundary>
   );
 }
