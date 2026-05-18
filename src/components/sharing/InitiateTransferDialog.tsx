@@ -6,8 +6,6 @@ import {
 } from '@mui/material';
 import { Warning } from '@mui/icons-material';
 import { useInitiateTransfer, useCancelTransfer } from '../../api/transfers';
-import { getApiError } from '../../api/client';
-import { useNotification } from '../../context/NotificationContext';
 
 interface Props {
   open: boolean;
@@ -17,7 +15,6 @@ interface Props {
 }
 
 export function InitiateTransferDialog({ open, onClose, petId, petName }: Props) {
-  const { showError } = useNotification();
   const [email, setEmail] = useState('');
   const [conflictError, setConflictError] = useState(false);
   const initiateMutation = useInitiateTransfer();
@@ -38,8 +35,6 @@ export function InitiateTransferDialog({ open, onClose, petId, petName }: Props)
         onError: (err) => {
           if (axios.isAxiosError(err) && err.response?.status === 409) {
             setConflictError(true);
-          } else {
-            showError(getApiError(err));
           }
         },
       },
