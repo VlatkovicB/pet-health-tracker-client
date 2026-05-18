@@ -17,7 +17,6 @@ import { useNotes } from '../../api/notes';
 import { useAttachPhotoToVisit } from '../../api/photos';
 import { useListSharedPets } from '../../api/shares';
 import { getApiError } from '../../api/client';
-import { useNotification } from '../../context/NotificationContext';
 import { useInfiniteScroll } from '../../hooks/useInfiniteScroll';
 import type { Medication, Note, Pet, VetVisit, Vet, VetWorkHours, DayOfWeek } from '../../types';
 import { PET_SPECIES } from '../../types';
@@ -80,7 +79,6 @@ export function PetDetailPage() {
   const { petId } = useParams<{ petId: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
   const queryClient = useQueryClient();
-  const { showError } = useNotification();
   const theme = useTheme();
   const isDark = theme.palette.mode === 'dark';
   const rawTab = searchParams.get('tab');
@@ -186,7 +184,6 @@ export function PetDetailPage() {
       queryClient.invalidateQueries({ queryKey: ['medications', petId] });
       setAddMedOpen(false);
     },
-    onError: (err) => showError(getApiError(err)),
   });
 
   const toggleActiveMutation = useMutation({
@@ -195,7 +192,6 @@ export function PetDetailPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['medications', petId] });
     },
-    onError: (err) => showError(getApiError(err)),
   });
 
   // Edit pet mutation
@@ -206,14 +202,12 @@ export function PetDetailPage() {
       queryClient.invalidateQueries({ queryKey: ['pet', petId] });
       setEditOpen(false);
     },
-    onError: (err) => showError(getApiError(err)),
   });
 
   // Pet photo upload mutation
   const photoMutation = useMutation({
     mutationFn: (file: File) => petsApi.uploadPhoto(petId!, file),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['pet', petId] }),
-    onError: (err) => showError(getApiError(err)),
   });
 
   const handlePhotoPick = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -250,7 +244,6 @@ export function PetDetailPage() {
       setVetForm({ vetId: '', reason: '', notes: '', visitDate: todayNoon(), nextVisitDate: weekFromNow(), nextReason: '' });
       setHasNextVisit(false);
     },
-    onError: (err) => showError(getApiError(err)),
   });
 
   // Vet visit update mutation
@@ -261,7 +254,6 @@ export function PetDetailPage() {
       queryClient.invalidateQueries({ queryKey: ['vet-visits', petId] });
       setDetailVisit(updatedVisit);
     },
-    onError: (err) => showError(getApiError(err)),
   });
 
 

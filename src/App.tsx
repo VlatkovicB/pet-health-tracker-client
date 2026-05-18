@@ -1,7 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider, QueryCache, MutationCache } from '@tanstack/react-query';
 import axios from 'axios';
-import { ToastProvider } from './context/ToastContext';
 import { toastRef } from './context/toastRef';
 import { getApiError } from './api/client';
 import { CssBaseline } from '@mui/material';
@@ -44,33 +43,31 @@ const queryClient = new QueryClient({
 export default function App() {
   return (
     <ErrorBoundary>
-      <ToastProvider>
-        <QueryClientProvider client={queryClient}>
-          <ThemeContextProvider>
-            <CssBaseline />
-            <NotificationProvider>
-              <AuthProvider>
-                <BrowserRouter>
-                  <Routes>
-                    <Route path="/auth"          element={<AuthPage />} />
-                    <Route path="/auth/callback" element={<AuthCallbackPage />} />
-                    <Route path="/login"    element={<Navigate to="/auth" replace />} />
-                    <Route path="/register" element={<Navigate to="/auth" replace />} />
-                    <Route path="/"         element={<ProtectedRoute><Layout><CalendarPage /></Layout></ProtectedRoute>} />
-                    <Route path="/pets"     element={<ProtectedRoute><Layout><PetsPage /></Layout></ProtectedRoute>} />
-                    <Route path="/vets"     element={<ProtectedRoute><Layout><VetsPage /></Layout></ProtectedRoute>} />
-                    <Route path="/pets/:petId" element={<ProtectedRoute><Layout><PetDetailPage /></Layout></ProtectedRoute>} />
-                    <Route path="/profile"  element={<ProtectedRoute><Layout><ProfilePage /></Layout></ProtectedRoute>} />
-                    <Route path="/photos"   element={<ProtectedRoute><Layout><PhotosPage /></Layout></ProtectedRoute>} />
-                    <Route path="/admin"     element={<AdminRoute><Layout><AdminPage /></Layout></AdminRoute>} />
-                    <Route path="*"         element={<Navigate to="/" replace />} />
-                  </Routes>
-                </BrowserRouter>
-              </AuthProvider>
-            </NotificationProvider>
-          </ThemeContextProvider>
-        </QueryClientProvider>
-      </ToastProvider>
+      <QueryClientProvider client={queryClient}>
+        <ThemeContextProvider>
+          <CssBaseline />
+          <NotificationProvider>
+            <AuthProvider>
+              <BrowserRouter>
+                <Routes>
+                  <Route path="/auth"          element={<AuthPage />} />
+                  <Route path="/auth/callback" element={<AuthCallbackPage />} />
+                  <Route path="/login"    element={<Navigate to="/auth" replace />} />
+                  <Route path="/register" element={<Navigate to="/auth" replace />} />
+                  <Route path="/"         element={<ProtectedRoute><Layout><CalendarPage /></Layout></ProtectedRoute>} />
+                  <Route path="/pets"     element={<ProtectedRoute><Layout><PetsPage /></Layout></ProtectedRoute>} />
+                  <Route path="/vets"     element={<ProtectedRoute><Layout><VetsPage /></Layout></ProtectedRoute>} />
+                  <Route path="/pets/:petId" element={<ProtectedRoute><Layout><PetDetailPage /></Layout></ProtectedRoute>} />
+                  <Route path="/profile"  element={<ProtectedRoute><Layout><ProfilePage /></Layout></ProtectedRoute>} />
+                  <Route path="/photos"   element={<ProtectedRoute><Layout><PhotosPage /></Layout></ProtectedRoute>} />
+                  <Route path="/admin"     element={<AdminRoute><Layout><AdminPage /></Layout></AdminRoute>} />
+                  <Route path="*"         element={<Navigate to="/" replace />} />
+                </Routes>
+              </BrowserRouter>
+            </AuthProvider>
+          </NotificationProvider>
+        </ThemeContextProvider>
+      </QueryClientProvider>
     </ErrorBoundary>
   );
 }

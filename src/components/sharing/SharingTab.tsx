@@ -6,8 +6,6 @@ import {
 import { Add, MedicalServices, Medication, StickyNote2 } from '@mui/icons-material';
 import type { SvgIconComponent } from '@mui/icons-material';
 import { useListPetShares, useSharePet, useRevokeShare } from '../../api/shares';
-import { getApiError } from '../../api/client';
-import { useNotification } from '../../context/NotificationContext';
 import { EditPermissionsDialog } from './EditPermissionsDialog';
 import { InitiateTransferDialog } from './InitiateTransferDialog';
 import type { PetShare, SharePermissions } from '../../types';
@@ -39,7 +37,6 @@ function SharePermIcons({ perms }: { perms: { canViewVetVisits: boolean; canEdit
 }
 
 export function SharingTab({ petId, petName }: Props) {
-  const { showError } = useNotification();
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
   const [pendingInviteEmail, setPendingInviteEmail] = useState('');
@@ -65,7 +62,6 @@ export function SharingTab({ petId, petName }: Props) {
           setInviteEmail('');
           setInviteDialogOpen(false);
         },
-        onError: (err) => showError(getApiError(err)),
       },
     );
   };
@@ -76,7 +72,6 @@ export function SharingTab({ petId, petName }: Props) {
       { petId, shareId: revokeShare.id },
       {
         onSuccess: () => setRevokeShare(null),
-        onError: (err) => showError(getApiError(err)),
       },
     );
   };

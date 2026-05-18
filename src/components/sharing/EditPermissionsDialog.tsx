@@ -4,8 +4,6 @@ import {
   Button, Box, Checkbox, FormControlLabel, Typography, CircularProgress,
 } from '@mui/material';
 import { useUpdateSharePermissions } from '../../api/shares';
-import { getApiError } from '../../api/client';
-import { useNotification } from '../../context/NotificationContext';
 import type { PetShare, SharePermissions } from '../../types';
 
 interface Props {
@@ -41,7 +39,6 @@ const DEFAULT_PERMISSIONS: SharePermissions = {
 };
 
 export function EditPermissionsDialog({ open, onClose, share, petId, mode, email, onConfirm, confirmPending }: Props) {
-  const { showError } = useNotification();
   const isCreate = mode === 'create';
   const [perms, setPerms] = useState<SharePermissions>(
     isCreate ? { ...DEFAULT_PERMISSIONS } : { ...share!.permissions },
@@ -70,7 +67,6 @@ export function EditPermissionsDialog({ open, onClose, share, petId, mode, email
       { petId: petId!, shareId: share!.id, permissions: perms },
       {
         onSuccess: onClose,
-        onError: (err) => showError(getApiError(err)),
       },
     );
   };

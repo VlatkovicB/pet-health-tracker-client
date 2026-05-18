@@ -11,7 +11,6 @@ import { petsApi } from '../api/pets';
 import { useDeleteNote } from '../api/notes';
 import { useAttachPhotoToNote } from '../api/photos';
 import { useNotification } from '../context/NotificationContext';
-import { getApiError } from '../api/client';
 
 const SECTION_LABEL_SX = {
   fontWeight: 800,
@@ -34,7 +33,7 @@ interface NoteDetailDialogProps {
 }
 
 export function NoteDetailDialog({ open, onClose, note, onEdit }: NoteDetailDialogProps) {
-  const { showError, showSuccess } = useNotification();
+  const { showSuccess } = useNotification();
   const [confirmDelete, setConfirmDelete] = useState(false);
   const notePhotoInputRef = useRef<HTMLInputElement>(null);
   const attachPhoto = useAttachPhotoToNote(note.id);
@@ -66,7 +65,6 @@ export function NoteDetailDialog({ open, onClose, note, onEdit }: NoteDetailDial
         setConfirmDelete(false);
         onClose();
       },
-      onError: (err) => showError(getApiError(err)),
     });
   }
 

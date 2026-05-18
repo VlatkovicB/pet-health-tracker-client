@@ -9,8 +9,6 @@ import type { UpdateMedicationInput } from '../api/medications';
 import { medicationsApi } from '../api/medications';
 import { petsApi } from '../api/pets';
 import { MedicationScheduleSection } from './MedicationScheduleSection';
-import { getApiError } from '../api/client';
-import { useNotification } from '../context/NotificationContext';
 
 const DOSAGE_UNITS = ['mg', 'ml', 'g', 'mcg', 'tab', 'pip', 'injection', 'collar', 'drop'];
 
@@ -23,7 +21,6 @@ interface Props {
 
 export function MedicationDetailDialog({ med, petId, onClose, canEdit = true }: Props) {
   const queryClient = useQueryClient();
-  const { showError } = useNotification();
 
   const [form, setForm] = useState({
     name: med.name,
@@ -54,7 +51,6 @@ export function MedicationDetailDialog({ med, petId, onClose, canEdit = true }: 
       queryClient.invalidateQueries({ queryKey: ['medications', petId] });
       onClose();
     },
-    onError: (err) => showError(getApiError(err)),
   });
 
   const handleSave = () => {

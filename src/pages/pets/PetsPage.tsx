@@ -8,8 +8,6 @@ import { Add } from '@mui/icons-material';
 import { useMutation, useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query';
 import { petsApi } from '../../api/pets';
 import { healthApi } from '../../api/health';
-import { getApiError } from '../../api/client';
-import { useNotification } from '../../context/NotificationContext';
 import { useInfiniteScroll } from '../../hooks/useInfiniteScroll';
 import {
   useListPendingShares, useAcceptShare, useDeclineShare, useListSharedPets,
@@ -264,7 +262,6 @@ export function PetsPage() {
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<{ name: string; species: typeof PET_SPECIES[number] | ''; breed: string; birthDate: string }>({ name: '', species: '', breed: '', birthDate: '' });
-  const { showError } = useNotification();
   const [searchParams, setSearchParams] = useSearchParams();
   const view = searchParams.get('view') === 'shared' ? 'shared' : 'mine';
   const setView = (v: 'mine' | 'shared') => setSearchParams({ view: v }, { replace: true });
@@ -297,7 +294,6 @@ export function PetsPage() {
       setOpen(false);
       setForm({ name: '', species: '', breed: '', birthDate: '' });
     },
-    onError: (err) => showError(getApiError(err)),
   });
 
   return (

@@ -11,7 +11,6 @@ import { format } from 'date-fns';
 import { useMutation } from '@tanstack/react-query';
 import type { CalendarEvent, Note, Pet, Vet } from '../types';
 import { healthApi } from '../api/health';
-import { getApiError } from '../api/client';
 import { useNotification } from '../context/NotificationContext';
 
 interface DayDetailModalProps {
@@ -35,7 +34,7 @@ function formatIso(s: string) {
 
 export function DayDetailModal({ date, events, petNames, petColors, pets, vets, onClose, onScheduled, onNoteClick, onAddNote, onAddMedication }: DayDetailModalProps) {
   const navigate = useNavigate();
-  const { showSuccess, showError } = useNotification();
+  const { showSuccess } = useNotification();
   const [selectedPetId, setSelectedPetId] = useState<string | null>(null);
   const [reason, setReason] = useState('');
   const [time, setTime] = useState('09:00');
@@ -65,7 +64,6 @@ export function DayDetailModal({ date, events, petNames, petColors, pets, vets, 
       setSelectedVet(null);
       onScheduled();
     },
-    onError: (err) => showError(getApiError(err)),
   });
 
   function handleClose() {

@@ -14,7 +14,6 @@ import { useQuery } from '@tanstack/react-query';
 import { petsApi } from '../api/pets';
 import { useCreateNote, useUpdateNote } from '../api/notes';
 import { useNotification } from '../context/NotificationContext';
-import { getApiError } from '../api/client';
 import type { Note } from '../types';
 
 interface NoteFormDialogProps {
@@ -57,7 +56,7 @@ const inputSx = {
 };
 
 export function NoteFormDialog({ open, onClose, note, defaultPetId, defaultDate }: NoteFormDialogProps) {
-  const { showSuccess, showError } = useNotification();
+  const { showSuccess } = useNotification();
   const isEditMode = !!note;
 
   // ── form state ──────────────────────────────────────────────────────────────
@@ -131,7 +130,6 @@ export function NoteFormDialog({ open, onClose, note, defaultPetId, defaultDate 
             showSuccess('Note updated');
             onClose();
           },
-          onError: (err) => showError(getApiError(err)),
         },
       );
     } else {
@@ -140,7 +138,6 @@ export function NoteFormDialog({ open, onClose, note, defaultPetId, defaultDate 
           showSuccess('Note created');
           onClose();
         },
-        onError: (err) => showError(getApiError(err)),
       });
     }
   };

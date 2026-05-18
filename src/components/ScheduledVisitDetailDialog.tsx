@@ -8,8 +8,6 @@ import type { Reminder, ReminderScheduleProps, Vet, VetVisit } from '../types';
 import { healthApi } from '../api/health';
 import { remindersApi } from '../api/reminders';
 import { ReminderScheduleEditor } from './ReminderScheduleEditor';
-import { getApiError } from '../api/client';
-import { useNotification } from '../context/NotificationContext';
 import { daysUntil } from '../utils/dateUtils';
 
 const fmtDate = (iso: string) =>
@@ -32,7 +30,6 @@ interface Props {
 
 export function ScheduledVisitDetailDialog({ visit, petId, vets, onClose }: Props) {
   const queryClient = useQueryClient();
-  const { showError } = useNotification();
 
   const vetName = vets.find((v) => v.id === visit.vetId)?.name ?? visit.clinic ?? '—';
   const [reminderEnabled, setReminderEnabled] = useState(false);
@@ -54,7 +51,6 @@ export function ScheduledVisitDetailDialog({ visit, petId, vets, onClose }: Prop
   const reminderMutation = useMutation({
     mutationFn: (data: { schedule: ReminderScheduleProps; enabled: boolean }) =>
       remindersApi.configureVetVisitReminder(petId, visit.id, data),
-    onError: (err) => showError(getApiError(err)),
   });
 
   const completeMutation = useMutation({
@@ -63,7 +59,6 @@ export function ScheduledVisitDetailDialog({ visit, petId, vets, onClose }: Prop
       queryClient.invalidateQueries({ queryKey: ['vet-visits', petId] });
       onClose();
     },
-    onError: (err) => showError(getApiError(err)),
   });
 
   const handleReminderChange = (s: ReminderScheduleProps) => {

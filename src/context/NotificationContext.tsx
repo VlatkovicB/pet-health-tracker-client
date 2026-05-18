@@ -1,5 +1,6 @@
-import { createContext, useCallback, useContext, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import { Snackbar, Alert } from '@mui/material';
+import { toastRef } from './toastRef';
 
 interface NotificationState {
   open: boolean;
@@ -27,6 +28,11 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   const showError = useCallback((msg: string) => setState({ open: true, message: msg, severity: 'error' }), []);
   const showSuccess = useCallback((msg: string) => setState({ open: true, message: msg, severity: 'success' }), []);
   const handleClose = () => setState((s) => ({ ...s, open: false }));
+
+  useEffect(() => {
+    toastRef.current = { showError };
+    return () => { toastRef.current = null; };
+  }, [showError]);
 
   return (
     <NotificationContext.Provider value={{ showError, showSuccess }}>

@@ -20,7 +20,6 @@ import { useMutation, useInfiniteQuery, useQueryClient } from '@tanstack/react-q
 import { vetsApi } from '../../api/vets';
 import { placesApi, type PlaceSearchResult, type PlaceDetails } from '../../api/places';
 import { getApiError } from '../../api/client';
-import { useNotification } from '../../context/NotificationContext';
 import { useInfiniteScroll } from '../../hooks/useInfiniteScroll';
 import { WorkHoursEditor } from '../../components/WorkHoursEditor';
 import { WorkHoursDisplay } from '../../components/WorkHoursDisplay';
@@ -208,7 +207,6 @@ export function VetsPage() {
   const setEdit = (field: string) => (e: React.ChangeEvent<HTMLInputElement>) =>
     setEditForm((f) => ({ ...f, [field]: e.target.value }));
 
-  const { showError } = useNotification();
   const [duplicateError, setDuplicateError] = useState<string | null>(null);
 
   const validateDuplicate = (name: string, phone: string, excludeId?: string): string | null => {
@@ -369,7 +367,6 @@ export function VetsPage() {
       setDuplicateError(null);
       resetSearch();
     },
-    onError: (err) => showError(getApiError(err)),
   });
 
   const handleAddVet = () => {
@@ -398,7 +395,6 @@ export function VetsPage() {
       setEditVet(null);
       setEditDuplicateError(null);
     },
-    onError: (err) => showError(getApiError(err)),
   });
 
   const handleSaveVet = () => {
