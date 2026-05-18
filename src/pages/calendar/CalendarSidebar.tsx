@@ -2,20 +2,13 @@ import { Box, Typography, Skeleton, useTheme } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import type { VetVisit } from '../../types';
+import { daysUntil } from '../../utils/dateUtils';
 
 interface CalendarSidebarProps {
   upcomingVisit: VetVisit | null;
   petNames: Record<string, string>;
   petColors: Record<string, string>;
   loading: boolean;
-}
-
-function daysUntil(dateStr: string): number {
-  const [y, m, d] = dateStr.slice(0, 10).split('-').map(Number);
-  const target = new Date(y, m - 1, d);
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  return Math.round((target.getTime() - today.getTime()) / 86_400_000);
 }
 
 export function CalendarSidebar({ upcomingVisit, petNames, petColors, loading }: CalendarSidebarProps) {

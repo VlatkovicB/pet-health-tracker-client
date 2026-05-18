@@ -10,15 +10,13 @@ import { remindersApi } from '../api/reminders';
 import { ReminderScheduleEditor } from './ReminderScheduleEditor';
 import { getApiError } from '../api/client';
 import { useNotification } from '../context/NotificationContext';
+import { daysUntil } from '../utils/dateUtils';
 
 const fmtDate = (iso: string) =>
   new Date(iso).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
 
 function daysUntilLabel(iso: string): string {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const [year, month, day] = iso.split('T')[0].split('-').map(Number);
-  const d = Math.round((new Date(year, month - 1, day).getTime() - today.getTime()) / 86_400_000);
+  const d = daysUntil(iso);
   if (d === 0) return 'Today';
   if (d === 1) return 'Tomorrow';
   if (d > 0) return `In ${d} days`;

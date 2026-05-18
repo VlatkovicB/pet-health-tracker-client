@@ -23,16 +23,10 @@ import type { Pet, VetVisit } from '../../types';
 import { PET_SPECIES } from '../../types';
 import { SPECIES_AVATAR_BG, SPECIES_TAG_GRADIENT, SPECIES_TAG_COLOR, SPECIES_PLACEHOLDER_IMG } from '../../utils/speciesStyles';
 import { petAge } from '../../utils/petUtils';
+import { daysUntil } from '../../utils/dateUtils';
 import emptyStatePetsUrl from '../../assets/empty-state-pets.svg';
 
 const serverUrl = import.meta.env.VITE_SERVER_URL ?? 'http://localhost:3000';
-
-function daysUntil(iso: string): number {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const [year, month, day] = iso.split('T')[0].split('-').map(Number);
-  return Math.round((new Date(year, month - 1, day).getTime() - today.getTime()) / 86_400_000);
-}
 
 const SPECIES_EMOJI: Record<string, string> = {
   dog: '🐕', cat: '🐈', rabbit: '🐇', bird: '🐦', fish: '🐟', other: '🐾',
